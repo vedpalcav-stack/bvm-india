@@ -143,15 +143,15 @@ function Dashboard({ onNav }) {
           <img src={bvmIndiaLogo} alt="BVM India" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
           <div>
             <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM India</div>
-            <div style={{ fontSize:11, color:'#86efac', marginTop:2 }}>Trading & Distribution</div>
+            <div style={{ fontSize:11, color:'#86efac', marginTop:2 }}>Private Limited</div>
             <div style={{ fontSize:10, color:'#4ade80', marginTop:3 }}>GSTIN: 06AGYPR1117M1ZT · PAN: AGYPR1117M</div>
           </div>
         </div>
         <div style={{ background:'linear-gradient(135deg,#1e3a5f,#1d4ed8)', borderRadius:10, padding:'16px 20px', color:'#fff', display:'flex', alignItems:'center', gap:14 }}>
-          <img src={bvmWorldLogo} alt="BVM World" style={{ width:256, height:256, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
+          <img src={bvmWorldLogo} alt="BVM World" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
           <div>
             <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM World</div>
-            <div style={{ fontSize:11, color:'#93c5fd', marginTop:2 }}>Global Trading & Distribution</div>
+            <div style={{ fontSize:11, color:'#93c5fd', marginTop:2 }}>Global Private Limited</div>
             <div style={{ fontSize:10, color:'#60a5fa', marginTop:3 }}>GSTIN: 06AGYPR1117M1ZT · PAN: AGYPR1117M</div>
           </div>
         </div>
@@ -350,7 +350,7 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
   const [form, setForm] = useState({
-    client_id:clients[0]?.id||'', date:today(),credit_period:30, due_date:futureDate(30),
+    client_id:clients[0]?.id||'', date:today(), due_date:futureDate(30),
     validity:15, currency:'INR', exchange_rate:1,
     po_number:'', so_number:'', notes:'',
     client_quotation_number:'', terms:DEFAULT_TERMS,
@@ -626,6 +626,7 @@ function DocList({ type, clients, products, showNew, onClearNew }) {
                   <button className="btn btn-sm" onClick={() => setViewDoc(doc)}>View</button>
                   {nextType&&doc.status!=='Converted'&&<button className="btn btn-sm btn-purple" onClick={async()=>{await api.convertDocument(doc.id,nextType);load();}}>→ {nextLabel}</button>}
                   {type==='invoice'&&doc.status!=='Paid'&&<button className="btn btn-sm btn-success" onClick={() => setPayModal(doc)}>Pay</button>}
+                  {doc.status!=='Converted'&&<button className="btn btn-sm" style={{background:'#fee2e2',color:'#dc2626',border:'1px solid #fecaca'}} onClick={async()=>{if(window.confirm('Delete '+doc.id+'? This cannot be undone.')){await api.deleteDocument(doc.id);load();}}}>🗑</button>}
                 </div>
               </td>
             </tr>);
@@ -911,7 +912,7 @@ export default function App() {
           </div>
           <div style={{display:'flex',alignItems:'center',gap:14}}>
             <GlobalSearch onNav={navTo}/>
-            <div className="topbar-sub">GSTIN: 06AGYPR1117M1ZT</div>
+            <div className="topbar-sub" style={{fontSize:10}}>IND: 06AGYPR1117M1ZT &nbsp;|&nbsp; WLD: 06AAMCB5079P1ZX</div>
           </div>
         </div>
         <div className="content">
