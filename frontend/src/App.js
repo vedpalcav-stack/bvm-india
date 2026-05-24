@@ -9,7 +9,7 @@ const today = () => new Date().toISOString().split('T')[0];
 const futureDate = (d) => new Date(Date.now() + d * 86400000).toISOString().split('T')[0];
 
 const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Pickup.
-1. Payment Terms: As per BVM Conditions.
+1. Payment Terms: As per BVM INDIA Conditions.
 2. Delivery: Immediate.
 3. Warranty: Standard as per OEM.`;
 
@@ -147,7 +147,7 @@ function Dashboard({ onNav }) {
           </div>
         </div>
         <div style={{ background:'linear-gradient(135deg,#1e3a5f,#1d4ed8)', borderRadius:10, padding:'16px 20px', color:'#fff', display:'flex', alignItems:'center', gap:14 }}>
-          <img src={bvmWorldLogo} alt="BVM World" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
+          <img src={bvmWorldLogo} alt="BVM World" style={{ width:128, height:128, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
           <div>
             <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM WORLD PVT LTD </div>
             <div style={{ fontSize:10, color:'#60a5fa', marginTop:3 }}>GSTIN: 06AAMCB5079P1ZX · PAN: AAMCB5079P</div>
