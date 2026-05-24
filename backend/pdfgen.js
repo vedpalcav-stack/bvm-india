@@ -16,8 +16,8 @@ const COMPANY = {
   gstin_india: '06AGYPR1117M1ZT',   // <-- BVM India GSTIN
   pan_india:   'AGYPR1117M',         // <-- BVM India PAN
   email_india: 'accounts@bvmindia.com',
-  gstin_world: '06AGYPR1117M1ZT',   // <-- BVM World GSTIN
-  pan_world:   'AGYPR1117M',         // <-- BVM World PAN
+  gstin_world: '06AAMCB5079P1ZX',   // <-- BVM World GSTIN
+  pan_world:   'AAMCB5079P',         // <-- BVM World PAN
   email_world: 'accounts@bvmworld.com',
 };
 // ─────────────────────────────────────────────────────────────────────────────
