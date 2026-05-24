@@ -80,3 +80,13 @@ export const COMPANY = {
 };
 
 export const deleteDocument = (id) => api(`/api/documents/${id}`, { method: 'DELETE' });
+
+export const getCreditSettings    = (brand)      => api(`/api/credit-settings?brand=${brand}`);
+export const updateCreditSettings = (data)        => api('/api/credit-settings', { method: 'PUT', body: data });
+
+export const getDueReminders      = (brand)       => api(`/api/due-reminders${brand ? `?brand=${brand}` : ''}`);
+export const createDueReminder    = (data)        => api('/api/due-reminders', { method: 'POST', body: data });
+export const sendReminder1        = (id)          => api(`/api/due-reminders/${id}/reminder1`, { method: 'PUT' });
+export const sendReminder2        = (id)          => api(`/api/due-reminders/${id}/reminder2`, { method: 'PUT' });
+export const deleteDueReminder    = (id)          => api(`/api/due-reminders/${id}`, { method: 'DELETE' });
+export const downloadPDF          = (id, brand)   => window.open(`${BASE}/api/documents/${id}/pdf/${brand}`, '_blank');
