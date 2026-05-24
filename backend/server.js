@@ -345,6 +345,96 @@ initDb().then(db => {
     res.json({ deleted: true });
   }));
 
+  // ── CREDIT SETTINGS ─────────────────────────────────────────────────────────────
+  app.get('/api/credit-settings', wrap(async (req, res) => {
+    const brand = req.query.brand || 'india';
+    let row = await db.prepare('SELECT * FROM credit_settings WHERE brand=$1').get(brand);
+    if (!row) {
+      await db.prepare('INSERT INTO credit_settings (brand, credit_days) VALUES ($1, 30)').run(brand);
+      row = { brand, credit_days: 30 };
+    }
+    res.json(row);
+  }));
+
+  app.put('/api/credit-settings', wrap(async (req, res) => {
+    const { brand, credit_days } = req.body;
+    const existing = await db.prepare('SELECT * FROM credit_settings WHERE brand=$1').get(brand||'india');
+    if (existing) {
+      await db.prepare('UPDATE credit_settings SET credit_days=$1 WHERE brand=$2').run(parseInt(credit_days)||30, brand||'india');
+    } else {
+      await db.prepare('INSERT INTO credit_settings (brand, credit_days) VALUES ($1, $2)').run(brand||'india', parseInt(credit_days)||30);
+    }
+    res.json({ brand: brand||'india', credit_days: parseInt(credit_days)||30 });
+  }));
+
+  // ── DUE DATE REMINDERS ───────────────────────────────────────────────────────────
+  app.get('/api/due-reminders', wrap(async (req, res) => {
+    const brand = req.query.brand || null;
+    let rows;
+    if (brand) {
+      rows = await db.prepare(
+        `SELECT dr.*, c.name as client_name, c.phone, c.email, d.paid, d.currency
+         FROM due_reminders dr
+         LEFT JOIN clients c ON dr.client_id = c.id
+         LEFT JOIN documents d ON dr.invoice_id = d.id
+         WHERE dr.brand=$1
+         ORDER BY dr.due_date ASC`
+      ).all(brand);
+    } else {
+      rows = await db.prepare(
+        `SELECT dr.*, c.name as client_name, c.phone, c.email, d.paid, d.currency
+         FROM due_reminders dr
+         LEFT JOIN clients c ON dr.client_id = c.id
+         LEFT JOIN documents d ON dr.invoice_id = d.id
+         ORDER BY dr.due_date ASC`
+      ).all();
+    }
+    // Calculate total amount for each due reminder
+    for (const row of rows) {
+      const items = await db.prepare('SELECT * FROM document_items WHERE document_id=$1').all(row.invoice_id);
+      const sub = items.reduce((s,it) => s + (it.qty||0)*(it.rate||0), 0);
+      row.total_amount = sub * 1.18;
+      row.balance = row.total_amount - (row.paid || 0);
+      // Calculate status
+      const today = new Date().toISOString().split('T')[0];
+      if (row.balance <= 0) row.computed_status = 'Paid';
+      else if (row.reminder2_sent) row.computed_status = 'Reminder 2 Sent';
+      else if (row.reminder1_sent) row.computed_status = 'Reminder 1 Sent';
+      else if (today > row.due_date) row.computed_status = 'Overdue';
+      else row.computed_status = 'Pending';
+    }
+    res.json(rows);
+  }));
+
+  app.post('/api/due-reminders', wrap(async (req, res) => {
+    const { invoice_id, client_id, invoice_date, due_date, credit_days, channel, brand } = req.body;
+    // Check if already exists
+    const existing = await db.prepare('SELECT * FROM due_reminders WHERE invoice_id=$1').get(invoice_id);
+    if (existing) return res.json(existing);
+    await db.prepare(
+      `INSERT INTO due_reminders (invoice_id,client_id,invoice_date,due_date,credit_days,channel,brand)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`
+    ).run(invoice_id, client_id, invoice_date, due_date, parseInt(credit_days)||30, channel||'whatsapp', brand||'india');
+    res.json({ success: true });
+  }));
+
+  app.put('/api/due-reminders/:id/reminder1', wrap(async (req, res) => {
+    const today = new Date().toISOString().split('T')[0];
+    await db.prepare('UPDATE due_reminders SET reminder1_sent=1, reminder1_date=$1 WHERE id=$2').run(today, req.params.id);
+    res.json({ success: true, date: today });
+  }));
+
+  app.put('/api/due-reminders/:id/reminder2', wrap(async (req, res) => {
+    const today = new Date().toISOString().split('T')[0];
+    await db.prepare('UPDATE due_reminders SET reminder2_sent=1, reminder2_date=$1 WHERE id=$2').run(today, req.params.id);
+    res.json({ success: true, date: today });
+  }));
+
+  app.delete('/api/due-reminders/:id', wrap(async (req, res) => {
+    await db.prepare('DELETE FROM due_reminders WHERE id=$1').run(req.params.id);
+    res.json({ deleted: true });
+  }));
+
   // ── LEDGER ─────────────────────────────────────────────────────────────────────
   app.get('/api/ledger', wrap(async (req, res) => {
     const clients = await db.prepare('SELECT * FROM clients ORDER BY name').all();
