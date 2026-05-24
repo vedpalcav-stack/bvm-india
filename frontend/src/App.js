@@ -143,7 +143,7 @@ function Dashboard({ onNav }) {
           <img src={bvmIndiaLogo} alt="BVM India" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
           <div>
             <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM India</div>
-            <div style={{ fontSize:11, color:'#86efac', marginTop:2 }}>PVT LTD </div>
+            <div style={{ fontSize:11, color:'#86efac', marginTop:2 }}>Private Limited</div>
             <div style={{ fontSize:10, color:'#4ade80', marginTop:3 }}>GSTIN: 06AGYPR1117M1ZT · PAN: AGYPR1117M</div>
           </div>
         </div>
@@ -151,8 +151,8 @@ function Dashboard({ onNav }) {
           <img src={bvmWorldLogo} alt="BVM World" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
           <div>
             <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM World</div>
-            <div style={{ fontSize:11, color:'#93c5fd', marginTop:2 }}>PVT LTD </div>
-            <div style={{ fontSize:10, color:'#60a5fa', marginTop:3 }}>GSTIN: 06AAMCB5079P1ZX · PAN: AAMCB5079P</div>
+            <div style={{ fontSize:11, color:'#93c5fd', marginTop:2 }}>Global Private Limited</div>
+            <div style={{ fontSize:10, color:'#60a5fa', marginTop:3 }}>GSTIN: 06AGYPR1117M1ZT · PAN: AGYPR1117M</div>
           </div>
         </div>
       </div>
@@ -626,6 +626,7 @@ function DocList({ type, clients, products, showNew, onClearNew }) {
                   <button className="btn btn-sm" onClick={() => setViewDoc(doc)}>View</button>
                   {nextType&&doc.status!=='Converted'&&<button className="btn btn-sm btn-purple" onClick={async()=>{await api.convertDocument(doc.id,nextType);load();}}>→ {nextLabel}</button>}
                   {type==='invoice'&&doc.status!=='Paid'&&<button className="btn btn-sm btn-success" onClick={() => setPayModal(doc)}>Pay</button>}
+                  {doc.status!=='Converted'&&<button className="btn btn-sm" style={{background:'#fee2e2',color:'#dc2626',border:'1px solid #fecaca'}} onClick={async()=>{if(window.confirm('Delete '+doc.id+'? This cannot be undone.')){{await api.deleteDocument(doc.id);load();}}}}>🗑</button>}
                 </div>
               </td>
             </tr>);
