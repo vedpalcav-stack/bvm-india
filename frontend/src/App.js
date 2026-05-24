@@ -402,8 +402,9 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
         type="date"
         value={form.date}
         onChange={e => set('date', e.target.value)}
-    />
-</div><div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e => set('date',e.target.value)}/></div>
+  
+</div>
+          <div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e => set('date',e.target.value)}/></div>
 {(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Credit Period</label><select value={form.credit_period||30} onChange={e=>{const days=Number(e.target.value);set('credit_period',days);if(form.date){const d=new Date(form.date);d.setDate(d.getDate()+days);set('due_date',d.toISOString().split('T')[0]);}}}><option value="0">Immediate</option><option value="15">15 Days</option><option value="30">30 Days</option><option value="45">45 Days</option><option value="60">60 Days</option><option value="90">90 Days</option></select></div>}
 {(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} readOnly/></div>}
 {(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e => set('validity',e.target.value)}/></div>}
