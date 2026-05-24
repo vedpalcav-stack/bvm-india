@@ -829,20 +829,7 @@ function Reminders({ clients, brand }) {
   const handleReminder1 = async (dr) => {
     const cl = clients.find(c => c.id === dr.client_id);
     if (!cl) return;
-    const msg = `Dear ${cl.name},
-
-This is your first payment reminder from ${cfg.name}.
-
-Invoice: ${dr.invoice_id}
-Invoice Date: ${dr.invoice_date}
-Due Date: ${dr.due_date}
-Balance Due: ${dr.balance > 0 ? 'INR ' + dr.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : 'Cleared'}
-
-Kindly arrange payment at your earliest convenience.
-
-Best Regards,
-${cfg.name}
-GSTIN: ${cfg.gstin}`;
+    const msg = `Dear ${cl.name},\n\nThis is your first payment reminder from ${cfg.name}.\n\nInvoice: ${dr.invoice_id}\nInvoice Date: ${dr.invoice_date}\nDue Date: ${dr.due_date}\nBalance Due: ${dr.balance > 0 ? 'INR ' + dr.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : 'Cleared'}\n\nKindly arrange payment at your earliest convenience.\n\nBest Regards,\n${cfg.name}\nGSTIN: ${cfg.gstin}`;
     if (dr.channel === 'whatsapp') {
       const phone = (cl.phone || '').replace(/\D/g, '');
       window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -857,22 +844,7 @@ GSTIN: ${cfg.gstin}`;
   const handleReminder2 = async (dr) => {
     const cl = clients.find(c => c.id === dr.client_id);
     if (!cl) return;
-    const msg = `Dear ${cl.name},
-
-This is your SECOND payment reminder from ${cfg.name}.
-
-Your credit period of ${dr.credit_days} days has ended.
-
-Invoice: ${dr.invoice_id}
-Invoice Date: ${dr.invoice_date}
-Due Date: ${dr.due_date}
-Balance Due: ${dr.balance > 0 ? 'INR ' + dr.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : 'Cleared'}
-
-Kindly clear the outstanding immediately to avoid any inconvenience.
-
-Best Regards,
-${cfg.name}
-GSTIN: ${cfg.gstin}`;
+    const msg = `Dear ${cl.name},\n\nThis is your SECOND payment reminder from ${cfg.name}.\n\nYour credit period of ${dr.credit_days} days has ended.\n\nInvoice: ${dr.invoice_id}\nInvoice Date: ${dr.invoice_date}\nDue Date: ${dr.due_date}\nBalance Due: ${dr.balance > 0 ? 'INR ' + dr.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : 'Cleared'}\n\nKindly clear the outstanding immediately to avoid any inconvenience.\n\nBest Regards,\n${cfg.name}\nGSTIN: ${cfg.gstin}`;
     if (dr.channel === 'whatsapp') {
       const phone = (cl.phone || '').replace(/\D/g, '');
       window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -885,19 +857,10 @@ GSTIN: ${cfg.gstin}`;
 
   const openManualModal = (cl = null) => {
     const lc = cl ? ledgerData.find(l => l.id === cl.id) : null;
-    const dueStr = lc && lc.due > 0.01 ? `
-Outstanding: INR ${lc.due.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '';
+    const dueStr = lc && lc.due > 0.01 ? `\nOutstanding: INR ${lc.due.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '';
     setForm({
       client_id: cl?.id || '', document_id: '', type: 'quotation', channel: 'whatsapp',
-      message: cl ? `Dear ${cl.name},
-
-This is a reminder from ${cfg.name}.
-GSTIN: ${cfg.gstin}${dueStr}
-
-Kindly revert at your earliest.
-
-Best Regards,
-${cfg.name}` : ''
+      message: cl ? `Dear ${cl.name},\n\nThis is a reminder from ${cfg.name}.\nGSTIN: ${cfg.gstin}${dueStr}\n\nKindly revert at your earliest.\n\nBest Regards,\n${cfg.name}` : ''
     });
     setModal(true);
   };
