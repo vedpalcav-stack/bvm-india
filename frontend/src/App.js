@@ -143,7 +143,7 @@ function Dashboard({ onNav }) {
           <img src={bvmIndiaLogo} alt="BVM India" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
           <div>
             <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM India</div>
-            <div style={{ fontSize:11, color:'#86efac', marginTop:2 }}>Trading & Distribution</div>
+            <div style={{ fontSize:11, color:'#86efac', marginTop:2 }}>PVT LTD </div>
             <div style={{ fontSize:10, color:'#4ade80', marginTop:3 }}>GSTIN: 06AGYPR1117M1ZT · PAN: AGYPR1117M</div>
           </div>
         </div>
@@ -151,7 +151,7 @@ function Dashboard({ onNav }) {
           <img src={bvmWorldLogo} alt="BVM World" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
           <div>
             <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM World</div>
-            <div style={{ fontSize:11, color:'#93c5fd', marginTop:2 }}>Global Trading & Distribution</div>
+            <div style={{ fontSize:11, color:'#93c5fd', marginTop:2 }}>PVT LTD </div>
             <div style={{ fontSize:10, color:'#60a5fa', marginTop:3 }}>GSTIN: 06AGYPR1117M1ZT · PAN: AGYPR1117M</div>
           </div>
         </div>
