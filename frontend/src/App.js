@@ -148,7 +148,7 @@ function Dashboard({ onNav }) {
           </div>
         </div>
         <div style={{ background:'linear-gradient(135deg,#1e3a5f,#1d4ed8)', borderRadius:10, padding:'16px 20px', color:'#fff', display:'flex', alignItems:'center', gap:14 }}>
-          <img src={bvmWorldLogo} alt="BVM World" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
+          <img src={bvmWorldLogo} alt="BVM World" style={{ width:256, height:256, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
           <div>
             <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM World</div>
             <div style={{ fontSize:11, color:'#93c5fd', marginTop:2 }}>Global Trading & Distribution</div>
