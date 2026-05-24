@@ -772,130 +772,485 @@ function Payments({ clients }) {
 
 // ── REMINDERS ─────────────────────────────────────────────────────────────────
 function Reminders({ clients, brand }) {
+  const [tab, setTab] = useState('due');
   const [reminders, setReminders] = useState([]);
+  const [dueReminders, setDueReminders] = useState([]);
+  const [creditDays, setCreditDays] = useState(30);
+  const [editCredit, setEditCredit] = useState(false);
+  const [tempCredit, setTempCredit] = useState(30);
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({client_id:'',document_id:'',type:'quotation',channel:'whatsapp',message:''});
+  const [addDueModal, setAddDueModal] = useState(false);
+  const [invoices, setInvoices] = useState([]);
+  const [form, setForm] = useState({ client_id:'', document_id:'', type:'quotation', channel:'whatsapp', message:'' });
+  const [dueForm, setDueForm] = useState({ invoice_id:'', channel:'whatsapp' });
   const [ledgerData, setLedgerData] = useState([]);
-  const [tab, setTab] = useState('reminders');
-  const load = useCallback(() => { api.getReminders().then(setReminders).catch(()=>{}); api.getLedger().then(setLedgerData).catch(()=>{}); }, []);
-  useEffect(() => { load(); }, [load]);
-  const set = (k,v) => setForm(f => ({...f,[k]:v}));
   const cfg = BRAND_CONFIG[brand];
 
-  const openModal = (cl=null) => {
-    const lc = cl ? ledgerData.find(l=>l.id===cl.id) : null;
-    const dueStr = lc&&lc.due>0.01?`\nOutstanding: ${fmtAmt(lc.due)}`:'';
-    setForm({client_id:cl?.id||'',document_id:'',type:'quotation',channel:'whatsapp',
-      message:cl?`Dear ${cl.name},\n\nThis is a reminder from ${cfg.name}.\nGSTIN: ${cfg.gstin}${dueStr}\n\nKindly revert at your earliest.\n\nBest Regards,\n${cfg.name}`:''});
+  const load = useCallback(async () => {
+    api.getReminders().then(setReminders).catch(() => {});
+    api.getDueReminders(brand).then(setDueReminders).catch(() => {});
+    api.getCreditSettings(brand).then(r => { setCreditDays(r.credit_days); setTempCredit(r.credit_days); }).catch(() => {});
+    api.getLedger().then(setLedgerData).catch(() => {});
+    api.getDocuments('invoice', brand).then(setInvoices).catch(() => {});
+  }, [brand]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  // Save credit period
+  const saveCreditDays = async () => {
+    await api.updateCreditSettings({ brand, credit_days: tempCredit });
+    setCreditDays(tempCredit);
+    setEditCredit(false);
+    load();
+  };
+
+  // Add invoice to due reminder tracker
+  const addToTracker = async () => {
+    const inv = invoices.find(i => i.id === dueForm.invoice_id);
+    if (!inv) return;
+    const invDate = inv.date;
+    const dueDate = new Date(new Date(invDate).getTime() + creditDays * 86400000).toISOString().split('T')[0];
+    await api.createDueReminder({
+      invoice_id: inv.id,
+      client_id: inv.client_id,
+      invoice_date: invDate,
+      due_date: dueDate,
+      credit_days: creditDays,
+      channel: dueForm.channel,
+      brand,
+    });
+    setAddDueModal(false);
+    load();
+  };
+
+  // Send reminder 1 (on invoice date)
+  const handleReminder1 = async (dr) => {
+    const cl = clients.find(c => c.id === dr.client_id);
+    if (!cl) return;
+    const msg = `Dear ${cl.name},
+
+This is your first payment reminder from ${cfg.name}.
+
+Invoice: ${dr.invoice_id}
+Invoice Date: ${dr.invoice_date}
+Due Date: ${dr.due_date}
+Balance Due: ${dr.balance > 0 ? 'INR ' + dr.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : 'Cleared'}
+
+Kindly arrange payment at your earliest convenience.
+
+Best Regards,
+${cfg.name}
+GSTIN: ${cfg.gstin}`;
+    if (dr.channel === 'whatsapp') {
+      const phone = (cl.phone || '').replace(/\D/g, '');
+      window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    } else if (dr.channel === 'email') {
+      window.open(`mailto:${cl.email}?subject=${encodeURIComponent('Payment Reminder - ' + dr.invoice_id)}&body=${encodeURIComponent(msg)}`, '_blank');
+    }
+    await api.sendReminder1(dr.id);
+    load();
+  };
+
+  // Send reminder 2 (after credit period)
+  const handleReminder2 = async (dr) => {
+    const cl = clients.find(c => c.id === dr.client_id);
+    if (!cl) return;
+    const msg = `Dear ${cl.name},
+
+This is your SECOND payment reminder from ${cfg.name}.
+
+Your credit period of ${dr.credit_days} days has ended.
+
+Invoice: ${dr.invoice_id}
+Invoice Date: ${dr.invoice_date}
+Due Date: ${dr.due_date}
+Balance Due: ${dr.balance > 0 ? 'INR ' + dr.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : 'Cleared'}
+
+Kindly clear the outstanding immediately to avoid any inconvenience.
+
+Best Regards,
+${cfg.name}
+GSTIN: ${cfg.gstin}`;
+    if (dr.channel === 'whatsapp') {
+      const phone = (cl.phone || '').replace(/\D/g, '');
+      window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    } else if (dr.channel === 'email') {
+      window.open(`mailto:${cl.email}?subject=${encodeURIComponent('URGENT: Payment Reminder - ' + dr.invoice_id)}&body=${encodeURIComponent(msg)}`, '_blank');
+    }
+    await api.sendReminder2(dr.id);
+    load();
+  };
+
+  const openManualModal = (cl = null) => {
+    const lc = cl ? ledgerData.find(l => l.id === cl.id) : null;
+    const dueStr = lc && lc.due > 0.01 ? `
+Outstanding: INR ${lc.due.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '';
+    setForm({
+      client_id: cl?.id || '', document_id: '', type: 'quotation', channel: 'whatsapp',
+      message: cl ? `Dear ${cl.name},
+
+This is a reminder from ${cfg.name}.
+GSTIN: ${cfg.gstin}${dueStr}
+
+Kindly revert at your earliest.
+
+Best Regards,
+${cfg.name}` : ''
+    });
     setModal(true);
   };
 
-  const sendReminder = async () => {
-    const cl = clients.find(c=>c.id===form.client_id);
-    if(!cl)return;
-    if(form.channel==='whatsapp'){const phone=(cl.phone||'').replace(/\D/g,'');window.open(`https://wa.me/${phone.startsWith('91')?phone:'91'+phone}?text=${encodeURIComponent(form.message)}`,'_blank');}
-    if(form.channel==='email'){window.open(`mailto:${cl.email}?subject=${encodeURIComponent('Reminder - '+cfg.name)}&body=${encodeURIComponent(form.message)}`,'_blank');}
-    if(form.channel==='sms'){window.open(`sms:${cl.phone}?body=${encodeURIComponent(form.message)}`,'_blank');}
+  const sendManualReminder = async () => {
+    const cl = clients.find(c => c.id === form.client_id);
+    if (!cl) return;
+    if (form.channel === 'whatsapp') { const phone = (cl.phone || '').replace(/\D/g, ''); window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(form.message)}`, '_blank'); }
+    if (form.channel === 'email') { window.open(`mailto:${cl.email}?subject=${encodeURIComponent('Reminder - ' + cfg.name)}&body=${encodeURIComponent(form.message)}`, '_blank'); }
+    if (form.channel === 'sms') { window.open(`sms:${cl.phone}?body=${encodeURIComponent(form.message)}`, '_blank'); }
     await api.createReminder(form);
-    setModal(false); load();
+    setModal(false);
+    load();
   };
 
-  const selectedClient = clients.find(c=>c.id===form.client_id);
-  const ledgerClient = ledgerData.find(l=>l.id===form.client_id);
-  const totalDue = ledgerData.reduce((s,cl)=>s+(cl.due>0?cl.due:0),0);
+  const today = new Date().toISOString().split('T')[0];
+
+  // Status badge for due reminders
+  const statusBadge = (dr) => {
+    if (dr.balance <= 0) return <span className="badge badge-success">✅ Paid</span>;
+    if (dr.reminder2_sent) return <span className="badge badge-purple">R2 Sent</span>;
+    if (dr.reminder1_sent) return <span className="badge badge-info">R1 Sent</span>;
+    if (today > dr.due_date) return <span className="badge badge-danger">⚠ Overdue</span>;
+    if (today === dr.invoice_date) return <span className="badge badge-warning">Due Today</span>;
+    return <span className="badge badge-gray">Pending</span>;
+  };
+
+  // Is reminder 1 due? (invoice date has passed or is today)
+  const isR1Due = (dr) => today >= dr.invoice_date && !dr.reminder1_sent && dr.balance > 0;
+  // Is reminder 2 due? (credit period has ended)
+  const isR2Due = (dr) => today > dr.due_date && !dr.reminder2_sent && dr.balance > 0;
+
+  const pendingCount = dueReminders.filter(dr => isR1Due(dr) || isR2Due(dr)).length;
 
   return (
     <div>
-      <div style={{display:'flex',gap:0,marginBottom:16,background:'#f1f5f9',borderRadius:10,padding:4,width:'fit-content'}}>
-        {[['reminders','📨 Reminders'],['ledger','💰 Paid & Due Ledger']].map(([key,label]) => (
-          <button key={key} onClick={() => setTab(key)} style={{padding:'8px 20px',borderRadius:8,border:'none',cursor:'pointer',fontWeight:tab===key?700:400,background:tab===key?'#fff':'transparent',color:tab===key?'#0f172a':'#64748b',boxShadow:tab===key?'0 1px 4px rgba(0,0,0,0.1)':'none',fontSize:13,fontFamily:'inherit'}}>{label}</button>
+      {/* Tab Switcher */}
+      <div style={{ display:'flex', gap:0, marginBottom:16, background:'#f1f5f9', borderRadius:10, padding:4, width:'fit-content' }}>
+        {[
+          ['due', `📅 Due Date Reminders${pendingCount > 0 ? ` (${pendingCount})` : ''}`],
+          ['manual', '📨 Manual Reminders'],
+          ['ledger', '💰 Paid & Due Ledger'],
+        ].map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            padding:'8px 18px', borderRadius:8, border:'none', cursor:'pointer',
+            fontWeight: tab===key ? 700 : 400,
+            background: tab===key ? '#fff' : 'transparent',
+            color: tab===key ? '#0f172a' : '#64748b',
+            boxShadow: tab===key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+            fontSize:13, fontFamily:'inherit', whiteSpace:'nowrap',
+          }}>{label}</button>
         ))}
       </div>
 
-      {tab==='ledger'&&(
+      {/* ── DUE DATE REMINDERS TAB ── */}
+      {tab === 'due' && (
         <div>
-          <div className="grid4 mb16">
-            <div className="metric"><div className="metric-label">Total Invoiced</div><div className="metric-val blue">{fmtAmt(ledgerData.reduce((s,l)=>s+l.totalInvoiced,0))}</div></div>
-            <div className="metric"><div className="metric-label">Total Received</div><div className="metric-val green">{fmtAmt(ledgerData.reduce((s,l)=>s+l.totalPaid,0))}</div></div>
-            <div className="metric"><div className="metric-label">Outstanding</div><div className="metric-val amber">{fmtAmt(totalDue)}</div></div>
-            <div className="metric"><div className="metric-label">Overdue Clients</div><div className="metric-val red">{ledgerData.filter(l=>l.overdueCount>0).length}</div></div>
-          </div>
-          <div className="card">
-            <table><thead><tr><th>Client</th><th>Phone</th><th style={{textAlign:'right'}}>Invoiced</th><th style={{textAlign:'right'}}>Paid</th><th style={{textAlign:'right'}}>Outstanding</th><th></th></tr></thead>
-            <tbody>{ledgerData.map(cl=>(
-              <tr key={cl.id}>
-                <td><strong>{cl.name}</strong></td>
-                <td>{cl.phone||'—'}</td>
-                <td style={{textAlign:'right',fontWeight:600}}>{fmtAmt(cl.totalInvoiced)}</td>
-                <td style={{textAlign:'right',fontWeight:600,color:'#15803d'}}>{fmtAmt(cl.totalPaid)}</td>
-                <td style={{textAlign:'right'}}><span style={{fontWeight:700,color:cl.due>0.01?'#dc2626':'#15803d'}}>{cl.due>0.01?fmtAmt(cl.due):'✓ Cleared'}</span></td>
-                <td><button className="btn btn-sm btn-primary" onClick={()=>openModal(cl)}>📨 Remind</button></td>
-              </tr>
-            ))}</tbody></table>
-          </div>
-        </div>
-      )}
-
-      {tab==='reminders'&&(
-        <div>
-          <div style={{display:'flex',justifyContent:'flex-end',marginBottom:12}}>
-            <button className="btn btn-primary" onClick={()=>openModal()}>+ Send Reminder</button>
-          </div>
-          <div className="card">
-            {reminders.length===0?<div style={{padding:40,textAlign:'center',color:'#94a3b8'}}><div style={{fontSize:32,marginBottom:8}}>📨</div><div>No reminders sent yet</div></div>:(
-              <table><thead><tr><th>Client</th><th>Channel</th><th>Type</th><th>Sent At</th><th>Status</th><th></th></tr></thead>
-              <tbody>{reminders.map(r=>(
-                <tr key={r.id}>
-                  <td><strong>{r.client_name||'—'}</strong></td>
-                  <td><span className="badge badge-success">{r.channel}</span></td>
-                  <td style={{fontSize:12}}>{(r.type||'').replace('_',' ')}</td>
-                  <td style={{fontSize:12,color:'#64748b'}}>{r.sent_at?new Date(r.sent_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}):'—'}</td>
-                  <td><span className="badge badge-success">{r.status}</span></td>
-                  <td><button className="btn-x" style={{fontSize:16}} onClick={async()=>{await api.deleteReminder(r.id);load();}}>🗑</button></td>
-                </tr>
-              ))}</tbody></table>
+          {/* Credit Period Settings */}
+          <div style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'14px 18px', marginBottom:14, display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
+            <div style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>⚙️ Credit Period:</div>
+            {editCredit ? (
+              <>
+                <input type="number" value={tempCredit} onChange={e => setTempCredit(+e.target.value)}
+                  style={{ width:80, padding:'6px 10px', border:'1px solid #d1d5db', borderRadius:7, fontSize:13, fontFamily:'inherit' }} />
+                <span style={{ fontSize:13, color:'#64748b' }}>days</span>
+                <button className="btn btn-success btn-sm" onClick={saveCreditDays}>✓ Save</button>
+                <button className="btn btn-sm" onClick={() => setEditCredit(false)}>Cancel</button>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize:20, fontWeight:800, color: cfg.primary }}>{creditDays} days</div>
+                <button className="btn btn-sm" onClick={() => { setTempCredit(creditDays); setEditCredit(true); }}>✏️ Edit</button>
+              </>
             )}
-          </div>
-        </div>
-      )}
-
-      {modal&&(
-        <Modal title="Send Reminder" onClose={() => setModal(false)} wide>
-          <div className="form-grid2">
-            <div className="form-row col-span2"><label>Client *</label>
-              <select value={form.client_id} onChange={e => {
-                set('client_id',e.target.value);
-                const cl=clients.find(c=>c.id===e.target.value);
-                const lc=ledgerData.find(l=>l.id===e.target.value);
-                if(cl) set('message',`Dear ${cl.name},\n\nThis is a reminder from ${cfg.name}.\n${lc&&lc.due>0.01?'Outstanding: '+fmtAmt(lc.due)+'\n':''}\nKindly revert at your earliest.\n\nBest Regards,\n${cfg.name}\nGSTIN: ${cfg.gstin}`);
-              }}>
-                <option value="">— Select Client —</option>
-                {clients.map(c=><option key={c.id} value={c.id}>{c.name} {c.phone?`(${c.phone})`:''}</option>)}
-              </select>
+            <div style={{ marginLeft:'auto', fontSize:12, color:'#94a3b8' }}>
+              Reminder 1 sent on invoice date · Reminder 2 sent after {creditDays} days
             </div>
-            {selectedClient&&ledgerClient&&(
-              <div className="col-span2" style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:8,padding:'12px 14px',fontSize:13,display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
-                <div><div style={{fontSize:10,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',marginBottom:2}}>Phone</div><strong>{selectedClient.phone||'—'}</strong></div>
-                <div><div style={{fontSize:10,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',marginBottom:2}}>Email</div><strong>{selectedClient.email||'—'}</strong></div>
-                <div><div style={{fontSize:10,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',marginBottom:2}}>Outstanding</div><strong style={{color:ledgerClient.due>0?'#dc2626':'#15803d'}}>{ledgerClient.due>0.01?fmtAmt(ledgerClient.due):'✓ Cleared'}</strong></div>
+          </div>
+
+          {/* Pending Action Alert */}
+          {pendingCount > 0 && (
+            <div style={{ background:'#fef3c7', border:'1px solid #fde68a', borderRadius:8, padding:'10px 16px', marginBottom:14, fontSize:13, color:'#92400e', display:'flex', alignItems:'center', gap:10 }}>
+              <span style={{ fontSize:18 }}>⚠️</span>
+              <strong>{pendingCount} reminder{pendingCount > 1 ? 's' : ''} need to be sent!</strong>
+              <span style={{ color:'#78350f' }}>Check the table below and click Send.</span>
+            </div>
+          )}
+
+          {/* Add Invoice button */}
+          <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:12 }}>
+            <button className="btn btn-primary" onClick={() => setAddDueModal(true)}>+ Track Invoice</button>
+          </div>
+
+          {/* Due Reminders Table */}
+          <div className="card">
+            <div className="section-title">Invoice Due Date Tracker</div>
+            {dueReminders.length === 0 ? (
+              <div style={{ padding:40, textAlign:'center', color:'#94a3b8' }}>
+                <div style={{ fontSize:32, marginBottom:8 }}>📅</div>
+                <div style={{ fontSize:14, fontWeight:600 }}>No invoices tracked yet</div>
+                <div style={{ fontSize:12, marginTop:4 }}>Click "+ Track Invoice" to add an invoice to the reminder system</div>
+              </div>
+            ) : (
+              <div style={{ overflowX:'auto' }}>
+                <table>
+                  <thead><tr>
+                    <th>Invoice</th>
+                    <th>Client</th>
+                    <th>Invoice Date</th>
+                    <th>Due Date ({creditDays}d)</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th>Reminder 1</th>
+                    <th>Reminder 2</th>
+                    <th></th>
+                  </tr></thead>
+                  <tbody>{dueReminders.map(dr => {
+                    const cl = clients.find(c => c.id === dr.client_id);
+                    const r1due = isR1Due(dr);
+                    const r2due = isR2Due(dr);
+                    return (
+                      <tr key={dr.id} style={{ background: (r1due || r2due) ? '#fffbeb' : '' }}>
+                        <td><code>{dr.invoice_id}</code></td>
+                        <td><strong>{dr.client_name || cl?.name || '—'}</strong><br/><small className="muted">{cl?.phone || ''}</small></td>
+                        <td style={{ fontSize:12 }}>{dr.invoice_date}</td>
+                        <td style={{ fontSize:12, color: today > dr.due_date ? '#dc2626' : '#0f172a', fontWeight: today > dr.due_date ? 700 : 400 }}>
+                          {dr.due_date}
+                          {today > dr.due_date && <div style={{ fontSize:10, color:'#dc2626' }}>Overdue!</div>}
+                        </td>
+                        <td className="bold" style={{ color: dr.balance > 0 ? '#dc2626' : '#15803d' }}>
+                          {dr.balance > 0 ? 'INR ' + dr.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '✓ Paid'}
+                        </td>
+                        <td>{statusBadge(dr)}</td>
+                        <td>
+                          {dr.reminder1_sent ? (
+                            <div style={{ fontSize:11 }}>
+                              <span className="badge badge-success">✓ Sent</span>
+                              <div style={{ color:'#94a3b8', marginTop:2 }}>{dr.reminder1_date}</div>
+                            </div>
+                          ) : (
+                            <button
+                              className="btn btn-sm"
+                              style={{ background: r1due ? cfg.primary : '#f1f5f9', color: r1due ? '#fff' : '#94a3b8', border:'none', fontWeight: r1due ? 700 : 400 }}
+                              onClick={() => handleReminder1(dr)}
+                              disabled={dr.balance <= 0}
+                              title={`Send on invoice date (${dr.invoice_date})`}>
+                              {r1due ? '📨 Send Now' : '📨 Send R1'}
+                            </button>
+                          )}
+                        </td>
+                        <td>
+                          {dr.reminder2_sent ? (
+                            <div style={{ fontSize:11 }}>
+                              <span className="badge badge-purple">✓ Sent</span>
+                              <div style={{ color:'#94a3b8', marginTop:2 }}>{dr.reminder2_date}</div>
+                            </div>
+                          ) : (
+                            <button
+                              className="btn btn-sm"
+                              style={{ background: r2due ? '#dc2626' : '#f1f5f9', color: r2due ? '#fff' : '#94a3b8', border:'none', fontWeight: r2due ? 700 : 400 }}
+                              onClick={() => handleReminder2(dr)}
+                              disabled={!dr.reminder1_sent || dr.balance <= 0}
+                              title={`Send after credit period ends (${dr.due_date})`}>
+                              {r2due ? '🚨 Send Now' : '📨 Send R2'}
+                            </button>
+                          )}
+                        </td>
+                        <td>
+                          <button className="btn-x" style={{ fontSize:15 }} onClick={async () => { if(window.confirm('Remove from tracker?')) { await api.deleteDueReminder(dr.id); load(); } }}>🗑</button>
+                        </td>
+                      </tr>
+                    );
+                  })}</tbody>
+                </table>
               </div>
             )}
-            <div className="form-row"><label>Channel</label>
-              <select value={form.channel} onChange={e => set('channel',e.target.value)}>
-                <option value="whatsapp">💬 WhatsApp</option><option value="email">📧 Email</option><option value="sms">📱 SMS</option>
+          </div>
+
+          {/* Legend */}
+          <div style={{ marginTop:12, display:'flex', gap:16, fontSize:12, color:'#64748b', flexWrap:'wrap' }}>
+            <span>📨 <strong>R1</strong> = First reminder (on invoice date)</span>
+            <span>🚨 <strong>R2</strong> = Second reminder (after {creditDays} day credit period)</span>
+            <span style={{ color:'#d97706' }}>⚠ Highlighted rows need action</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── MANUAL REMINDERS TAB ── */}
+      {tab === 'manual' && (
+        <div>
+          <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:12 }}>
+            <button className="btn btn-primary" onClick={() => openManualModal()}>+ Send Reminder</button>
+          </div>
+          <div className="card">
+            {reminders.length === 0 ? (
+              <div style={{ padding:40, textAlign:'center', color:'#94a3b8' }}>
+                <div style={{ fontSize:32, marginBottom:8 }}>📨</div>
+                <div style={{ fontWeight:600 }}>No manual reminders sent yet</div>
+              </div>
+            ) : (
+              <table>
+                <thead><tr><th>Client</th><th>Channel</th><th>Type</th><th>Sent At</th><th>Status</th><th></th></tr></thead>
+                <tbody>{reminders.map(r => (
+                  <tr key={r.id}>
+                    <td><strong>{r.client_name || '—'}</strong><br/><small className="muted">{r.phone || ''}</small></td>
+                    <td><span className="badge badge-info">{r.channel === 'whatsapp' ? '💬 WhatsApp' : r.channel === 'email' ? '📧 Email' : '📱 SMS'}</span></td>
+                    <td style={{ fontSize:12, textTransform:'capitalize' }}>{(r.type || '').replace('_', ' ')}</td>
+                    <td style={{ fontSize:12, color:'#64748b' }}>{r.sent_at ? new Date(r.sent_at).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) : '—'}</td>
+                    <td><span className="badge badge-success">{r.status}</span></td>
+                    <td><button className="btn-x" style={{ fontSize:16 }} onClick={async () => { await api.deleteReminder(r.id); load(); }}>🗑</button></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── LEDGER TAB ── */}
+      {tab === 'ledger' && (
+        <div>
+          <div className="grid4 mb16">
+            <div className="metric"><div className="metric-label">Total Invoiced</div><div className="metric-val blue">{fmtAmt(ledgerData.reduce((s, l) => s + l.totalInvoiced, 0))}</div></div>
+            <div className="metric"><div className="metric-label">Total Received</div><div className="metric-val green">{fmtAmt(ledgerData.reduce((s, l) => s + l.totalPaid, 0))}</div></div>
+            <div className="metric"><div className="metric-label">Outstanding</div><div className="metric-val amber">{fmtAmt(ledgerData.reduce((s, l) => s + (l.due > 0 ? l.due : 0), 0))}</div></div>
+            <div className="metric"><div className="metric-label">Overdue Clients</div><div className="metric-val red">{ledgerData.filter(l => l.overdueCount > 0).length}</div></div>
+          </div>
+          <div className="card">
+            <table>
+              <thead><tr><th>Client</th><th>Phone</th><th style={{ textAlign:'right' }}>Invoiced</th><th style={{ textAlign:'right' }}>Paid</th><th style={{ textAlign:'right' }}>Outstanding</th><th></th></tr></thead>
+              <tbody>{ledgerData.map(cl => (
+                <tr key={cl.id}>
+                  <td><strong>{cl.name}</strong><br/><small className="muted">{cl.city}{cl.state ? `, ${cl.state}` : ''}</small></td>
+                  <td>{cl.phone || '—'}</td>
+                  <td style={{ textAlign:'right', fontWeight:600 }}>{fmtAmt(cl.totalInvoiced)}</td>
+                  <td style={{ textAlign:'right', fontWeight:600, color:'#15803d' }}>{fmtAmt(cl.totalPaid)}</td>
+                  <td style={{ textAlign:'right' }}>
+                    <span style={{ fontWeight:700, fontSize:14, color: cl.due > 0.01 ? '#dc2626' : '#15803d' }}>
+                      {cl.due > 0.01 ? fmtAmt(cl.due) : '✓ Cleared'}
+                    </span>
+                  </td>
+                  <td><button className="btn btn-sm btn-primary" onClick={() => { setTab('manual'); openManualModal(cl); }}>📨 Remind</button></td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD INVOICE TO TRACKER MODAL ── */}
+      {addDueModal && (
+        <Modal title="Track Invoice for Due Reminders" onClose={() => setAddDueModal(false)}>
+          <div style={{ background: cfg.light, border:`1px solid ${cfg.border}`, borderRadius:8, padding:'10px 14px', marginBottom:14, fontSize:12, color: cfg.primary }}>
+            <strong>How it works:</strong> Add an invoice here. Reminder 1 will be sent on the invoice date. Reminder 2 will be sent after the {creditDays}-day credit period ends ({creditDays} days after invoice date).
+          </div>
+          <div className="form-grid2">
+            <div className="form-row col-span2">
+              <label>Select Invoice *</label>
+              <select value={dueForm.invoice_id} onChange={e => setDueForm(f => ({ ...f, invoice_id: e.target.value }))}>
+                <option value="">— Select Invoice —</option>
+                {invoices.filter(inv => inv.status !== 'Paid').map(inv => {
+                  const cl = clients.find(c => c.id === inv.client_id);
+                  const items = inv.items || [];
+                  const total = items.reduce((s, it) => s + (it.qty || 0) * (it.rate || 0), 0) * 1.18;
+                  return (
+                    <option key={inv.id} value={inv.id}>
+                      {inv.id} — {cl?.name || '—'} — INR {total.toLocaleString('en-IN', { maximumFractionDigits: 0 })} — {inv.date}
+                    </option>
+                  );
+                })}
               </select>
             </div>
-            <div className="form-row"><label>Type</label>
-              <select value={form.type} onChange={e => set('type',e.target.value)}>
-                {['quotation','invoice','overdue','proforma','purchase_order','general'].map(t=><option key={t} value={t}>{t.replace('_',' ')}</option>)}
+            {dueForm.invoice_id && (() => {
+              const inv = invoices.find(i => i.id === dueForm.invoice_id);
+              const dueDate = inv ? new Date(new Date(inv.date).getTime() + creditDays * 86400000).toISOString().split('T')[0] : '—';
+              return (
+                <div className="col-span2" style={{ gridColumn:'span 2', background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:8, padding:'12px 14px', fontSize:13, display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
+                  <div><div style={{ fontSize:10, color:'#94a3b8', fontWeight:700, textTransform:'uppercase', marginBottom:2 }}>Invoice Date</div><strong>{inv?.date}</strong></div>
+                  <div><div style={{ fontSize:10, color:'#94a3b8', fontWeight:700, textTransform:'uppercase', marginBottom:2 }}>Due Date (+{creditDays}d)</div><strong style={{ color:'#dc2626' }}>{dueDate}</strong></div>
+                  <div><div style={{ fontSize:10, color:'#94a3b8', fontWeight:700, textTransform:'uppercase', marginBottom:2 }}>Reminder 1</div><strong>On invoice date</strong></div>
+                </div>
+              );
+            })()}
+            <div className="form-row col-span2">
+              <label>Reminder Channel</label>
+              <select value={dueForm.channel} onChange={e => setDueForm(f => ({ ...f, channel: e.target.value }))}>
+                <option value="whatsapp">💬 WhatsApp</option>
+                <option value="email">📧 Email</option>
+                <option value="sms">📱 SMS</option>
               </select>
             </div>
-            <div className="form-row col-span2"><label>Message</label><textarea rows={7} value={form.message} onChange={e => set('message',e.target.value)} style={{fontFamily:'inherit',lineHeight:1.7}}/></div>
+          </div>
+          <div className="modal-footer">
+            <button className="btn" onClick={() => setAddDueModal(false)}>Cancel</button>
+            <button className="btn btn-primary" disabled={!dueForm.invoice_id} onClick={addToTracker}
+              style={{ opacity: !dueForm.invoice_id ? 0.5 : 1 }}>
+              + Add to Tracker
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── MANUAL REMINDER MODAL ── */}
+      {modal && (
+        <Modal title="Send Manual Reminder" onClose={() => setModal(false)} wide>
+          <div className="form-grid2">
+            <div className="form-row col-span2">
+              <label>Client *</label>
+              <select value={form.client_id} onChange={e => {
+                set('client_id', e.target.value);
+                const cl = clients.find(c => c.id === e.target.value);
+                const lc = ledgerData.find(l => l.id === e.target.value);
+                if (cl) set('message', `Dear ${cl.name},
+
+This is a reminder from ${cfg.name}.
+${lc && lc.due > 0.01 ? 'Outstanding: INR ' + lc.due.toLocaleString('en-IN', { minimumFractionDigits: 2 }) + '
+' : ''}
+Kindly revert at your earliest.
+
+Best Regards,
+${cfg.name}
+GSTIN: ${cfg.gstin}`);
+              }}>
+                <option value="">— Select Client —</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ''}</option>)}
+              </select>
+            </div>
+            <div className="form-row">
+              <label>Channel</label>
+              <select value={form.channel} onChange={e => set('channel', e.target.value)}>
+                <option value="whatsapp">💬 WhatsApp</option>
+                <option value="email">📧 Email</option>
+                <option value="sms">📱 SMS</option>
+              </select>
+            </div>
+            <div className="form-row">
+              <label>Type</label>
+              <select value={form.type} onChange={e => set('type', e.target.value)}>
+                {['quotation', 'invoice', 'overdue', 'proforma', 'purchase_order', 'general'].map(t => (
+                  <option key={t} value={t}>{t.replace('_', ' ')}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-row col-span2">
+              <label>Message</label>
+              <textarea rows={7} value={form.message} onChange={e => set('message', e.target.value)} style={{ fontFamily:'inherit', lineHeight:1.7 }} />
+            </div>
           </div>
           <div className="modal-footer">
             <button className="btn" onClick={() => setModal(false)}>Cancel</button>
-            <button className="btn btn-primary" disabled={!form.client_id||!form.message} onClick={sendReminder} style={{opacity:(!form.client_id||!form.message)?0.5:1}}>
-              {form.channel==='whatsapp'?'💬 WhatsApp':form.channel==='email'?'📧 Email':'📱 SMS'} &amp; Log
+            <button className="btn btn-primary" disabled={!form.client_id || !form.message} onClick={sendManualReminder}
+              style={{ opacity: (!form.client_id || !form.message) ? 0.5 : 1 }}>
+              {form.channel === 'whatsapp' ? '💬 WhatsApp' : form.channel === 'email' ? '📧 Email' : '📱 SMS'} &amp; Log
             </button>
           </div>
         </Modal>
