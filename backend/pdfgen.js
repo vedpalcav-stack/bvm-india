@@ -9,8 +9,8 @@ const LOGO_WORLD = path.join(__dirname, 'logos', 'bvm-world.jpg');
 const COMPANY = {
   name_india:    'BVM India',
   name_world:    'BVM World',
-  tagline_india: 'Trading & Distribution',
-  tagline_world: 'Global Trading & Distribution',
+  tagline_india: 'PVT LTD.',
+  tagline_world: 'PVT LTD.',
   line1: '#1, 2nd Floor, Kamla Palace,',
   line2: 'Jail Road, Sohna Chowk',
   line3: 'Gurugram, Haryana - 122001',
