@@ -404,38 +404,23 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
         onChange={e => set('date', e.target.value)}
     />
 </div>
-<div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e => set('date',e.target.value)}/></div> {(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} onChange={e => set('due_date',e.target.value)}/></div>} {(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e => set('validity',e.target.value)}/></div>} <div className="form-row"><label>Client's Ref / Quotation No.</label><input value={form.client_quotation_number} onChange={e => set('client_quotation_number',e.target.value)} placeholder="Client's own reference"/></div> {showPO && <div className="form-row"><label>Purchase Order No.</label><input value={form.po_number} onChange={e => set('po_number',e.target.value)} placeholder="BVM-PO-0001"/></div>} {showSO && <div className="form-row"><label>Sales Order No.</label><input value={form.so_number} onChange={e => set('so_number',e.target.value)} placeholder="BVM-SO-0001"/></div>} <div className="form-row"><label>Currency</label> <select value={form.currency} onChange={e => {set('currency',e.target.value);setItems(prev=>prev.map(it=>({...it,currency:e.target.value})));}}> {api.CURRENCIES.map(c => <option key={c}>{c}</option>)} </select> </div> {form.currency!=='INR' && <div className="form-row"><label>Exchange Rate (1 {form.currency} = ₹)</label><input type="number" step="0.01" value={form.exchange_rate} onChange={e => set('exchange_rate',e.target.value)}/></div>} </div>
+<div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e=>set('date',e.target.value)}/></div>
 
-</div>
+{(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Credit Period</label><select value={form.credit_period||30} onChange={e=>{const days=Number(e.target.value);set('credit_period',days);if(form.date){const d=new Date(form.date);d.setDate(d.getDate()+days);set('due_date',d.toISOString().split('T')[0]);}}}><option value="0">Immediate</option><option value="15">15 Days</option><option value="30">30 Days</option><option value="45">45 Days</option><option value="60">60 Days</option><option value="90">90 Days</option></select></div>}
 
-}
+{(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} readOnly/></div>}
 
-        {form.currency!=='INR' && <div className="form-row"><label>Exchange Rate (1 {form.currency} = ₹)</label><input type="number" step="0.01" value={form.exchange_rate} onChange={e => set('exchange_rate',e.target.value)}/></div>}
-      </div>
+{(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e=>set('validity',e.target.value)}/></div>}
 
-      {!isSO && (
-        <div style={{marginBottom:14}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-            <div className="section-title" style={{margin:0}}>Bill To / Ship To</div>
-            <button className="btn btn-sm" onClick={() => setShowShipTo(v=>!v)}>{showShipTo?'▲ Hide Ship To':'▼ Different Ship To Address'}</button>
-          </div>
-          {selectedClient && (
-            <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#475569'}}>
-              <strong style={{color:'#0f172a'}}>{selectedClient.name}</strong> · {selectedClient.address} · {selectedClient.city}, {selectedClient.state} - {selectedClient.pincode} · GSTIN: {selectedClient.gstin}
-            </div>
-          )}
-          {showShipTo && (
-            <div style={{marginTop:10}}>
-              <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:8}}>Ship To (if different from Bill To)</div>
-              <div className="form-grid3">
-                <div className="form-row"><label>Ship To Name</label><input value={form.ship_to_name} onChange={e=>set('ship_to_name',e.target.value)}/></div>
-                <div className="form-row"><label>Phone</label><input value={form.ship_to_phone} onChange={e=>set('ship_to_phone',e.target.value)}/></div>
-                <div className="form-row"><label>GSTIN</label><input value={form.ship_to_gstin} onChange={e=>set('ship_to_gstin',e.target.value)}/></div>
-                <div className="form-row col-span2"><label>Address</label><input value={form.ship_to_address} onChange={e=>set('ship_to_address',e.target.value)}/></div>
-                <div className="form-row"><label>City</label><input value={form.ship_to_city} onChange={e=>set('ship_to_city',e.target.value)}/></div>
-                <div className="form-row"><label>State</label><input value={form.ship_to_state} onChange={e=>set('ship_to_state',e.target.value)}/></div>
-                <div className="form-row"><label>Pincode</label><input value={form.ship_to_pincode} onChange={e=>set('ship_to_pincode',e.target.value)}/></div>
-              </div>
+<div className="form-row"><label>Client's Ref / Quotation No.</label><input value={form.client_quotation_number} onChange={e=>set('client_quotation_number',e.target.value)} placeholder="Client's own reference"/></div>
+
+{showPO && <div className="form-row"><label>Purchase Order No.</label><input value={form.po_number} onChange={e=>set('po_number',e.target.value)} placeholder="BVM-PO-0001"/></div>}
+
+{showSO && <div className="form-row"><label>Sales Order No.</label><input value={form.so_number} onChange={e=>set('so_number',e.target.value)} placeholder="BVM-SO-0001"/></div>}
+
+<div className="form-row"><label>Currency</label><select value={form.currency} onChange={e=>{set('currency',e.target.value);setItems(prev=>prev.map(it=>({...it,currency:e.target.value})));}}>{api.CURRENCIES.map(c=><option key={c}>{c}</option>)}</select></div>
+
+{form.currency!=='INR' && <div className="form-row"><label>Exchange Rate (1 {form.currency} = ₹)</label><input type="number" step="0.01" value={form.exchange_rate} onChange={e=>set('exchange_rate',e.target.value)}/></div>}
             </div>
           )}
         </div>
