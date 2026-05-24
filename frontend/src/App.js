@@ -903,7 +903,7 @@ export default function App() {
               BVM INDIA
             </div>
             <div className="brand-tab brand-tab-world">
-              <img src={bvmWorldLogo} alt="BVM WORLD" style={{width:22,height:22,objectFit:'contain',borderRadius:2}}/>
+              <img src={bvmWorldLogo} alt="BVM WORLD" style={{width:44,height:44,objectFit:'contain',borderRadius:2}}/>
               BVM WORLD
             </div>
             <div className="topbar-title">{PAGE_TITLES[page]||page}</div>
