@@ -120,6 +120,27 @@ async function initDb() {
       channel TEXT DEFAULT 'whatsapp', message TEXT,
       sent_at TEXT DEFAULT (datetime('now')), status TEXT DEFAULT 'Sent'
     );
+    CREATE TABLE IF NOT EXISTS due_reminders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_id TEXT NOT NULL,
+      client_id TEXT NOT NULL,
+      invoice_date TEXT NOT NULL,
+      due_date TEXT NOT NULL,
+      credit_days INTEGER DEFAULT 30,
+      reminder1_sent INTEGER DEFAULT 0,
+      reminder1_date TEXT,
+      reminder2_sent INTEGER DEFAULT 0,
+      reminder2_date TEXT,
+      channel TEXT DEFAULT 'whatsapp',
+      status TEXT DEFAULT 'Pending',
+      brand TEXT DEFAULT 'india',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS credit_settings (
+      id INTEGER PRIMARY KEY,
+      brand TEXT DEFAULT 'india',
+      credit_days INTEGER DEFAULT 30
+    );
   `);
   saveDb();
 
@@ -127,6 +148,19 @@ async function initDb() {
   try { _db.run("ALTER TABLE clients ADD COLUMN brand TEXT DEFAULT 'india'"); saveDb(); } catch(e) {}
   try { _db.run("ALTER TABLE products ADD COLUMN brand TEXT DEFAULT 'india'"); saveDb(); } catch(e) {}
   try { _db.run("ALTER TABLE documents ADD COLUMN brand TEXT DEFAULT 'india'"); saveDb(); } catch(e) {}
+  // Create due_reminders if not exists (for existing databases)
+  try {
+    _db.run(`CREATE TABLE IF NOT EXISTS due_reminders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, invoice_id TEXT NOT NULL,
+      client_id TEXT NOT NULL, invoice_date TEXT NOT NULL, due_date TEXT NOT NULL,
+      credit_days INTEGER DEFAULT 30, reminder1_sent INTEGER DEFAULT 0,
+      reminder1_date TEXT, reminder2_sent INTEGER DEFAULT 0, reminder2_date TEXT,
+      channel TEXT DEFAULT 'whatsapp', status TEXT DEFAULT 'Pending',
+      brand TEXT DEFAULT 'india', created_at TEXT DEFAULT (datetime('now'))
+    )`);
+    _db.run(`CREATE TABLE IF NOT EXISTS credit_settings (id INTEGER PRIMARY KEY, brand TEXT DEFAULT 'india', credit_days INTEGER DEFAULT 30)`);
+    saveDb();
+  } catch(e) {}
 
   // Seed if empty
   const row = getRow('SELECT COUNT(*) as c FROM clients');
