@@ -152,7 +152,7 @@ function Dashboard({ onNav }) {
           <div>
             <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM World</div>
             <div style={{ fontSize:11, color:'#93c5fd', marginTop:2 }}>Global Private Limited</div>
-            <div style={{ fontSize:10, color:'#60a5fa', marginTop:3 }}>GSTIN: 06AGYPR1117M1ZT · PAN: AGYPR1117M</div>
+            <div style={{ fontSize:10, color:'#60a5fa', marginTop:3 }}>GSTIN: 06AAMCB5079P1ZX · PAN: AAMCB5079P</div>
           </div>
         </div>
       </div>
