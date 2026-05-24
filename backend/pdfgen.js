@@ -6,19 +6,21 @@ const fs          = require('fs');
 const LOGO_INDIA = path.join(__dirname, 'logos', 'bvm-india.png');
 const LOGO_WORLD = path.join(__dirname, 'logos', 'bvm-world.jpg');
 
+// ── CHANGE YOUR GSTIN / PAN / EMAIL HERE ─────────────────────────────────────
 const COMPANY = {
   name_india:  'BVM India',
   name_world:  'BVM World',
   tagline:     'Private Limited',
   line1:       '#1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk',
   line2:       'Gurugram, Haryana - 122001',
-  gstin_india: '06AGYPR1117M1ZT',
-  pan_india:   'AGYPR1117M',
+  gstin_india: '06AGYPR1117M1ZT',   // <-- BVM India GSTIN
+  pan_india:   'AGYPR1117M',         // <-- BVM India PAN
   email_india: 'accounts@bvmindia.com',
-  gstin_world: '06AGYPR1117M1ZT',
-  pan_world:   'AGYPR1117M',
+  gstin_world: '06AGYPR1117M1ZT',   // <-- BVM World GSTIN
+  pan_world:   'AGYPR1117M',         // <-- BVM World PAN
   email_world: 'accounts@bvmworld.com',
 };
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Helper to get brand-specific company info
 function getBrandInfo(brandKey) {
@@ -251,7 +253,9 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
     };
 
     const HDR_H = 14;
-    const ROW_H = 13;
+    // Dynamic row height — shrinks if many items to fit on one page
+    const availableH = PH - tableY - HDR_H - 120; // 120 for totals+terms+footer
+    const ROW_H = Math.min(13, Math.max(9, Math.floor(availableH / Math.max(items.length, 1))));
 
     // Header
     pdf.fillColor(brand.primary).rect(ML, tableY, CW, HDR_H).fill();
@@ -277,6 +281,8 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
       subtotal  += amt;
       totalGst  += amt * gstPct / 100;
 
+      // Skip rows that would go off page — single page only
+      if (iy + ROW_H > PH - 25) return;
       pdf.fillColor(i % 2 === 0 ? brand.rowAlt : brand.rowNormal)
         .rect(ML, iy, CW, ROW_H).fill();
       pdf.strokeColor(brand.borderColor).lineWidth(0.2)
