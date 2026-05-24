@@ -10,18 +10,18 @@ async function api(path, opts = {}) {
   return res.json();
 }
 
-export const getClients       = ()         => api('/api/clients');
+export const getClients       = (brand)    => api('/api/clients' + (brand ? `?brand=${brand}` : ''));
 export const createClient     = (data)     => api('/api/clients', { method: 'POST', body: data });
 export const updateClient     = (id, data) => api(`/api/clients/${id}`, { method: 'PUT', body: data });
 
-export const getProducts   = ()         => api('/api/products');
+export const getProducts   = (brand)    => api('/api/products' + (brand ? `?brand=${brand}` : ''));
 export const createProduct = (data)     => api('/api/products', { method: 'POST', body: data });
 export const updateProduct = (id, data) => api(`/api/products/${id}`, { method: 'PUT', body: data });
 
 export const getInventory = ()     => api('/api/inventory');
 export const updateStock  = (data) => api('/api/inventory/update', { method: 'POST', body: data });
 
-export const getDocuments    = (type)       => api(`/api/documents${type ? `?type=${type}` : ''}`);
+export const getDocuments    = (type, brand) => api(`/api/documents?${type ? `type=${type}` : ''}${brand ? `&brand=${brand}` : ''}`);
 export const getDocument     = (id)         => api(`/api/documents/${id}`);
 export const createDocument  = (data)       => api('/api/documents', { method: 'POST', body: data });
 export const updateDocument  = (id, data)   => api(`/api/documents/${id}`, { method: 'PUT', body: data });
@@ -35,9 +35,9 @@ export const downloadBothPDFs = (id) => window.open(`${BASE}/api/documents/${id}
 
 export const getPayments   = ()     => api('/api/payments');
 export const createPayment = (data) => api('/api/payments', { method: 'POST', body: data });
-export const getDashboard  = ()     => api('/api/dashboard');
+export const getDashboard  = (brand) => api('/api/dashboard' + (brand ? `?brand=${brand}` : ''));
 
-export const searchDocuments = (q, type) => api(`/api/search/documents?q=${encodeURIComponent(q)}${type ? `&type=${type}` : ''}`);
+export const searchDocuments = (q, type, brand) => api(`/api/search/documents?q=${encodeURIComponent(q)}${type ? `&type=${type}` : ''}${brand ? `&brand=${brand}` : ''}`);
 export const searchClients   = (q)       => api(`/api/search/clients?q=${encodeURIComponent(q)}`);
 
 export const getReminders    = ()     => api('/api/reminders');
@@ -78,4 +78,5 @@ export const COMPANY = {
   gstin:   '06AGYPR1117M1ZT',
   pan:     'AGYPR1117M',
 };
+
 export const deleteDocument = (id) => api(`/api/documents/${id}`, { method: 'DELETE' });
