@@ -13,11 +13,129 @@ const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Picku
 2. Delivery: Immediate.
 3. Warranty: Standard as per OEM.`;
 
+const BRAND_CONFIG = {
+  india: {
+    name: 'BVM INDIA',
+    fullName: 'BVM India Pvt Ltd',
+    gstin: '06AGYPR1117M1ZT',
+    pan: 'AGYPR1117M',
+    email: 'accounts@bvmindia.com',
+    logo: bvmIndiaLogo,
+    primary: '#166534',
+    accent: '#16a34a',
+    gradient: 'linear-gradient(135deg, #166534, #15803d)',
+    light: '#f0fdf4',
+    border: '#bbf7d0',
+    navActive: '#4ade80',
+    tabClass: 'brand-tab-india',
+  },
+  world: {
+    name: 'BVM WORLD',
+    fullName: 'BVM World Pvt Ltd',
+    gstin: '06AAMCB5079P1ZX',
+    pan: 'AAMCB5079P',
+    email: 'accounts@bvmworld.com',
+    logo: bvmWorldLogo,
+    primary: '#1e3a5f',
+    accent: '#1d4ed8',
+    gradient: 'linear-gradient(135deg, #1e3a5f, #1d4ed8)',
+    light: '#eff6ff',
+    border: '#bfdbfe',
+    navActive: '#60a5fa',
+    tabClass: 'brand-tab-world',
+  }
+};
+
 function fmtAmt(n, currency = 'INR') {
   const sym = api.CURRENCY_SYMBOLS[currency] || currency + ' ';
   return sym + Math.abs(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// ── BRAND SELECTION SCREEN ────────────────────────────────────────────────────
+function BrandSelect({ onSelect }) {
+  return (
+    <div style={{
+      minHeight: '100vh', background: '#0c1220',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: 24,
+    }}>
+      {/* Header */}
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <div style={{ fontSize: 13, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 12 }}>
+          UNIFIED ERP SYSTEM
+        </div>
+        <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: -1, marginBottom: 8 }}>
+          Welcome to BVM ERP
+        </div>
+        <div style={{ fontSize: 15, color: '#64748b' }}>
+          Select your brand to continue
+        </div>
+      </div>
+
+      {/* Brand Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 680, width: '100%' }}>
+        {/* BVM India */}
+        <button onClick={() => onSelect('india')} style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(74,222,128,0.3)',
+          borderRadius: 16, padding: '32px 24px',
+          cursor: 'pointer', transition: 'all 0.2s',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+          fontFamily: 'inherit',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(74,222,128,0.08)'; e.currentTarget.style.borderColor = '#4ade80'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 20px 60px rgba(74,222,128,0.15)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(74,222,128,0.3)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+          <div style={{ width: 80, height: 80, background: '#fff', borderRadius: 16, padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={bvmIndiaLogo} alt="BVM India" style={{ width: 64, height: 64, objectFit: 'contain' }} />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#4ade80', letterSpacing: -0.5 }}>BVM INDIA</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Private Limited</div>
+            <div style={{ fontSize: 11, color: '#475569', marginTop: 8, fontFamily: 'monospace' }}>
+              GSTIN: 06AGYPR1117M1ZT
+            </div>
+          </div>
+          <div style={{ background: '#166534', color: '#fff', padding: '10px 28px', borderRadius: 8, fontSize: 13, fontWeight: 700, marginTop: 4 }}>
+            Enter BVM India →
+          </div>
+        </button>
+
+        {/* BVM World */}
+        <button onClick={() => onSelect('world')} style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(96,165,250,0.3)',
+          borderRadius: 16, padding: '32px 24px',
+          cursor: 'pointer', transition: 'all 0.2s',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+          fontFamily: 'inherit',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(96,165,250,0.08)'; e.currentTarget.style.borderColor = '#60a5fa'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 20px 60px rgba(96,165,250,0.15)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(96,165,250,0.3)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+          <div style={{ width: 80, height: 80, background: '#fff', borderRadius: 16, padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={bvmWorldLogo} alt="BVM World" style={{ width: 64, height: 64, objectFit: 'contain' }} />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#60a5fa', letterSpacing: -0.5 }}>BVM WORLD</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Private Limited</div>
+            <div style={{ fontSize: 11, color: '#475569', marginTop: 8, fontFamily: 'monospace' }}>
+              GSTIN: 06AAMCB5079P1ZX
+            </div>
+          </div>
+          <div style={{ background: '#1e3a5f', color: '#fff', padding: '10px 28px', borderRadius: 8, fontSize: 13, fontWeight: 700, marginTop: 4 }}>
+            Enter BVM World →
+          </div>
+        </button>
+      </div>
+
+      <div style={{ marginTop: 40, fontSize: 12, color: '#334155', textAlign: 'center' }}>
+        Each brand has its own separate clients, products and documents
+      </div>
+    </div>
+  );
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
 function Modal({ title, onClose, children, wide, extraWide }) {
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -61,33 +179,34 @@ function FlowBar({ current }) {
   );
 }
 
-function PDFButtons({ docId }) {
+// PDF button — single brand only
+function PDFButton({ docId, brand }) {
+  const cfg = BRAND_CONFIG[brand];
   return (
-    <div className="pdf-btn-group">
-      <button className="btn btn-sm btn-pdf-india" onClick={() => api.downloadIndiaPDF(docId)} title="BVM India PDF">🟢 India</button>
-      <button className="btn btn-sm btn-pdf-world" onClick={() => api.downloadWorldPDF(docId)} title="BVM World PDF">🔵 World</button>
-      <button className="btn-pdf-both" onClick={() => api.downloadBothPDFs(docId)} title="Download both">⬇ Both</button>
-    </div>
+    <button
+      style={{ background: cfg.primary, color: '#fff', border: 'none', padding: '5px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}
+      onClick={() => api.downloadPDF(docId, brand)}
+      title={`Download ${cfg.name} PDF`}>
+      ⬇ PDF
+    </button>
   );
 }
 
 // ── GLOBAL SEARCH ─────────────────────────────────────────────────────────────
-function GlobalSearch({ onNav }) {
+function GlobalSearch({ onNav, brand }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const ref = React.useRef(null);
   const PAGE_FOR_TYPE = { quotation:'quotations', proforma:'proforma', purchase_order:'purchase_orders', sales_order:'sales_orders', invoice:'invoices' };
 
   useEffect(() => {
     if (!q.trim()) { setResults([]); setOpen(false); return; }
-    setLoading(true);
     const t = setTimeout(() => {
-      api.searchDocuments(q).then(docs => { setResults(docs); setOpen(true); setLoading(false); }).catch(() => setLoading(false));
+      api.searchDocuments(q, null, brand).then(docs => { setResults(docs); setOpen(true); }).catch(() => {});
     }, 300);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [q, brand]);
 
   useEffect(() => {
     const close = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -96,31 +215,30 @@ function GlobalSearch({ onNav }) {
   }, []);
 
   return (
-    <div ref={ref} style={{ position:'relative', width:300 }}>
+    <div ref={ref} style={{ position:'relative', width:280 }}>
       <div style={{ position:'relative' }}>
         <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#94a3b8', fontSize:14, pointerEvents:'none' }}>🔍</span>
         <input value={q} onChange={e => setQ(e.target.value)} onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder="Search any document, client, PO/SO..."
+          placeholder="Search documents, clients..."
           style={{ paddingLeft:32, width:'100%', height:34, borderRadius:8, border:'1px solid #e2e8f0', fontSize:12, background:'#f8fafc' }} />
         {q && <button onClick={() => {setQ('');setResults([]);setOpen(false);}} style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:16 }}>×</button>}
       </div>
       {open && results.length > 0 && (
-        <div style={{ position:'absolute', top:'calc(100% + 6px)', left:0, right:0, background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, boxShadow:'0 10px 40px rgba(0,0,0,0.15)', zIndex:9999, maxHeight:360, overflowY:'auto' }}>
-          <div style={{ padding:'6px 12px', fontSize:11, color:'#94a3b8', borderBottom:'1px solid #f1f5f9', fontWeight:600 }}>{results.length} result{results.length!==1?'s':''} for "{q}"</div>
+        <div style={{ position:'absolute', top:'calc(100% + 6px)', left:0, right:0, background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, boxShadow:'0 10px 40px rgba(0,0,0,0.15)', zIndex:9999, maxHeight:320, overflowY:'auto' }}>
           {results.map(doc => {
             const sub = (doc.items||[]).reduce((s,it)=>s+(it.qty||0)*(it.rate||0),0);
             return (
               <div key={doc.id} onClick={() => { onNav(PAGE_FOR_TYPE[doc.type]||'dashboard'); setQ(''); setOpen(false); }}
-                style={{ padding:'10px 14px', cursor:'pointer', borderBottom:'1px solid #f8fafc', display:'flex', justifyContent:'space-between', alignItems:'center' }}
+                style={{ padding:'10px 14px', cursor:'pointer', borderBottom:'1px solid #f8fafc', display:'flex', justifyContent:'space-between' }}
                 onMouseEnter={e => e.currentTarget.style.background='#f8fafc'}
                 onMouseLeave={e => e.currentTarget.style.background='#fff'}>
                 <div>
-                  <div style={{ fontFamily:'monospace', fontSize:13, fontWeight:700, color:'#0f172a' }}>{doc.id}</div>
+                  <div style={{ fontFamily:'monospace', fontSize:13, fontWeight:700 }}>{doc.id}</div>
                   <div style={{ fontSize:11, color:'#64748b', marginTop:2 }}>{api.FLOW_LABELS[doc.type]||doc.type} · {doc.client_name||'—'} · {doc.date}</div>
                 </div>
                 <div style={{ textAlign:'right' }}>
                   <div style={{ fontSize:12, fontWeight:700, color:'#166534' }}>{fmtAmt(sub*1.18, doc.currency)}</div>
-                  <span style={{ padding:'1px 6px', borderRadius:10, background:'#f1f5f9', color:'#475569', fontWeight:600, fontSize:10 }}>{doc.status}</span>
+                  <span style={{ padding:'1px 6px', borderRadius:10, background:'#f1f5f9', color:'#475569', fontSize:10 }}>{doc.status}</span>
                 </div>
               </div>
             );
@@ -132,30 +250,25 @@ function GlobalSearch({ onNav }) {
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function Dashboard({ onNav }) {
+function Dashboard({ onNav, brand }) {
   const [data, setData] = useState(null);
-  useEffect(() => { api.getDashboard().then(setData).catch(()=>{}); }, []);
+  const cfg = BRAND_CONFIG[brand];
+  useEffect(() => { api.getDashboard(brand).then(setData).catch(()=>{}); }, [brand]);
   if (!data) return <div className="loading">Loading…</div>;
   return (
     <div>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
-        <div style={{ background:'linear-gradient(135deg,#166534,#15803d)', borderRadius:10, padding:'16px 20px', color:'#fff', display:'flex', alignItems:'center', gap:14 }}>
-          <img src={bvmIndiaLogo} alt="BVM India" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
-          <div>
-            <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM India</div>
-            <div style={{ fontSize:11, color:'#86efac', marginTop:2 }}>Private Limited</div>
-            <div style={{ fontSize:10, color:'#4ade80', marginTop:3 }}>GSTIN: 06AGYPR1117M1ZT · PAN: AGYPR1117M</div>
-          </div>
-        </div>
-        <div style={{ background:'linear-gradient(135deg,#1e3a5f,#1d4ed8)', borderRadius:10, padding:'16px 20px', color:'#fff', display:'flex', alignItems:'center', gap:14 }}>
-          <img src={bvmWorldLogo} alt="BVM World" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
-          <div>
-            <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM World</div>
-            <div style={{ fontSize:11, color:'#93c5fd', marginTop:2 }}>Global Private Limited</div>
-            <div style={{ fontSize:10, color:'#60a5fa', marginTop:3 }}>GSTIN: 06AGYPR1117M1ZT · PAN: AGYPR1117M</div>
+      {/* Brand banner */}
+      <div style={{ background: cfg.gradient, borderRadius: 12, padding: '20px 24px', color: '#fff', display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+        <img src={cfg.logo} alt={cfg.name} style={{ width: 64, height: 64, objectFit:'contain', borderRadius: 10, background:'#fff', padding: 4 }} />
+        <div>
+          <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.5 }}>{cfg.name}</div>
+          <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>Private Limited</div>
+          <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4, fontFamily:'monospace' }}>
+            GSTIN: {cfg.gstin} · PAN: {cfg.pan}
           </div>
         </div>
       </div>
+
       <div className="grid4 mb16">
         <div className="metric"><div className="metric-label">Clients</div><div className="metric-val blue">{data.totalClients}</div></div>
         <div className="metric"><div className="metric-label">Products</div><div className="metric-val">{data.totalProducts}</div></div>
@@ -172,10 +285,7 @@ function Dashboard({ onNav }) {
         <div className="card">
           <div className="section-title">Billing Flow</div>
           <FlowBar current="quotation" />
-          <div style={{ fontSize:12, color:'#475569', marginTop:10, lineHeight:1.7 }}>
-            Every document auto-generates <strong style={{color:'#166534'}}>BVM India</strong> + <strong style={{color:'#1e3a5f'}}>BVM World</strong> PDFs.
-          </div>
-          <div style={{ marginTop:14 }}>
+          <div style={{ marginTop: 14 }}>
             {[['+ New Quotation','quotations'],['+ New Purchase Order','purchase_orders'],['+ New Sales Order','sales_orders'],['+ New Invoice','invoices']].map(([label,page]) => (
               <button key={page} className="btn btn-block" onClick={() => onNav(page)}>{label}</button>
             ))}
@@ -199,15 +309,15 @@ function Dashboard({ onNav }) {
 }
 
 // ── CLIENTS ───────────────────────────────────────────────────────────────────
-function Clients({ onDataChange }) {
+function Clients({ onDataChange, brand }) {
   const [clients, setClients] = useState([]);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
-  const load = useCallback(() => api.getClients().then(setClients), []);
+  const load = useCallback(() => api.getClients(brand).then(setClients), [brand]);
   useEffect(() => { load(); }, [load]);
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
   const save = async () => {
-    if (modal==='add') await api.createClient(form);
+    if (modal==='add') await api.createClient({...form, brand});
     else await api.updateClient(form.id, form);
     setModal(null); load(); onDataChange && onDataChange();
   };
@@ -251,15 +361,15 @@ function Clients({ onDataChange }) {
 }
 
 // ── PRODUCTS ──────────────────────────────────────────────────────────────────
-function Products({ onDataChange }) {
+function Products({ onDataChange, brand }) {
   const [products, setProducts] = useState([]);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({gst:18,unit:'Piece'});
-  const load = useCallback(() => api.getProducts().then(setProducts), []);
+  const load = useCallback(() => api.getProducts(brand).then(setProducts), [brand]);
   useEffect(() => { load(); }, [load]);
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
   const save = async () => {
-    if (modal==='add') await api.createProduct(form);
+    if (modal==='add') await api.createProduct({...form, brand});
     else await api.updateProduct(form.id,form);
     setModal(null); load(); onDataChange && onDataChange();
   };
@@ -303,19 +413,19 @@ function Products({ onDataChange }) {
 }
 
 // ── INVENTORY ─────────────────────────────────────────────────────────────────
-function Inventory() {
+function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
   const [products, setProducts] = useState([]);
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({type:'add',qty:''});
-  const load = useCallback(() => Promise.all([api.getInventory(),api.getProducts()]).then(([inv,prods]) => {setInventory(inv);setProducts(prods);}), []);
+  const load = useCallback(() => Promise.all([api.getInventory(),api.getProducts(brand)]).then(([inv,prods]) => {setInventory(inv);setProducts(prods);}), [brand]);
   useEffect(() => { load(); }, [load]);
   return (
     <div>
       <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({product_id:products[0]?.id,type:'add',qty:''});setModal(true);}}>Update Stock</button></div>
       <div className="card">
         <table><thead><tr><th>Product</th><th>SKU</th><th>Warehouse</th><th>Unit</th><th>Stock</th><th>Reorder</th><th>Status</th></tr></thead>
-        <tbody>{inventory.map(inv => {
+        <tbody>{inventory.filter(inv => products.some(p => p.id === inv.product_id)).map(inv => {
           const low = inv.stock <= inv.reorder;
           return (<tr key={inv.id}><td><strong>{inv.product_name}</strong></td><td><code>{inv.sku}</code></td><td>{inv.warehouse}</td><td>{inv.unit}</td><td className={`bold ${low?'danger':'success'}`}>{inv.stock}</td><td className="muted">{inv.reorder}</td><td><Badge status={low?'Unpaid':'Paid'}/></td></tr>);
         })}</tbody></table>
@@ -346,9 +456,10 @@ function Inventory() {
 }
 
 // ── DOC FORM ──────────────────────────────────────────────────────────────────
-function DocForm({ type, clients, products, onClose, onSaved }) {
+function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
+  const cfg = BRAND_CONFIG[brand];
   const [form, setForm] = useState({
     client_id:clients[0]?.id||'', date:today(), due_date:futureDate(30),
     validity:15, currency:'INR', exchange_rate:1,
@@ -376,7 +487,7 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
   const selectedClient = clients.find(c => c.id === form.client_id);
 
   const save = async () => {
-    const saved = await api.createDocument({...form, type, items: items.map(it=>({...it,qty:parseFloat(it.qty),rate:parseFloat(it.rate)}))});
+    const saved = await api.createDocument({...form, type, brand, items: items.map(it=>({...it,qty:parseFloat(it.qty),rate:parseFloat(it.rate)}))});
     onSaved(); onClose();
     setTimeout(() => onSaved(saved), 100);
   };
@@ -384,14 +495,18 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
   return (
     <Modal title={`New ${label}`} onClose={onClose} extraWide>
       <FlowBar current={type}/>
+      <div style={{background:cfg.light,border:`1px solid ${cfg.border}`,borderRadius:8,padding:'8px 14px',marginBottom:12,fontSize:12,color:cfg.primary,display:'flex',alignItems:'center',gap:8}}>
+        <img src={cfg.logo} alt={cfg.name} style={{width:20,height:20,objectFit:'contain'}}/>
+        <strong>{cfg.name}</strong> — GSTIN: {cfg.gstin}
+      </div>
 
       {isSO && (
-        <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:8,padding:'10px 14px',marginTop:10,fontSize:12,color:'#1e3a5f',marginBottom:12}}>
-          <strong>ℹ Sales Order Note:</strong> BVM is the BUYER. Client appears as Vendor/Supplier. BVM address appears in Bill To automatically.
+        <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:8,padding:'10px 14px',marginBottom:12,fontSize:12,color:'#1e3a5f'}}>
+          <strong>ℹ Sales Order:</strong> {cfg.name} is the BUYER. Client appears as Vendor/Supplier.
         </div>
       )}
 
-      <div className="section-title" style={{marginTop:12}}>Document Details</div>
+      <div className="section-title" style={{marginTop:8}}>Document Details</div>
       <div className="form-grid3 mb12">
         <div className="form-row">
           <label>{isSO?'Vendor / Supplier *':'Client *'}</label>
@@ -402,31 +517,30 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
         <div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e => set('date',e.target.value)}/></div>
         {(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} onChange={e => set('due_date',e.target.value)}/></div>}
         {(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e => set('validity',e.target.value)}/></div>}
-        <div className="form-row"><label>Client's Ref / Quotation No.</label><input value={form.client_quotation_number} onChange={e => set('client_quotation_number',e.target.value)} placeholder="Client's own reference"/></div>
-        {showPO && <div className="form-row"><label>Purchase Order No.</label><input value={form.po_number} onChange={e => set('po_number',e.target.value)} placeholder="BVM-PO-0001"/></div>}
-        {showSO && <div className="form-row"><label>Sales Order No.</label><input value={form.so_number} onChange={e => set('so_number',e.target.value)} placeholder="BVM-SO-0001"/></div>}
+        <div className="form-row"><label>Client's Ref No.</label><input value={form.client_quotation_number} onChange={e => set('client_quotation_number',e.target.value)} placeholder="Client's own reference"/></div>
+        {showPO && <div className="form-row"><label>Purchase Order No.</label><input value={form.po_number} onChange={e => set('po_number',e.target.value)}/></div>}
+        {showSO && <div className="form-row"><label>Sales Order No.</label><input value={form.so_number} onChange={e => set('so_number',e.target.value)}/></div>}
         <div className="form-row"><label>Currency</label>
           <select value={form.currency} onChange={e => {set('currency',e.target.value);setItems(prev=>prev.map(it=>({...it,currency:e.target.value})));}}> 
             {api.CURRENCIES.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
-        {form.currency!=='INR' && <div className="form-row"><label>Exchange Rate (1 {form.currency} = ₹)</label><input type="number" step="0.01" value={form.exchange_rate} onChange={e => set('exchange_rate',e.target.value)}/></div>}
+        {form.currency!=='INR' && <div className="form-row"><label>Exchange Rate</label><input type="number" step="0.01" value={form.exchange_rate} onChange={e => set('exchange_rate',e.target.value)}/></div>}
       </div>
 
       {!isSO && (
         <div style={{marginBottom:14}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
             <div className="section-title" style={{margin:0}}>Bill To / Ship To</div>
-            <button className="btn btn-sm" onClick={() => setShowShipTo(v=>!v)}>{showShipTo?'▲ Hide Ship To':'▼ Different Ship To Address'}</button>
+            <button className="btn btn-sm" onClick={() => setShowShipTo(v=>!v)}>{showShipTo?'▲ Hide':'▼ Different Ship To'}</button>
           </div>
           {selectedClient && (
             <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#475569'}}>
-              <strong style={{color:'#0f172a'}}>{selectedClient.name}</strong> · {selectedClient.address} · {selectedClient.city}, {selectedClient.state} - {selectedClient.pincode} · GSTIN: {selectedClient.gstin}
+              <strong style={{color:'#0f172a'}}>{selectedClient.name}</strong> · {selectedClient.address} · {selectedClient.city}, {selectedClient.state} · GSTIN: {selectedClient.gstin}
             </div>
           )}
           {showShipTo && (
             <div style={{marginTop:10}}>
-              <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:8}}>Ship To (if different from Bill To)</div>
               <div className="form-grid3">
                 <div className="form-row"><label>Ship To Name</label><input value={form.ship_to_name} onChange={e=>set('ship_to_name',e.target.value)}/></div>
                 <div className="form-row"><label>Phone</label><input value={form.ship_to_phone} onChange={e=>set('ship_to_phone',e.target.value)}/></div>
@@ -443,9 +557,9 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
 
       {isSO && (
         <div style={{marginBottom:14}}>
-          <div className="section-title">Bill To (BVM — Buyer)</div>
-          <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#166534'}}>
-            <strong>BVM India / BVM World</strong> · #1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk · Gurugram, Haryana - 122001 · GSTIN: 06AGYPR1117M1ZT
+          <div className="section-title">Bill To ({cfg.name} — Buyer)</div>
+          <div style={{background:cfg.light,border:`1px solid ${cfg.border}`,borderRadius:8,padding:'10px 14px',fontSize:12,color:cfg.primary}}>
+            <strong>{cfg.name}</strong> · #1, 2nd Floor, Kamla Palace, Gurugram, Haryana - 122001 · GSTIN: {cfg.gstin}
           </div>
         </div>
       )}
@@ -456,7 +570,7 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
           <thead><tr>
             <th style={{width:38}}>S.No</th><th style={{width:145}}>Product</th><th style={{width:165}}>Description</th>
             <th style={{width:50}}>HSN</th><th style={{width:55}}>Qty</th><th style={{width:80}}>Unit</th>
-            <th style={{width:90}}>Rate ({form.currency})</th><th style={{width:100}}>Amount ({form.currency})</th><th style={{width:32}}></th>
+            <th style={{width:90}}>Rate ({form.currency})</th><th style={{width:100}}>Amount</th><th style={{width:32}}></th>
           </tr></thead>
           <tbody>{items.map((it,i) => {
             const p = products.find(x=>x.id===it.product_id);
@@ -481,15 +595,9 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
         <div className="tot-row"><span>Subtotal (excl. GST)</span><span>{fmtAmt(subtotal,form.currency)}</span></div>
         <div className="tot-row"><span>GST (18%)</span><span>{fmtAmt(gstAmt,form.currency)}</span></div>
         <div className="tot-row grand"><span>Total</span><span>{fmtAmt(subtotal+gstAmt,form.currency)}</span></div>
-        {form.currency!=='INR' && parseFloat(form.exchange_rate)>0 && (
-          <div className="tot-row" style={{fontSize:11,color:'#94a3b8'}}><span>INR Equivalent</span><span>{fmtAmt((subtotal+gstAmt)*parseFloat(form.exchange_rate),'INR')}</span></div>
-        )}
       </div>
 
-      <div className="section-title" style={{marginTop:14}}>
-        Terms &amp; Conditions
-        <span style={{fontSize:11,fontWeight:400,color:'#94a3b8',marginLeft:8}}>(editable — one per line)</span>
-      </div>
+      <div className="section-title" style={{marginTop:14}}>Terms &amp; Conditions</div>
       <textarea rows={5} value={form.terms} onChange={e => set('terms',e.target.value)}
         style={{width:'100%',fontFamily:'inherit',fontSize:12,lineHeight:1.8,padding:'8px 10px',border:'1px solid #d1d5db',borderRadius:6,color:'#78350f',background:'#fffbeb'}}/>
       <button className="btn" style={{fontSize:11,marginTop:4}} onClick={() => set('terms',DEFAULT_TERMS)}>↺ Reset to Default</button>
@@ -497,7 +605,7 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
       <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
       <div className="modal-footer">
         <button className="btn" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" onClick={save}>Save &amp; Preview Both Templates</button>
+        <button className="btn btn-primary" onClick={save}>Save {label}</button>
       </div>
     </Modal>
   );
@@ -532,8 +640,8 @@ function PayForm({ doc, clients, onClose }) {
   );
 }
 
-// ── DOC LIST WITH SEARCH ──────────────────────────────────────────────────────
-function DocList({ type, clients, products, showNew, onClearNew }) {
+// ── DOC LIST ──────────────────────────────────────────────────────────────────
+function DocList({ type, clients, products, showNew, onClearNew, brand }) {
   const [docs, setDocs] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [viewDoc, setViewDoc] = useState(null);
@@ -541,8 +649,8 @@ function DocList({ type, clients, products, showNew, onClearNew }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [clientFilter, setClientFilter] = useState('All');
-  const load = useCallback(() => api.getDocuments(type).then(setDocs).catch(()=>{}), [type]);
-  useEffect(() => { load(); }, [load,type]);
+  const load = useCallback(() => api.getDocuments(type, brand).then(setDocs).catch(()=>{}), [type, brand]);
+  useEffect(() => { load(); }, [load]);
   useEffect(() => { if(showNew){setShowForm(true);onClearNew&&onClearNew();} }, [showNew,onClearNew]);
 
   const label = api.FLOW_LABELS[type]||type;
@@ -566,7 +674,7 @@ function DocList({ type, clients, products, showNew, onClearNew }) {
         <button className="btn btn-primary" onClick={() => setShowForm(true)}>+ New {label}</button>
         <div style={{position:'relative',flex:1,minWidth:200,maxWidth:360}}>
           <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#94a3b8',pointerEvents:'none'}}>🔍</span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ID, client, PO/SO, date…`}
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ID, client, PO/SO…`}
             style={{paddingLeft:34,width:'100%',height:36,borderRadius:8,border:'1px solid #d1d5db',fontSize:13}}/>
           {search && <button onClick={() => setSearch('')} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#94a3b8',fontSize:18}}>×</button>}
         </div>
@@ -582,12 +690,6 @@ function DocList({ type, clients, products, showNew, onClearNew }) {
 
       <FlowBar current={type}/>
       <div style={{marginBottom:14}}/>
-
-      {q && (
-        <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,padding:'8px 14px',marginBottom:10,fontSize:13,color:'#92400e'}}>
-          {filtered.length>0?<><strong>{filtered.length}</strong> result{filtered.length!==1?'s':''} for <strong>"{search}"</strong></>:<>No results for <strong>"{search}"</strong></>}
-        </div>
-      )}
 
       <div className="card">
         {filtered.length===0 ? (
@@ -612,7 +714,7 @@ function DocList({ type, clients, products, showNew, onClearNew }) {
             const idHighlight=q&&doc.id.toLowerCase().includes(q);
             return (<tr key={doc.id}>
               <td><code style={idHighlight?{background:'#fef3c7',borderColor:'#f59e0b',color:'#92400e'}:{}}>{doc.id}</code></td>
-              <td><strong>{cl?.name||'—'}</strong>{cl?.gstin&&<><br/><small className="muted" style={{fontSize:10}}>{cl.gstin}</small></>}</td>
+              <td><strong>{cl?.name||'—'}</strong></td>
               <td>{doc.date}</td>
               {type==='invoice'&&<td>{doc.due_date||'—'}</td>}
               {(type==='purchase_order'||type==='sales_order'||type==='invoice')&&<td><small className="muted">{[doc.po_number,doc.so_number].filter(Boolean).join('/')||'—'}</small></td>}
@@ -620,13 +722,13 @@ function DocList({ type, clients, products, showNew, onClearNew }) {
               <td className="bold">{fmtAmt(total,currency)}</td>
               {type==='invoice'&&<td className="success">{fmtAmt(doc.paid||0,currency)}</td>}
               <td><Badge status={doc.status}/></td>
-              <td><PDFButtons docId={doc.id}/></td>
+              <td><PDFButton docId={doc.id} brand={brand}/></td>
               <td>
                 <div className="actions">
                   <button className="btn btn-sm" onClick={() => setViewDoc(doc)}>View</button>
                   {nextType&&doc.status!=='Converted'&&<button className="btn btn-sm btn-purple" onClick={async()=>{await api.convertDocument(doc.id,nextType);load();}}>→ {nextLabel}</button>}
                   {type==='invoice'&&doc.status!=='Paid'&&<button className="btn btn-sm btn-success" onClick={() => setPayModal(doc)}>Pay</button>}
-                  {doc.status!=='Converted'&&<button className="btn btn-sm" style={{background:'#fee2e2',color:'#dc2626',border:'1px solid #fecaca'}} onClick={async()=>{if(window.confirm('Delete '+doc.id+'? This cannot be undone.')){await api.deleteDocument(doc.id);load();}}}>🗑</button>}
+                  {doc.status!=='Converted'&&<button className="btn btn-sm" style={{background:'#fee2e2',color:'#dc2626',border:'1px solid #fecaca'}} onClick={async()=>{if(window.confirm('Delete '+doc.id+'? This cannot be undone.')){{await api.deleteDocument(doc.id);load();}}}}>🗑</button>}
                 </div>
               </td>
             </tr>);
@@ -634,8 +736,8 @@ function DocList({ type, clients, products, showNew, onClearNew }) {
         )}
       </div>
 
-      {showForm&&<DocForm type={type} clients={clients} products={products} onClose={() => setShowForm(false)} onSaved={(savedDoc) => {load();if(savedDoc&&savedDoc.id)setViewDoc(savedDoc);}}/>}
-      {viewDoc&&<DualDocView doc={viewDoc} clients={clients} products={products} onClose={() => setViewDoc(null)} onRefresh={load}/>}
+      {showForm&&<DocForm type={type} clients={clients} products={products} brand={brand} onClose={() => setShowForm(false)} onSaved={(savedDoc) => {load();if(savedDoc&&savedDoc.id)setViewDoc(savedDoc);}}/>}
+      {viewDoc&&<DualDocView doc={viewDoc} clients={clients} products={products} onClose={() => setViewDoc(null)} onRefresh={load} brand={brand}/>}
       {payModal&&<PayForm doc={payModal} clients={clients} onClose={() => {setPayModal(null);load();}}/>}
     </div>
   );
@@ -657,10 +759,10 @@ function Payments({ clients }) {
         <div className="metric"><div className="metric-label">This Month</div><div className="metric-val blue">{fmtAmt(payments.filter(p=>p.date?.startsWith(new Date().toISOString().slice(0,7))).reduce((s,p)=>s+p.amount,0))}</div></div>
       </div>
       <div className="card">
-        <table><thead><tr><th>ID</th><th>Invoice</th><th>Client</th><th>Date</th><th>Amount</th><th>Currency</th><th>Mode</th><th>Reference</th></tr></thead>
+        <table><thead><tr><th>ID</th><th>Invoice</th><th>Client</th><th>Date</th><th>Amount</th><th>Mode</th><th>Reference</th></tr></thead>
         <tbody>{payments.map(p => {
           const cl=clients.find(c=>c.id===p.client_id);
-          return (<tr key={p.id}><td><code>{p.id}</code></td><td><code>{p.invoice_id||'—'}</code></td><td>{cl?.name||'—'}</td><td>{p.date}</td><td className="success bold">{fmtAmt(p.amount,p.currency)}</td><td><span className="badge badge-gray">{p.currency||'INR'}</span></td><td>{p.mode}</td><td><small className="muted">{p.ref}</small></td></tr>);
+          return (<tr key={p.id}><td><code>{p.id}</code></td><td><code>{p.invoice_id||'—'}</code></td><td>{cl?.name||'—'}</td><td>{p.date}</td><td className="success bold">{fmtAmt(p.amount,p.currency)}</td><td>{p.mode}</td><td><small className="muted">{p.ref}</small></td></tr>);
         })}</tbody></table>
       </div>
       {modal&&<PayForm clients={clients} onClose={() => {setModal(false);load();}}/>}
@@ -668,71 +770,23 @@ function Payments({ clients }) {
   );
 }
 
-// ── REMINDERS + LEDGER ────────────────────────────────────────────────────────
-function Ledger({ onSendReminder }) {
-  const [ledger, setLedger] = useState([]);
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const load = useCallback(() => { setLoading(true); api.getLedger().then(d => {setLedger(d);setLoading(false);}).catch(()=>setLoading(false)); }, []);
-  useEffect(() => { load(); }, [load]);
-  const q = search.toLowerCase();
-  const filtered = ledger.filter(cl => !q || cl.name?.toLowerCase().includes(q) || cl.phone?.includes(q));
-  const totalDue = ledger.reduce((s,cl) => s+(cl.due>0?cl.due:0),0);
-  const totalPaid = ledger.reduce((s,cl) => s+cl.totalPaid,0);
-  const totalInvoiced = ledger.reduce((s,cl) => s+cl.totalInvoiced,0);
-  return (
-    <div>
-      <div className="grid4 mb16">
-        <div className="metric"><div className="metric-label">Total Invoiced</div><div className="metric-val blue">{fmtAmt(totalInvoiced)}</div></div>
-        <div className="metric"><div className="metric-label">Total Received</div><div className="metric-val green">{fmtAmt(totalPaid)}</div></div>
-        <div className="metric"><div className="metric-label">Total Outstanding</div><div className="metric-val amber">{fmtAmt(totalDue)}</div></div>
-        <div className="metric"><div className="metric-label">Overdue Clients</div><div className="metric-val red">{ledger.filter(cl=>cl.overdueCount>0).length}</div></div>
-      </div>
-      <div style={{display:'flex',gap:10,marginBottom:14}}>
-        <div style={{position:'relative',flex:1,maxWidth:360}}>
-          <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#94a3b8',pointerEvents:'none'}}>🔍</span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search client name, phone…" style={{paddingLeft:34,width:'100%',height:36,borderRadius:8,border:'1px solid #d1d5db',fontSize:13}}/>
-        </div>
-      </div>
-      <div className="card">
-        {loading?<div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>Loading ledger…</div>:(
-          <table><thead><tr><th>Client</th><th>Phone</th><th style={{textAlign:'right'}}>Invoiced</th><th style={{textAlign:'right'}}>Paid</th><th style={{textAlign:'right'}}>Outstanding</th><th>Overdue</th><th></th></tr></thead>
-          <tbody>{filtered.map(cl => {
-            const hasDue=cl.due>0.01;
-            return (<tr key={cl.id} style={cl.overdueCount>0?{background:'#fff7ed'}:{}}>
-              <td><strong>{cl.name}</strong><br/><small className="muted">{cl.city}{cl.state?`, ${cl.state}`:''}</small></td>
-              <td>{cl.phone||'—'}</td>
-              <td style={{textAlign:'right',fontWeight:600}}>{fmtAmt(cl.totalInvoiced)}</td>
-              <td style={{textAlign:'right',fontWeight:600,color:'#15803d'}}>{fmtAmt(cl.totalPaid)}</td>
-              <td style={{textAlign:'right'}}><span style={{fontWeight:700,fontSize:14,color:hasDue?'#dc2626':'#15803d'}}>{hasDue?fmtAmt(cl.due):'✓ Cleared'}</span></td>
-              <td>{cl.overdueCount>0?<span className="badge badge-danger">⚠ {cl.overdueCount}</span>:<span className="badge badge-success">On time</span>}</td>
-              <td><button className="btn btn-sm btn-primary" onClick={() => onSendReminder(cl)}>📨 Remind</button></td>
-            </tr>);
-          })}</tbody></table>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Reminders({ clients }) {
+// ── REMINDERS ─────────────────────────────────────────────────────────────────
+function Reminders({ clients, brand }) {
   const [reminders, setReminders] = useState([]);
   const [modal, setModal] = useState(false);
-  const [prefillClient, setPrefillClient] = useState(null);
   const [form, setForm] = useState({client_id:'',document_id:'',type:'quotation',channel:'whatsapp',message:''});
-  const [docs, setDocs] = useState([]);
   const [ledgerData, setLedgerData] = useState([]);
   const [tab, setTab] = useState('reminders');
   const load = useCallback(() => { api.getReminders().then(setReminders).catch(()=>{}); api.getLedger().then(setLedgerData).catch(()=>{}); }, []);
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { if(form.client_id) api.getDocuments().then(all=>setDocs(all.filter(d=>d.client_id===form.client_id))).catch(()=>{}); else setDocs([]); }, [form.client_id]);
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
+  const cfg = BRAND_CONFIG[brand];
 
-  const openRemindModal = (cl=null) => {
+  const openModal = (cl=null) => {
     const lc = cl ? ledgerData.find(l=>l.id===cl.id) : null;
-    const dueStr = lc&&lc.due>0.01?`\nOutstanding Amount: ${fmtAmt(lc.due)}`:'';
-    setForm({client_id:cl?.id||'',document_id:'',type:'quotation',channel:'whatsapp',message:cl?`Dear ${cl.name},\n\nThis is a gentle reminder regarding your pending documents with BVM India & BVM World.${dueStr}\n\nKindly revert at your earliest convenience.\n\nBest Regards,\nBVM India / BVM World\nGSTIN: 06AGYPR1117M1ZT`:''});
-    setPrefillClient(cl);
+    const dueStr = lc&&lc.due>0.01?`\nOutstanding: ${fmtAmt(lc.due)}`:'';
+    setForm({client_id:cl?.id||'',document_id:'',type:'quotation',channel:'whatsapp',
+      message:cl?`Dear ${cl.name},\n\nThis is a reminder from ${cfg.name}.\nGSTIN: ${cfg.gstin}${dueStr}\n\nKindly revert at your earliest.\n\nBest Regards,\n${cfg.name}`:''});
     setModal(true);
   };
 
@@ -740,7 +794,7 @@ function Reminders({ clients }) {
     const cl = clients.find(c=>c.id===form.client_id);
     if(!cl)return;
     if(form.channel==='whatsapp'){const phone=(cl.phone||'').replace(/\D/g,'');window.open(`https://wa.me/${phone.startsWith('91')?phone:'91'+phone}?text=${encodeURIComponent(form.message)}`,'_blank');}
-    if(form.channel==='email'){window.open(`mailto:${cl.email}?subject=${encodeURIComponent('Reminder - BVM India / BVM World')}&body=${encodeURIComponent(form.message)}`,'_blank');}
+    if(form.channel==='email'){window.open(`mailto:${cl.email}?subject=${encodeURIComponent('Reminder - '+cfg.name)}&body=${encodeURIComponent(form.message)}`,'_blank');}
     if(form.channel==='sms'){window.open(`sms:${cl.phone}?body=${encodeURIComponent(form.message)}`,'_blank');}
     await api.createReminder(form);
     setModal(false); load();
@@ -748,39 +802,53 @@ function Reminders({ clients }) {
 
   const selectedClient = clients.find(c=>c.id===form.client_id);
   const ledgerClient = ledgerData.find(l=>l.id===form.client_id);
+  const totalDue = ledgerData.reduce((s,cl)=>s+(cl.due>0?cl.due:0),0);
 
   return (
     <div>
       <div style={{display:'flex',gap:0,marginBottom:16,background:'#f1f5f9',borderRadius:10,padding:4,width:'fit-content'}}>
         {[['reminders','📨 Reminders'],['ledger','💰 Paid & Due Ledger']].map(([key,label]) => (
-          <button key={key} onClick={() => setTab(key)} style={{padding:'8px 20px',borderRadius:8,border:'none',cursor:'pointer',fontWeight:tab===key?700:400,background:tab===key?'#fff':'transparent',color:tab===key?'#0f172a':'#64748b',boxShadow:tab===key?'0 1px 4px rgba(0,0,0,0.1)':'none',fontSize:13,fontFamily:'inherit',transition:'all .15s'}}>{label}</button>
+          <button key={key} onClick={() => setTab(key)} style={{padding:'8px 20px',borderRadius:8,border:'none',cursor:'pointer',fontWeight:tab===key?700:400,background:tab===key?'#fff':'transparent',color:tab===key?'#0f172a':'#64748b',boxShadow:tab===key?'0 1px 4px rgba(0,0,0,0.1)':'none',fontSize:13,fontFamily:'inherit'}}>{label}</button>
         ))}
       </div>
 
-      {tab==='ledger'&&<Ledger onSendReminder={(cl) => {setTab('reminders');openRemindModal(cl);}}/>}
+      {tab==='ledger'&&(
+        <div>
+          <div className="grid4 mb16">
+            <div className="metric"><div className="metric-label">Total Invoiced</div><div className="metric-val blue">{fmtAmt(ledgerData.reduce((s,l)=>s+l.totalInvoiced,0))}</div></div>
+            <div className="metric"><div className="metric-label">Total Received</div><div className="metric-val green">{fmtAmt(ledgerData.reduce((s,l)=>s+l.totalPaid,0))}</div></div>
+            <div className="metric"><div className="metric-label">Outstanding</div><div className="metric-val amber">{fmtAmt(totalDue)}</div></div>
+            <div className="metric"><div className="metric-label">Overdue Clients</div><div className="metric-val red">{ledgerData.filter(l=>l.overdueCount>0).length}</div></div>
+          </div>
+          <div className="card">
+            <table><thead><tr><th>Client</th><th>Phone</th><th style={{textAlign:'right'}}>Invoiced</th><th style={{textAlign:'right'}}>Paid</th><th style={{textAlign:'right'}}>Outstanding</th><th></th></tr></thead>
+            <tbody>{ledgerData.map(cl=>(
+              <tr key={cl.id}>
+                <td><strong>{cl.name}</strong></td>
+                <td>{cl.phone||'—'}</td>
+                <td style={{textAlign:'right',fontWeight:600}}>{fmtAmt(cl.totalInvoiced)}</td>
+                <td style={{textAlign:'right',fontWeight:600,color:'#15803d'}}>{fmtAmt(cl.totalPaid)}</td>
+                <td style={{textAlign:'right'}}><span style={{fontWeight:700,color:cl.due>0.01?'#dc2626':'#15803d'}}>{cl.due>0.01?fmtAmt(cl.due):'✓ Cleared'}</span></td>
+                <td><button className="btn btn-sm btn-primary" onClick={()=>openModal(cl)}>📨 Remind</button></td>
+              </tr>
+            ))}</tbody></table>
+          </div>
+        </div>
+      )}
 
       {tab==='reminders'&&(
         <div>
-          <div className="grid3 mb16">
-            <div className="metric"><div className="metric-label">Total Sent</div><div className="metric-val blue">{reminders.length}</div></div>
-            <div className="metric"><div className="metric-label">This Week</div><div className="metric-val green">{reminders.filter(r=>{const d=new Date(r.sent_at);return(new Date()-d)/(1000*60*60*24)<=7;}).length}</div></div>
-            <div className="metric"><div className="metric-label">Clients with Due</div><div className="metric-val amber">{ledgerData.filter(l=>l.due>0.01).length}</div></div>
-          </div>
           <div style={{display:'flex',justifyContent:'flex-end',marginBottom:12}}>
-            <button className="btn btn-primary" onClick={() => openRemindModal()}>+ Send Reminder</button>
+            <button className="btn btn-primary" onClick={()=>openModal()}>+ Send Reminder</button>
           </div>
           <div className="card">
-            <div className="section-title">Reminder History</div>
-            {reminders.length===0?(
-              <div style={{padding:'40px',textAlign:'center',color:'#94a3b8'}}><div style={{fontSize:36,marginBottom:8}}>📨</div><div style={{fontWeight:600}}>No reminders sent yet</div></div>
-            ):(
-              <table><thead><tr><th>Client</th><th>Phone</th><th>Channel</th><th>Type</th><th>Document</th><th>Sent At</th><th>Status</th><th></th></tr></thead>
+            {reminders.length===0?<div style={{padding:40,textAlign:'center',color:'#94a3b8'}}><div style={{fontSize:32,marginBottom:8}}>📨</div><div>No reminders sent yet</div></div>:(
+              <table><thead><tr><th>Client</th><th>Channel</th><th>Type</th><th>Sent At</th><th>Status</th><th></th></tr></thead>
               <tbody>{reminders.map(r=>(
                 <tr key={r.id}>
-                  <td><strong>{r.client_name||'—'}</strong></td><td>{r.phone||'—'}</td>
-                  <td><span className="badge" style={{background:r.channel==='whatsapp'?'#dcfce7':r.channel==='email'?'#dbeafe':'#f1f5f9',color:r.channel==='whatsapp'?'#166534':r.channel==='email'?'#1e40af':'#475569'}}>{r.channel==='whatsapp'?'💬 WhatsApp':r.channel==='email'?'📧 Email':'📱 SMS'}</span></td>
-                  <td style={{textTransform:'capitalize'}}>{(r.type||'').replace('_',' ')}</td>
-                  <td><code>{r.document_id||'—'}</code></td>
+                  <td><strong>{r.client_name||'—'}</strong></td>
+                  <td><span className="badge badge-success">{r.channel}</span></td>
+                  <td style={{fontSize:12}}>{(r.type||'').replace('_',' ')}</td>
                   <td style={{fontSize:12,color:'#64748b'}}>{r.sent_at?new Date(r.sent_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}):'—'}</td>
                   <td><span className="badge badge-success">{r.status}</span></td>
                   <td><button className="btn-x" style={{fontSize:16}} onClick={async()=>{await api.deleteReminder(r.id);load();}}>🗑</button></td>
@@ -795,18 +863,21 @@ function Reminders({ clients }) {
         <Modal title="Send Reminder" onClose={() => setModal(false)} wide>
           <div className="form-grid2">
             <div className="form-row col-span2"><label>Client *</label>
-              <select value={form.client_id} onChange={e => {set('client_id',e.target.value);const cl=clients.find(c=>c.id===e.target.value);const lc=ledgerData.find(l=>l.id===e.target.value);if(cl)set('message',`Dear ${cl.name},\n\nThis is a gentle reminder regarding your pending documents with BVM India & BVM World.${lc&&lc.due>0.01?'\nOutstanding: '+fmtAmt(lc.due):''}\n\nKindly revert at your earliest.\n\nBest Regards,\nBVM India / BVM World`);}}> 
+              <select value={form.client_id} onChange={e => {
+                set('client_id',e.target.value);
+                const cl=clients.find(c=>c.id===e.target.value);
+                const lc=ledgerData.find(l=>l.id===e.target.value);
+                if(cl) set('message',`Dear ${cl.name},\n\nThis is a reminder from ${cfg.name}.\n${lc&&lc.due>0.01?'Outstanding: '+fmtAmt(lc.due)+'\n':''}\nKindly revert at your earliest.\n\nBest Regards,\n${cfg.name}\nGSTIN: ${cfg.gstin}`);
+              }}>
                 <option value="">— Select Client —</option>
                 {clients.map(c=><option key={c.id} value={c.id}>{c.name} {c.phone?`(${c.phone})`:''}</option>)}
               </select>
             </div>
-            {selectedClient&&(
+            {selectedClient&&ledgerClient&&(
               <div className="col-span2" style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:8,padding:'12px 14px',fontSize:13,display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
                 <div><div style={{fontSize:10,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',marginBottom:2}}>Phone</div><strong>{selectedClient.phone||'—'}</strong></div>
                 <div><div style={{fontSize:10,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',marginBottom:2}}>Email</div><strong>{selectedClient.email||'—'}</strong></div>
-                {ledgerClient&&<>
-                  <div><div style={{fontSize:10,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',marginBottom:2}}>Outstanding</div><strong style={{color:ledgerClient.due>0?'#dc2626':'#15803d'}}>{ledgerClient.due>0.01?fmtAmt(ledgerClient.due):'✓ Cleared'}</strong></div>
-                </>}
+                <div><div style={{fontSize:10,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',marginBottom:2}}>Outstanding</div><strong style={{color:ledgerClient.due>0?'#dc2626':'#15803d'}}>{ledgerClient.due>0.01?fmtAmt(ledgerClient.due):'✓ Cleared'}</strong></div>
               </div>
             )}
             <div className="form-row"><label>Channel</label>
@@ -814,23 +885,17 @@ function Reminders({ clients }) {
                 <option value="whatsapp">💬 WhatsApp</option><option value="email">📧 Email</option><option value="sms">📱 SMS</option>
               </select>
             </div>
-            <div className="form-row"><label>Reminder Type</label>
+            <div className="form-row"><label>Type</label>
               <select value={form.type} onChange={e => set('type',e.target.value)}>
                 {['quotation','invoice','overdue','proforma','purchase_order','general'].map(t=><option key={t} value={t}>{t.replace('_',' ')}</option>)}
               </select>
             </div>
-            {docs.length>0&&<div className="form-row col-span2"><label>Link Document (optional)</label>
-              <select value={form.document_id} onChange={e => set('document_id',e.target.value)}>
-                <option value="">— No specific document —</option>
-                {docs.map(d=>{const sub=(d.items||[]).reduce((s,it)=>s+(it.qty||0)*(it.rate||0),0);return<option key={d.id} value={d.id}>{d.id} — {api.FLOW_LABELS[d.type]||d.type} — {fmtAmt(sub*1.18)} — {d.status}</option>;})}
-              </select>
-            </div>}
-            <div className="form-row col-span2"><label>Message</label><textarea rows={8} value={form.message} onChange={e => set('message',e.target.value)} style={{fontFamily:'inherit',lineHeight:1.7}}/></div>
+            <div className="form-row col-span2"><label>Message</label><textarea rows={7} value={form.message} onChange={e => set('message',e.target.value)} style={{fontFamily:'inherit',lineHeight:1.7}}/></div>
           </div>
           <div className="modal-footer">
             <button className="btn" onClick={() => setModal(false)}>Cancel</button>
             <button className="btn btn-primary" disabled={!form.client_id||!form.message} onClick={sendReminder} style={{opacity:(!form.client_id||!form.message)?0.5:1}}>
-              {form.channel==='whatsapp'?'💬 Open WhatsApp':form.channel==='email'?'📧 Open Email':'📱 Open SMS'} &amp; Log
+              {form.channel==='whatsapp'?'💬 WhatsApp':form.channel==='email'?'📧 Email':'📱 SMS'} &amp; Log
             </button>
           </div>
         </Modal>
@@ -856,20 +921,27 @@ const PAGE_TITLES = {dashboard:'Dashboard',clients:'Clients',products:'Products'
 const PAGE_DOC_TYPE = {quotations:'quotation',proforma:'proforma',purchase_orders:'purchase_order',sales_orders:'sales_order',invoices:'invoice'};
 
 export default function App() {
+  const [brand, setBrand] = useState(null); // null = selection screen
   const [page, setPage] = useState('dashboard');
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
-  const [triggerNew, setTriggerNew] = useState(null);
 
   const loadMasters = useCallback(() => {
-    api.getClients().then(setClients).catch(()=>{});
-    api.getProducts().then(setProducts).catch(()=>{});
-  }, []);
+    if (!brand) return;
+    api.getClients(brand).then(setClients).catch(()=>{});
+    api.getProducts(brand).then(setProducts).catch(()=>{});
+  }, [brand]);
 
   useEffect(() => { loadMasters(); }, [loadMasters]);
-  useEffect(() => { if(page==='clients'||page==='products') loadMasters(); }, [page,loadMasters]);
+  useEffect(() => { if(brand && (page==='clients'||page==='products')) loadMasters(); }, [page, brand, loadMasters]);
 
-  const navTo = (p) => { setPage(p); setTriggerNew(null); };
+  // Show brand selection screen
+  if (!brand) {
+    return <BrandSelect onSelect={(b) => { setBrand(b); setPage('dashboard'); }} />;
+  }
+
+  const cfg = BRAND_CONFIG[brand];
+  const navTo = (p) => setPage(p);
   const docType = PAGE_DOC_TYPE[page];
 
   return (
@@ -877,14 +949,19 @@ export default function App() {
       <aside className="sidebar">
         <div className="logo">
           <div className="logo-brand-row">
-            <img src={bvmIndiaLogo} alt="BVM India" style={{width:34,height:34,objectFit:'contain',borderRadius:4,background:'#fff',padding:2,flexShrink:0}}/>
-            <div className="logo-india">BVM India</div>
+            <img src={cfg.logo} alt={cfg.name} style={{width:36,height:36,objectFit:'contain',borderRadius:6,background:'#fff',padding:3,flexShrink:0}}/>
+            <div style={{color: brand==='india' ? '#4ade80' : '#60a5fa', fontWeight:800, fontSize:14}}>{cfg.name}</div>
           </div>
-          <div className="logo-brand-row">
-            <img src={bvmWorldLogo} alt="BVM World" style={{width:34,height:34,objectFit:'contain',borderRadius:4,background:'#fff',padding:2,flexShrink:0}}/>
-            <div className="logo-world">BVM World</div>
+          <div style={{fontSize:9,color:'#475569',marginTop:4,fontFamily:'monospace',lineHeight:1.5}}>
+            {cfg.gstin}
           </div>
-          <div className="logo-sub">Unified ERP · One document<br/>Two branded templates</div>
+          {/* Switch brand button */}
+          <button onClick={() => { setBrand(null); setPage('dashboard'); setClients([]); setProducts([]); }}
+            style={{marginTop:10,width:'100%',padding:'6px 0',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:6,color:'#94a3b8',fontSize:11,cursor:'pointer',fontFamily:'inherit',transition:'all 0.15s'}}
+            onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.15)'}
+            onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.08)'}>
+            ⇄ Switch Brand
+          </button>
         </div>
         {NAV.map(sec => (
           <div key={sec.section}>
@@ -900,29 +977,27 @@ export default function App() {
       <div className="main">
         <div className="topbar">
           <div className="topbar-left">
-            <div className="brand-tab brand-tab-india">
-              <img src={bvmIndiaLogo} alt="BVM India" style={{width:22,height:22,objectFit:'contain'}}/>
-              BVM India
-            </div>
-            <div className="brand-tab brand-tab-world">
-              <img src={bvmWorldLogo} alt="BVM World" style={{width:22,height:22,objectFit:'contain',borderRadius:2}}/>
-              BVM World
+            <div className={`brand-tab ${cfg.tabClass}`}>
+              <img src={cfg.logo} alt={cfg.name} style={{width:20,height:20,objectFit:'contain'}}/>
+              {cfg.name}
             </div>
             <div className="topbar-title">{PAGE_TITLES[page]||page}</div>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:14}}>
-            <GlobalSearch onNav={navTo}/>
-            <div className="topbar-sub" style={{fontSize:10}}>IND: 06AGYPR1117M1ZT &nbsp;|&nbsp; WLD: 06AAMCB5079P1ZX</div>
+            <GlobalSearch onNav={navTo} brand={brand}/>
+            <div style={{fontSize:10,color:'#6b7280',fontFamily:'monospace'}}>
+              {cfg.gstin}
+            </div>
           </div>
         </div>
         <div className="content">
-          {page==='dashboard'&&<Dashboard onNav={navTo}/>}
-          {page==='clients'&&<Clients onDataChange={loadMasters}/>}
-          {page==='products'&&<Products onDataChange={loadMasters}/>}
-          {page==='inventory'&&<Inventory/>}
-          {docType&&<DocList key={page} type={docType} clients={clients} products={products} showNew={triggerNew===page} onClearNew={() => setTriggerNew(null)}/>}
+          {page==='dashboard'&&<Dashboard onNav={navTo} brand={brand}/>}
+          {page==='clients'&&<Clients onDataChange={loadMasters} brand={brand}/>}
+          {page==='products'&&<Products onDataChange={loadMasters} brand={brand}/>}
+          {page==='inventory'&&<Inventory brand={brand}/>}
+          {docType&&<DocList key={page+brand} type={docType} clients={clients} products={products} brand={brand} showNew={false} onClearNew={()=>{}}/>}
           {page==='payments'&&<Payments clients={clients}/>}
-          {page==='reminders'&&<Reminders clients={clients}/>}
+          {page==='reminders'&&<Reminders clients={clients} brand={brand}/>}
         </div>
       </div>
     </div>
