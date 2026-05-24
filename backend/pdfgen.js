@@ -14,11 +14,20 @@ const COMPANY = {
   line2:       'Gurugram, Haryana - 122001',
   gstin_india: '06AGYPR1117M1ZT',
   pan_india:   'AGYPR1117M',
-  gstin_world: '06AAMCB5079P1ZX',
-  pan_world:   'AAMCB5079P',
   email_india: 'accounts@bvmindia.com',
+  gstin_world: '06AGYPR1117M1ZT',
+  pan_world:   'AGYPR1117M',
   email_world: 'accounts@bvmworld.com',
 };
+
+// Helper to get brand-specific company info
+function getBrandInfo(brandKey) {
+  return {
+    gstin: brandKey === 'india' ? COMPANY.gstin_india : COMPANY.gstin_world,
+    pan:   brandKey === 'india' ? COMPANY.pan_india   : COMPANY.pan_world,
+    email: brandKey === 'india' ? COMPANY.email_india : COMPANY.email_world,
+  };
+}
 
 const DEFAULT_TERMS = [
   'Freight Forwarder: Will be confirmed at the time of Pickup.',
@@ -29,24 +38,24 @@ const DEFAULT_TERMS = [
 
 const BRANDS = {
   india: {
-    primary:    '#166534',
-    accent:     '#16a34a',
-    rowAlt:     '#f0fdf4',
-    rowNormal:  '#ffffff',
-    totBg:      '#f0fdf4',
-    borderColor:'#bbf7d0',
-    textDark:   '#14532d',
-    logo:       LOGO_INDIA,
+    primary:     '#166534',
+    accent:      '#16a34a',
+    rowAlt:      '#f0fdf4',
+    rowNormal:   '#ffffff',
+    totBg:       '#f0fdf4',
+    borderColor: '#bbf7d0',
+    textDark:    '#14532d',
+    logo:        LOGO_INDIA,
   },
   world: {
-    primary:    '#1e3a5f',
-    accent:     '#1d4ed8',
-    rowAlt:     '#eff6ff',
-    rowNormal:  '#ffffff',
-    totBg:      '#eff6ff',
-    borderColor:'#bfdbfe',
-    textDark:   '#1e3a5f',
-    logo:       LOGO_WORLD,
+    primary:     '#1e3a5f',
+    accent:      '#1d4ed8',
+    rowAlt:      '#eff6ff',
+    rowNormal:   '#ffffff',
+    totBg:       '#eff6ff',
+    borderColor: '#bfdbfe',
+    textDark:    '#1e3a5f',
+    logo:        LOGO_WORLD,
   }
 };
 
@@ -66,17 +75,11 @@ const DOC_PREFIX_LABELS = {
   invoice:        'Invoice No',
 };
 
-// Fixed currency formatter — uses text symbol, not Unicode char that PDFKit renders as number
+// Use text symbol — PDFKit Helvetica can't render ₹ glyph
 function fmtC(n, currency = 'INR') {
-  const abs = Math.abs(n || 0).toLocaleString('en-IN', {
-    minimumFractionDigits: 2, maximumFractionDigits: 2
-  });
-  // Use text abbreviations inside PDFKit (Helvetica doesn't support ₹ glyph)
-  const sym = {
-    INR: 'INR ', USD: 'USD ', EUR: 'EUR ',
-    GBP: 'GBP ', AED: 'AED ', SGD: 'SGD ', JPY: 'JPY '
-  }[currency] || (currency + ' ');
-  return sym + abs;
+  const syms = { INR:'INR ', USD:'USD ', EUR:'EUR ', GBP:'GBP ', AED:'AED ', SGD:'SGD ', JPY:'JPY ' };
+  const sym  = syms[currency] || currency + ' ';
+  return sym + Math.abs(n || 0).toLocaleString('en-IN', { minimumFractionDigits:2, maximumFractionDigits:2 });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,158 +87,156 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
   return new Promise((resolve, reject) => {
     const brand     = BRANDS[brandKey];
     const brandName = brandKey === 'india' ? COMPANY.name_india : COMPANY.name_world;
-    const tagline   = brandKey === 'india' ? COMPANY.tagline_india : COMPANY.tagline_world;
-    const logoPath  = brand.logo;
-    const hasLogo   = fs.existsSync(logoPath);
+    const hasLogo   = fs.existsSync(brand.logo);
 
-    const pdf = new PDFDocument({ margin: 25, size: 'A4', bufferPages: true });
+    // ── Single A4 page, tight margins ────────────────────────────────────────
+    const pdf = new PDFDocument({ margin: 0, size: 'A4', bufferPages: false });
     const chunks = [];
     pdf.on('data',  c  => chunks.push(c));
     pdf.on('end',   () => resolve(Buffer.concat(chunks)));
     pdf.on('error', reject);
 
-    const PW = pdf.page.width;
-    const PH = pdf.page.height;
-    const ML = 25, MR = PW - 25, CW = MR - ML;
+    const PW  = pdf.page.width;   // 595
+    const PH  = pdf.page.height;  // 842
+    const ML  = 22;
+    const MR  = PW - 22;
+    const CW  = MR - ML;
     const currency  = doc.currency || 'INR';
     const isSO      = doc.type === 'sales_order';
     const typeLabel = TYPE_LABELS[doc.type] || doc.type.toUpperCase();
 
-    // ── WHITE BACKGROUND ─────────────────────────────────────────────────────
+    // ── WHITE BG ─────────────────────────────────────────────────────────────
     pdf.fillColor('#ffffff').rect(0, 0, PW, PH).fill();
 
-    // ── TOP COLOR STRIP ───────────────────────────────────────────────────────
-    pdf.fillColor(brand.primary).rect(0, 0, PW, 5).fill();
+    // ── TOP STRIP ────────────────────────────────────────────────────────────
+    pdf.fillColor(brand.primary).rect(0, 0, PW, 4).fill();
 
-    // ── LOGO (left side) ──────────────────────────────────────────────────────
-    const logoH = 50, logoW = 80;
+    // ── HEADER (logo + company info + doc badge) ──────────────────────────────
+    let headerY = 8;
+
+    // Logo
+    const logoW = 48, logoH = 36;
     if (hasLogo) {
-      try {
-        pdf.image(logoPath, ML, 12, { fit: [logoW, logoH], align: 'left' });
-      } catch (e) {
-        console.warn('Logo load failed:', e.message);
-      }
+      try { pdf.image(brand.logo, ML, headerY, { fit:[logoW, logoH] }); } catch(e) {}
     }
 
-    // ── COMPANY INFO (next to logo) ───────────────────────────────────────────
-    const infoX = hasLogo ? ML + logoW + 10 : ML;
-    pdf.fillColor(brand.primary).fontSize(16).font('Helvetica-Bold')
-      .text(brandName, infoX, 14);
-    pdf.fillColor(brand.accent).fontSize(8).font('Helvetica')
-      .text(tagline, infoX, 32);
-    pdf.fillColor('#64748b').fontSize(7).font('Helvetica')
-      .text(`${COMPANY.line1} ${COMPANY.line2}, ${COMPANY.line3}`, infoX, 42)
-      .text(`${brandName}  |  GSTIN: ${brandKey === 'india' ? COMPANY.gstin_india : COMPANY.gstin_world}  |  PAN: ${brandKey === 'india' ? COMPANY.pan_india : COMPANY.pan_world}`,
+    // Company name + info
+    const infoX = ML + (hasLogo ? logoW + 6 : 0);
+    pdf.fillColor(brand.primary).fontSize(13).font('Helvetica-Bold')
+      .text(brandName, infoX, headerY + 2);
+    pdf.fillColor(brand.accent).fontSize(7).font('Helvetica')
+      .text(COMPANY.tagline, infoX, headerY + 17);
+    pdf.fillColor('#64748b').fontSize(6).font('Helvetica')
+      .text(COMPANY.line1 + ', ' + COMPANY.line2, infoX, headerY + 26)
+      .text('GSTIN: ' + getBrandInfo(brandKey).gstin + '   PAN: ' + getBrandInfo(brandKey).pan, infoX, headerY + 34);
 
-    // ── DOC TYPE BADGE (right) ────────────────────────────────────────────────
-    const badgeW = 155, badgeH = 26, badgeX = MR - badgeW;
-    pdf.strokeColor(brand.primary).lineWidth(1.5)
-      .rect(badgeX, 12, badgeW, badgeH).stroke();
-    pdf.fillColor(brand.primary).fontSize(10).font('Helvetica-Bold')
-      .text(typeLabel, badgeX, 19, { width: badgeW, align: 'center' });
+    // Doc type badge (right side)
+    const badgeW = 140, badgeH = 20;
+    const badgeX = MR - badgeW;
+    pdf.strokeColor(brand.primary).lineWidth(1)
+      .rect(badgeX, headerY + 2, badgeW, badgeH).stroke();
+    pdf.fillColor(brand.primary).fontSize(9).font('Helvetica-Bold')
+      .text(typeLabel, badgeX, headerY + 8, { width: badgeW, align: 'center' });
 
-    // ── DOC META ──────────────────────────────────────────────────────────────
-    let metaY = 46;
+    // Doc meta (right side below badge)
+    let metaY = headerY + 26;
     const metaItems = [
-      [DOC_PREFIX_LABELS[doc.type] || 'Document No', doc.id],
-      doc.client_quotation_number ? ["Client's Ref", doc.client_quotation_number] : null,
+      [DOC_PREFIX_LABELS[doc.type] || 'Doc No', doc.id],
+      doc.client_quotation_number ? ["Client Ref", doc.client_quotation_number] : null,
       ['Date', doc.date],
-      doc.due_date   ? ['Due Date',  doc.due_date]           : null,
-      doc.validity   ? ['Valid For', `${doc.validity} days`] : null,
-      doc.po_number  ? ['PO Number', doc.po_number]          : null,
-      doc.so_number  ? ['SO Number', doc.so_number]          : null,
-      doc.ref_doc_id ? ['Ref Doc',   doc.ref_doc_id]         : null,
-      currency !== 'INR' ? ['Currency', `${currency} @ ${doc.exchange_rate || 1}`] : null,
+      doc.due_date   ? ['Due',       doc.due_date]              : null,
+      doc.validity   ? ['Valid',     doc.validity + ' days']    : null,
+      doc.po_number  ? ['PO No',     doc.po_number]             : null,
+      doc.so_number  ? ['SO No',     doc.so_number]             : null,
+      currency !== 'INR' ? ['Curr', currency + ' @ ' + (doc.exchange_rate||1)] : null,
     ].filter(Boolean);
 
     metaItems.forEach(([label, val]) => {
-      pdf.fillColor('#64748b').fontSize(7).font('Helvetica-Bold')
-        .text(label + ':', badgeX, metaY, { width: 72 });
+      pdf.fillColor('#64748b').fontSize(6).font('Helvetica-Bold')
+        .text(label + ':', badgeX, metaY, { width: 52 });
       pdf.fillColor(brand.textDark).font('Helvetica')
-        .text(String(val), badgeX + 72, metaY, { width: badgeW - 72, align: 'right' });
-      metaY += 11;
+        .text(String(val), badgeX + 52, metaY, { width: badgeW - 52, align: 'right' });
+      metaY += 9;
     });
 
     // ── DIVIDER ───────────────────────────────────────────────────────────────
-    const divY = Math.max(metaY + 4, 72);
+    const divY = Math.max(metaY + 2, headerY + 46);
     pdf.moveTo(ML, divY).lineTo(MR, divY)
-      .strokeColor(brand.accent).lineWidth(0.8).stroke();
+      .strokeColor(brand.accent).lineWidth(0.6).stroke();
 
-    // ── BILL TO / SHIP TO ─────────────────────────────────────────────────────
-    const halfW = (CW - 14) / 2;
-    const addrY = divY + 10;
+    // ── BILL TO / SHIP TO (side by side, compact) ─────────────────────────────
+    const halfW  = (CW - 10) / 2;
+    const addrY  = divY + 5;
+    const addrFS = 7;
 
-    function drawAddr(x, w, heading, name, lines, color) {
-      pdf.fillColor(color).fontSize(7).font('Helvetica-Bold')
+    function drawAddr(x, w, heading, name, lines) {
+      pdf.fillColor(brand.accent).fontSize(6).font('Helvetica-Bold')
         .text(heading, x, addrY, { width: w });
-      pdf.fillColor(brand.textDark).fontSize(10).font('Helvetica-Bold')
-        .text(name, x, addrY + 10, { width: w });
-      let ay = addrY + 22;
-      pdf.fontSize(7.5).font('Helvetica').fillColor('#475569');
+      pdf.fillColor(brand.textDark).fontSize(8).font('Helvetica-Bold')
+        .text(name, x, addrY + 8, { width: w });
+      let ay = addrY + 17;
+      pdf.fontSize(addrFS).font('Helvetica').fillColor('#475569');
       lines.filter(Boolean).forEach(line => {
-        pdf.text(line, x, ay, { width: w }); ay += 11;
+        pdf.text(line, x, ay, { width: w }); ay += 9;
       });
       return ay;
     }
 
-    let billH, shipH, billName, shipName, billLines, shipLines;
+    let billLines, shipLines, billName, shipName, billH, shipH;
 
     if (isSO) {
-      billH    = 'FROM (VENDOR / SUPPLIER):';
-      billName = client.name;
+      billH = 'FROM (VENDOR):'; billName = client.name;
       billLines = [
         client.address,
         [client.city, client.state, client.pincode].filter(Boolean).join(', '),
-        client.gstin ? `GSTIN: ${client.gstin}` : null,
-        client.phone ? `Ph: ${client.phone}` : null,
+        client.gstin ? 'GSTIN: ' + client.gstin : null,
+        client.phone ? 'Ph: ' + client.phone : null,
       ];
-      shipH    = 'BILL TO / SHIP TO (BUYER):';
-      shipName = brandName;
+      shipH = 'BILL TO (BUYER):'; shipName = brandName;
       shipLines = [
-        COMPANY.line1, COMPANY.line2, COMPANY.line3,
-        `GSTIN: ${COMPANY.gstin}`, `PAN: ${COMPANY.pan}`,
+        COMPANY.line1, COMPANY.line2,
+        'GSTIN: ' + getBrandInfo(brandKey).gstin, 'PAN: ' + getBrandInfo(brandKey).pan,
       ];
     } else {
-      billH    = 'BILL TO:';
-      billName = client.name;
+      billH = 'BILL TO:'; billName = client.name;
       billLines = [
         client.address,
         [client.city, client.state, client.pincode].filter(Boolean).join(', '),
-        client.gstin ? `GSTIN: ${client.gstin}` : null,
-        client.phone ? `Ph: ${client.phone}` : null,
+        client.gstin ? 'GSTIN: ' + client.gstin : null,
+        client.phone ? 'Ph: ' + client.phone : null,
         client.email || null,
       ];
-      shipH    = 'SHIP TO:';
+      shipH = 'SHIP TO:';
       shipName = doc.ship_to_name || client.name;
       shipLines = [
         doc.ship_to_address || client.address,
         doc.ship_to_city
           ? [doc.ship_to_city, doc.ship_to_state, doc.ship_to_pincode].filter(Boolean).join(', ')
           : [client.city, client.state, client.pincode].filter(Boolean).join(', '),
-        (doc.ship_to_gstin || client.gstin) ? `GSTIN: ${doc.ship_to_gstin || client.gstin}` : null,
-        (doc.ship_to_phone || client.phone) ? `Ph: ${doc.ship_to_phone || client.phone}` : null,
+        (doc.ship_to_gstin || client.gstin) ? 'GSTIN: ' + (doc.ship_to_gstin || client.gstin) : null,
+        (doc.ship_to_phone || client.phone) ? 'Ph: ' + (doc.ship_to_phone || client.phone) : null,
       ];
     }
 
-    const endBill = drawAddr(ML, halfW, billH, billName, billLines, brand.accent);
-    const endShip = drawAddr(ML + halfW + 14, halfW, shipH, shipName, shipLines, brand.accent);
+    const endBill = drawAddr(ML, halfW, billH, billName, billLines);
+    const endShip = drawAddr(ML + halfW + 10, halfW, shipH, shipName, shipLines);
 
-    // vertical separator
-    pdf.moveTo(ML + halfW + 7, addrY)
-      .lineTo(ML + halfW + 7, Math.max(endBill, endShip))
-      .strokeColor(brand.borderColor).lineWidth(0.5).stroke();
+    // separator line
+    pdf.moveTo(ML + halfW + 5, addrY)
+      .lineTo(ML + halfW + 5, Math.max(endBill, endShip))
+      .strokeColor(brand.borderColor).lineWidth(0.4).stroke();
 
-    const tableY = Math.max(endBill, endShip) + 12;
+    const tableY = Math.max(endBill, endShip) + 6;
 
     // ── ITEMS TABLE ───────────────────────────────────────────────────────────
-    // Fixed widths summing to CW
-    const SN_W   = 22;
-    const DESC_W = 150;
-    const HSN_W  = 40;
-    const QTY_W  = 30;
-    const UNIT_W = 32;
-    const RATE_W = 66;
-    const GST_W  = 28;
+    // Tight column widths
+    const SN_W   = 18;
+    const DESC_W = 148;
+    const HSN_W  = 38;
+    const QTY_W  = 26;
+    const UNIT_W = 28;
+    const RATE_W = 58;
+    const GST_W  = 24;
     const AMT_W  = CW - SN_W - DESC_W - HSN_W - QTY_W - UNIT_W - RATE_W - GST_W;
 
     const C = {
@@ -250,25 +251,22 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
     };
 
     const HDR_H = 14;
+    const ROW_H = 13;
 
-    function drawTableHeader(y) {
-      pdf.fillColor(brand.primary).rect(ML, y, CW, HDR_H).fill();
-      pdf.fillColor('#64748b').fontSize(6.5).font('Helvetica')
-      pdf.text('#',                 C.SN,   y + 5, { width: SN_W,   align: 'center' });
-      pdf.text('Description',       C.DESC, y + 5, { width: DESC_W });
-      pdf.text('HSN',               C.HSN,  y + 5, { width: HSN_W,  align: 'center' });
-      pdf.text('Qty',               C.QTY,  y + 5, { width: QTY_W,  align: 'right' });
-      pdf.text('Unit',              C.UNIT, y + 5, { width: UNIT_W, align: 'center' });
-      pdf.text(`Rate(${currency})`, C.RATE, y + 5, { width: RATE_W, align: 'right' });
-      pdf.text('GST%',              C.GST,  y + 5, { width: GST_W,  align: 'center' });
-      pdf.text(`Amt(${currency})`,  C.AMT,  y + 5, { width: AMT_W,  align: 'right' });
-    }
-
-    drawTableHeader(tableY);
+    // Header
+    pdf.fillColor(brand.primary).rect(ML, tableY, CW, HDR_H).fill();
+    pdf.fillColor('#ffffff').fontSize(6.5).font('Helvetica-Bold');
+    pdf.text('#',                C.SN,   tableY + 4, { width: SN_W,   align: 'center' });
+    pdf.text('Description',      C.DESC, tableY + 4, { width: DESC_W });
+    pdf.text('HSN',              C.HSN,  tableY + 4, { width: HSN_W,  align: 'center' });
+    pdf.text('Qty',              C.QTY,  tableY + 4, { width: QTY_W,  align: 'right' });
+    pdf.text('Unit',             C.UNIT, tableY + 4, { width: UNIT_W, align: 'center' });
+    pdf.text('Rate(' + currency + ')', C.RATE, tableY + 4, { width: RATE_W, align: 'right' });
+    pdf.text('GST%',             C.GST,  tableY + 4, { width: GST_W,  align: 'center' });
+    pdf.text('Amt(' + currency + ')',  C.AMT,  tableY + 4, { width: AMT_W,  align: 'right' });
 
     let iy = tableY + HDR_H;
     let subtotal = 0, totalGst = 0;
-    const ROW_H = 13;
 
     items.forEach((item, i) => {
       const product = products.find(p => p.id === item.product_id);
@@ -279,148 +277,127 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
       subtotal  += amt;
       totalGst  += amt * gstPct / 100;
 
-      // Page break
-      if (iy + ROW_H > PH - 130) {
-        pdf.addPage();
-        pdf.fillColor('#ffffff').rect(0, 0, PW, PH).fill();
-        pdf.fillColor(brand.primary).rect(0, 0, PW, 4).fill();
-        iy = 20;
-        drawTableHeader(iy);
-        iy += HDR_H;
-      }
-
-      // Row background
       pdf.fillColor(i % 2 === 0 ? brand.rowAlt : brand.rowNormal)
         .rect(ML, iy, CW, ROW_H).fill();
-
-      // Row border
-      pdf.strokeColor(brand.borderColor).lineWidth(0.25)
+      pdf.strokeColor(brand.borderColor).lineWidth(0.2)
         .rect(ML, iy, CW, ROW_H).stroke();
 
-      // Column dividers
+      // Column separators
       [C.DESC, C.HSN, C.QTY, C.UNIT, C.RATE, C.GST, C.AMT].forEach(cx => {
         pdf.moveTo(cx, iy).lineTo(cx, iy + ROW_H)
-          .strokeColor(brand.borderColor).lineWidth(0.2).stroke();
+          .strokeColor(brand.borderColor).lineWidth(0.15).stroke();
       });
 
-      const sn   = String(item.serial_no || i + 1);
       const desc = item.description || product?.name || '—';
       const hsn  = item.hsn || product?.hsn || '—';
       const unit = item.unit || product?.unit || '—';
 
-      pdf.fillColor(brand.textDark).fontSize(7.5).font('Helvetica');
-      pdf.text(sn,                    C.SN,     iy + 5, { width: SN_W,        align: 'center' });
-      pdf.text(desc,                  C.DESC+2, iy + 5, { width: DESC_W - 4,  lineBreak: false });
-      pdf.text(hsn,                   C.HSN,    iy + 5, { width: HSN_W,       align: 'center' });
-      pdf.text(String(qty),           C.QTY,    iy + 5, { width: QTY_W,       align: 'right' });
-      pdf.text(unit,                  C.UNIT,   iy + 5, { width: UNIT_W,      align: 'center' });
-      pdf.text(fmtC(rate, currency),  C.RATE,   iy + 5, { width: RATE_W,      align: 'right' });
-      pdf.text(`${gstPct}%`,          C.GST,    iy + 5, { width: GST_W,       align: 'center' });
+      pdf.fillColor(brand.textDark).fontSize(6.5).font('Helvetica');
+      pdf.text(String(item.serial_no || i + 1), C.SN,   iy + 3, { width: SN_W,   align: 'center' });
+      pdf.text(desc,                              C.DESC + 2, iy + 3, { width: DESC_W - 4, lineBreak: false });
+      pdf.text(hsn,                               C.HSN,  iy + 3, { width: HSN_W,  align: 'center' });
+      pdf.text(String(qty),                       C.QTY,  iy + 3, { width: QTY_W,  align: 'right' });
+      pdf.text(unit,                              C.UNIT, iy + 3, { width: UNIT_W, align: 'center' });
+      pdf.text(fmtC(rate, currency),              C.RATE, iy + 3, { width: RATE_W, align: 'right' });
+      pdf.text(gstPct + '%',                      C.GST,  iy + 3, { width: GST_W,  align: 'center' });
       pdf.fillColor(brand.primary).font('Helvetica-Bold')
-        .text(fmtC(amt, currency),    C.AMT,    iy + 5, { width: AMT_W,       align: 'right' });
+        .text(fmtC(amt, currency),                C.AMT,  iy + 3, { width: AMT_W,  align: 'right' });
       iy += ROW_H;
     });
 
-    // Bottom table border
+    // Table bottom border
     pdf.moveTo(ML, iy).lineTo(MR, iy)
-      .strokeColor(brand.accent).lineWidth(0.8).stroke();
+      .strokeColor(brand.accent).lineWidth(0.6).stroke();
 
-    // ── TOTALS ────────────────────────────────────────────────────────────────
-    iy += 10;
+    // ── TOTALS + TERMS side by side ───────────────────────────────────────────
+    iy += 6;
     const sameState = (client.state || '').toLowerCase() === 'haryana' || isSO;
-    const totX = ML + CW * 0.55, totW = MR - totX;
+    const totX = ML + CW * 0.56, totW = MR - totX;
+    const termsW = totX - ML - 6;
+
+    // Terms (left side)
+    pdf.fillColor(brand.primary).rect(ML, iy, termsW, 12).fill();
+    pdf.fillColor('#ffffff').fontSize(6.5).font('Helvetica-Bold')
+      .text('TERMS & CONDITIONS', ML + 4, iy + 3);
+
+    let ty = iy + 15;
+    const terms = doc.terms
+      ? doc.terms.split('\n').filter(t => t.trim())
+      : DEFAULT_TERMS;
+    pdf.fillColor(brand.textDark).fontSize(6).font('Helvetica');
+    terms.forEach(t => {
+      pdf.text(t.trim(), ML + 2, ty, { width: termsW - 4 }); ty += 9;
+    });
+
+    if (doc.notes) {
+      pdf.fillColor(brand.accent).fontSize(6).font('Helvetica-Bold')
+        .text('Notes:', ML + 2, ty); ty += 8;
+      pdf.fillColor('#475569').font('Helvetica')
+        .text(doc.notes, ML + 2, ty, { width: termsW - 4 });
+    }
+
+    // Totals (right side)
+    let toty = iy;
 
     function totRow(label, val, isGrand = false) {
-      const rH = isGrand ? 20 : 15, pad = isGrand ? 5 : 3;
+      const rH = isGrand ? 16 : 12, pad = isGrand ? 4 : 2;
       if (isGrand) {
-        pdf.fillColor(brand.primary).rect(totX, iy, totW, rH).fill();
-        pdf.fillColor('#ffffff').fontSize(9).font('Helvetica-Bold');
+        pdf.fillColor(brand.primary).rect(totX, toty, totW, rH).fill();
+        pdf.fillColor('#ffffff').fontSize(8).font('Helvetica-Bold');
       } else {
-        pdf.fillColor(brand.totBg).rect(totX, iy, totW, rH).fill();
-        pdf.strokeColor(brand.borderColor).lineWidth(0.25)
-          .rect(totX, iy, totW, rH).stroke();
-        pdf.fillColor(brand.textDark).fontSize(7.5).font('Helvetica');
+        pdf.fillColor(brand.totBg).rect(totX, toty, totW, rH).fill();
+        pdf.strokeColor(brand.borderColor).lineWidth(0.2).rect(totX, toty, totW, rH).stroke();
+        pdf.fillColor(brand.textDark).fontSize(6.5).font('Helvetica');
       }
-      pdf.text(label, totX + 6, iy + pad, { width: totW * 0.54 });
-      pdf.text(val,   totX + totW * 0.54, iy + pad, { width: totW * 0.42, align: 'right' });
-      iy += rH;
+      pdf.text(label, totX + 4, toty + pad, { width: totW * 0.55 });
+      pdf.text(val,   totX + totW * 0.55, toty + pad, { width: totW * 0.42, align: 'right' });
+      toty += rH;
     }
 
     totRow('Subtotal (excl. GST)', fmtC(subtotal, currency));
     if (sameState) {
-      totRow('CGST (9%)',  fmtC(totalGst / 2, currency));
-      totRow('SGST (9%)',  fmtC(totalGst / 2, currency));
+      totRow('CGST (9%)', fmtC(totalGst / 2, currency));
+      totRow('SGST (9%)', fmtC(totalGst / 2, currency));
     } else {
       totRow('IGST (18%)', fmtC(totalGst, currency));
     }
     if (Number(doc.paid) > 0) {
-      totRow('Amount Paid', `- ${fmtC(doc.paid, currency)}`);
+      totRow('Amount Paid', '- ' + fmtC(doc.paid, currency));
     }
-    totRow('TOTAL DUE',
-      fmtC(subtotal + totalGst - (Number(doc.paid) || 0), currency), true);
+    totRow('TOTAL DUE', fmtC(subtotal + totalGst - (Number(doc.paid) || 0), currency), true);
 
     if (currency !== 'INR' && doc.exchange_rate && doc.exchange_rate !== 1) {
-      iy += 3;
-      const inrEq = (subtotal + totalGst - (Number(doc.paid) || 0)) * doc.exchange_rate;
-      pdf.fillColor('#64748b').fontSize(7).font('Helvetica')
-        .text(`(INR equivalent: ${fmtC(inrEq, 'INR')} @ ${doc.exchange_rate})`,
-          totX, iy, { width: totW, align: 'right' });
-      iy += 12;
-    }
-
-    // ── TERMS & CONDITIONS ────────────────────────────────────────────────────
-    iy += 12;
-    if (iy > PH - 100) { pdf.addPage(); iy = 30; }
-
-    pdf.fillColor(brand.primary).rect(ML, iy, CW, 15).fill();
-    pdf.fillColor('#ffffff').fontSize(7.5).font('Helvetica-Bold')
-      .text('TERMS & CONDITIONS', ML + 6, iy + 4);
-    iy += 18;
-
-    const terms = doc.terms
-      ? doc.terms.split('\n').filter(t => t.trim())
-      : DEFAULT_TERMS;
-
-    pdf.fillColor(brand.textDark).fontSize(7.5).font('Helvetica');
-    terms.forEach(t => {
-      pdf.text(t.trim(), ML + 4, iy, { width: CW - 8 });
-      iy += 11;
-    });
-
-    if (doc.notes) {
-      iy += 4;
-      pdf.fillColor(brand.accent).fontSize(7.5).font('Helvetica-Bold')
-        .text('Notes:', ML, iy);
-      iy += 10;
-      pdf.fillColor('#475569').font('Helvetica')
-        .text(doc.notes, ML + 4, iy, { width: CW - 8 });
+      const inrEq = (subtotal + totalGst - (Number(doc.paid)||0)) * doc.exchange_rate;
+      pdf.fillColor('#94a3b8').fontSize(6).font('Helvetica')
+        .text('(INR ' + fmtC(inrEq, 'INR') + ' @ ' + doc.exchange_rate + ')',
+          totX, toty, { width: totW, align: 'right' });
+      toty += 9;
     }
 
     // ── FOOTER ────────────────────────────────────────────────────────────────
-    const fY = PH - 35;
-    pdf.moveTo(ML, fY - 6).lineTo(MR, fY - 6)
-      .strokeColor(brand.accent).lineWidth(0.8).stroke();
-    pdf.fillColor(brand.textDark).fontSize(7).font('Helvetica-Bold')
+    const footerY = PH - 20;
+    pdf.moveTo(ML, footerY - 4).lineTo(MR, footerY - 4)
+      .strokeColor(brand.accent).lineWidth(0.5).stroke();
+    pdf.fillColor(brand.textDark).fontSize(6).font('Helvetica-Bold')
       .text('This is an Electronic generated document, No need for sign and stamp.',
-        ML, fY, { width: CW, align: 'center' });
-    pdf.fillColor(brand.accent).fontSize(6.5).font('Helvetica')
-      .text(`${brandName}  |  GSTIN: ${COMPANY.gstin}  |  PAN: ${COMPANY.pan}  |  ${COMPANY.email}`,
-        ML, fY + 11, { width: CW, align: 'center' });
+        ML, footerY, { width: CW, align: 'center' });
+    pdf.fillColor(brand.accent).fontSize(5.5).font('Helvetica')
+      .text(brandName + '  |  GSTIN: ' + getBrandInfo(brandKey).gstin + '  |  PAN: ' + getBrandInfo(brandKey).pan + '  |  ' + getBrandInfo(brandKey).email,
+        ML, footerY + 8, { width: CW, align: 'center' });
 
-    // Bottom strip + logo watermark in footer
-    pdf.fillColor(brand.primary).rect(0, PH - 6, PW, 6).fill();
+    // Bottom strip
+    pdf.fillColor(brand.primary).rect(0, PH - 4, PW, 4).fill();
 
     pdf.end();
   });
 }
 
-// ── SINGLE BRAND PDF ──────────────────────────────────────────────────────────
+// ── Single brand ──────────────────────────────────────────────────────────────
 async function generateDocPDF(doc, client, items, products, res, brandKey = 'india') {
   try {
     const buf = await buildPDFBuffer(doc, client, items, products, brandKey);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition',
-      `attachment; filename="${doc.id}-${brandKey}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${doc.id}-${brandKey}.pdf"`);
     res.end(buf);
   } catch (err) {
     console.error('PDF error:', err);
@@ -428,7 +405,7 @@ async function generateDocPDF(doc, client, items, products, res, brandKey = 'ind
   }
 }
 
-// ── BOTH PDFs IN ONE ZIP ──────────────────────────────────────────────────────
+// ── Both brands as ZIP ────────────────────────────────────────────────────────
 async function generateBothPDFs(doc, client, items, products, res) {
   try {
     const [indiaBuf, worldBuf] = await Promise.all([
@@ -436,8 +413,7 @@ async function generateBothPDFs(doc, client, items, products, res) {
       buildPDFBuffer(doc, client, items, products, 'world'),
     ]);
     res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition',
-      `attachment; filename="${doc.id}-both.zip"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${doc.id}-both.zip"`);
     const archive = archiver('zip', { zlib: { level: 6 } });
     archive.pipe(res);
     archive.append(indiaBuf, { name: `${doc.id}-BVM-India.pdf` });
