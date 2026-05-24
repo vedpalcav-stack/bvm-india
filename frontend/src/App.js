@@ -404,13 +404,9 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
         onChange={e => set('date', e.target.value)}
     />
 </div>
-<div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e=>set('date',e.target.value)}/></div>
+<div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e=>set('date',e.target.value)}/></div>{(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Credit Period</label><select value={form.credit_period||30} onChange={e=>{const days=Number(e.target.value);set('credit_period',days);if(form.date){const d=new Date(form.date);d.setDate(d.getDate()+days);set('due_date',d.toISOString().split('T')[0]);}}}><option value="0">Immediate</option><option value="15">15 Days</option><option value="30">30 Days</option><option value="45">45 Days</option><option value="60">60 Days</option><option value="90">90 Days</option></select></div>}
 
-{(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Credit Period</label><select value={form.credit_period||30} onChange={e=>{const days=Number(e.target.value);set('credit_period',days);if(form.date){const d=new Date(form.date);d.setDate(d.getDate()+days);set('due_date',d.toISOString().split('T')[0]);}}}><option value="0">Immediate</option><option value="15">15 Days</option><option value="30">30 Days</option><option value="45">45 Days</option><option value="60">60 Days</option><option value="90">90 Days</option></select></div>}
-
-{(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} readOnly/></div>}
-
-{(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e=>set('validity',e.target.value)}/></div>}
+{(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} readOnly/></div>}{(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e=>set('validity',e.target.value)}/></div>}
 
 <div className="form-row"><label>Client's Ref / Quotation No.</label><input value={form.client_quotation_number} onChange={e=>set('client_quotation_number',e.target.value)} placeholder="Client's own reference"/></div>
 
@@ -421,8 +417,6 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
 <div className="form-row"><label>Currency</label><select value={form.currency} onChange={e=>{set('currency',e.target.value);setItems(prev=>prev.map(it=>({...it,currency:e.target.value})));}}>{api.CURRENCIES.map(c=><option key={c}>{c}</option>)}</select></div>
 
 {form.currency!=='INR' && <div className="form-row"><label>Exchange Rate (1 {form.currency} = ₹)</label><input type="number" step="0.01" value={form.exchange_rate} onChange={e=>set('exchange_rate',e.target.value)}/></div>}
-            </div>
-          )}
         </div>
       )}
 
@@ -432,7 +426,7 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
           <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#166534'}}>
             <strong>BVM INDIA / BVM WORLD</strong> · #1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk · Gurugram, Haryana - 122001 · GSTIN: 06AGYPR1117M1ZT
           </div>
-        </div>
+        
       )}
 
       <div className="section-title">Line Items</div>
