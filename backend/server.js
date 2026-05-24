@@ -118,11 +118,6 @@ initDb().then(db => {
     if (!doc) return res.status(404).json({ error: 'Not found' });
     res.json(doc);
   }));
-  app.delete('/api/documents/:id', wrap(async (req, res) => {
-  await db.prepare('DELETE FROM document_items WHERE document_id=$1').run(req.params.id);
-  await db.prepare('DELETE FROM documents WHERE id=$1').run(req.params.id);
-  res.json({ deleted: true });
-  }));
   app.post('/api/documents', wrap(async (req, res) => {
     const {
       type, client_id, date, due_date, validity, notes, items,
@@ -169,6 +164,15 @@ initDb().then(db => {
            so_number||doc.so_number, terms||doc.terms,
            client_quotation_number||doc.client_quotation_number, req.params.id);
     res.json(await getDocWithItems(req.params.id));
+  }));
+
+  // ── DELETE DOCUMENT ──────────────────────────────────────────────────────
+  app.delete('/api/documents/:id', wrap(async (req, res) => {
+    const doc = await db.prepare('SELECT * FROM documents WHERE id=$1').get(req.params.id);
+    if (!doc) return res.status(404).json({ error: 'Not found' });
+    await db.prepare('DELETE FROM document_items WHERE document_id=$1').run(req.params.id);
+    await db.prepare('DELETE FROM documents WHERE id=$1').run(req.params.id);
+    res.json({ deleted: true, id: req.params.id });
   }));
 
   app.post('/api/documents/:id/convert', wrap(async (req, res) => {
