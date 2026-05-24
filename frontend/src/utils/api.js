@@ -78,3 +78,4 @@ export const COMPANY = {
   gstin:   '06AGYPR1117M1ZT',
   pan:     'AGYPR1117M',
 };
+export const deleteDocument = (id) => api(`/api/documents/${id}`, { method: 'DELETE' });
