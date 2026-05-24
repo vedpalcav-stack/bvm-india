@@ -64,8 +64,8 @@ function FlowBar({ current }) {
 function PDFButtons({ docId }) {
   return (
     <div className="pdf-btn-group">
-      <button className="btn btn-sm btn-pdf-india" onClick={() => api.downloadIndiaPDF(docId)} title="BVM India PDF">🟢 India</button>
-      <button className="btn btn-sm btn-pdf-world" onClick={() => api.downloadWorldPDF(docId)} title="BVM World PDF">🔵 World</button>
+      <button className="btn btn-sm btn-pdf-india" onClick={() => api.downloadIndiaPDF(docId)} title="BVM INDIA PDF">🟢 India</button>
+      <button className="btn btn-sm btn-pdf-world" onClick={() => api.downloadWorldPDF(docId)} title="BVM WORLD PDF">🔵 World</button>
       <button className="btn-pdf-both" onClick={() => api.downloadBothPDFs(docId)} title="Download both">⬇ Both</button>
     </div>
   );
@@ -443,7 +443,7 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
         <div style={{marginBottom:14}}>
           <div className="section-title">Bill To (BVM — Buyer)</div>
           <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#166534'}}>
-            <strong>BVM India / BVM World</strong> · #1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk · Gurugram, Haryana - 122001 · GSTIN: 06AGYPR1117M1ZT
+            <strong>BVM INDIA / BVM WORLD</strong> · #1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk · Gurugram, Haryana - 122001 · GSTIN: 06AGYPR1117M1ZT
           </div>
         </div>
       )}
@@ -875,12 +875,12 @@ export default function App() {
       <aside className="sidebar">
         <div className="logo">
           <div className="logo-brand-row">
-            <img src={bvmIndiaLogo} alt="BVM India" style={{width:34,height:34,objectFit:'contain',borderRadius:4,background:'#fff',padding:2,flexShrink:0}}/>
-            <div className="logo-india">BVM India</div>
+            <img src={bvmIndiaLogo} alt="BVM INDIA" style={{width:34,height:34,objectFit:'contain',borderRadius:4,background:'#fff',padding:2,flexShrink:0}}/>
+            <div className="logo-india">BVM INDIA</div>
           </div>
           <div className="logo-brand-row">
-            <img src={bvmWorldLogo} alt="BVM World" style={{width:34,height:34,objectFit:'contain',borderRadius:4,background:'#fff',padding:2,flexShrink:0}}/>
-            <div className="logo-world">BVM World</div>
+            <img src={bvmWorldLogo} alt="BVM WORLD" style={{width:34,height:34,objectFit:'contain',borderRadius:4,background:'#fff',padding:2,flexShrink:0}}/>
+            <div className="logo-world">BVM WORLD</div>
           </div>
           <div className="logo-sub">Unified ERP · One document<br/>Two branded templates</div>
         </div>
@@ -899,12 +899,12 @@ export default function App() {
         <div className="topbar">
           <div className="topbar-left">
             <div className="brand-tab brand-tab-india">
-              <img src={bvmIndiaLogo} alt="BVM India" style={{width:22,height:22,objectFit:'contain'}}/>
-              BVM India
+              <img src={bvmIndiaLogo} alt="BVM INDIA" style={{width:22,height:22,objectFit:'contain'}}/>
+              BVM INDIA
             </div>
             <div className="brand-tab brand-tab-world">
-              <img src={bvmWorldLogo} alt="BVM World" style={{width:22,height:22,objectFit:'contain',borderRadius:2}}/>
-              BVM World
+              <img src={bvmWorldLogo} alt="BVM WORLD" style={{width:22,height:22,objectFit:'contain',borderRadius:2}}/>
+              BVM WORLD
             </div>
             <div className="topbar-title">{PAGE_TITLES[page]||page}</div>
           </div>
