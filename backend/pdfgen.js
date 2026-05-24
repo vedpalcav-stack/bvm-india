@@ -7,16 +7,17 @@ const LOGO_INDIA = path.join(__dirname, 'logos', 'bvm-india.png');
 const LOGO_WORLD = path.join(__dirname, 'logos', 'bvm-world.jpg');
 
 const COMPANY = {
-  name_india:    'BVM India',
-  name_world:    'BVM World',
-  tagline_india: 'PVT LTD.',
-  tagline_world: 'PVT LTD.',
-  line1: '#1, 2nd Floor, Kamla Palace,',
-  line2: 'Jail Road, Sohna Chowk',
-  line3: 'Gurugram, Haryana - 122001',
-  gstin: '06AGYPR1117M1ZT',
-  pan:   'AGYPR1117M',
-  email: 'accounts@bvmindia.com',
+  name_india:  'BVM India',
+  name_world:  'BVM World',
+  tagline:     'Private Limited',
+  line1:       '#1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk',
+  line2:       'Gurugram, Haryana - 122001',
+  gstin_india: '06AGYPR1117M1ZT',
+  pan_india:   'AGYPR1117M',
+  gstin_world: '06AAMCB5079P1ZX',
+  pan_world:   'AAMCB5079P',
+  email_india: 'accounts@bvmindia.com',
+  email_world: 'accounts@bvmworld.com',
 };
 
 const DEFAULT_TERMS = [
@@ -87,7 +88,7 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
     const logoPath  = brand.logo;
     const hasLogo   = fs.existsSync(logoPath);
 
-    const pdf = new PDFDocument({ margin: 40, size: 'A4', bufferPages: true });
+    const pdf = new PDFDocument({ margin: 25, size: 'A4', bufferPages: true });
     const chunks = [];
     pdf.on('data',  c  => chunks.push(c));
     pdf.on('end',   () => resolve(Buffer.concat(chunks)));
@@ -95,7 +96,7 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
 
     const PW = pdf.page.width;
     const PH = pdf.page.height;
-    const ML = 40, MR = PW - 40, CW = MR - ML;
+    const ML = 25, MR = PW - 25, CW = MR - ML;
     const currency  = doc.currency || 'INR';
     const isSO      = doc.type === 'sales_order';
     const typeLabel = TYPE_LABELS[doc.type] || doc.type.toUpperCase();
@@ -124,7 +125,7 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
       .text(tagline, infoX, 32);
     pdf.fillColor('#64748b').fontSize(7).font('Helvetica')
       .text(`${COMPANY.line1} ${COMPANY.line2}, ${COMPANY.line3}`, infoX, 42)
-      .text(`GSTIN: ${COMPANY.gstin}   |   PAN: ${COMPANY.pan}   |   ${COMPANY.email}`, infoX, 52);
+      .text(`${brandName}  |  GSTIN: ${brandKey === 'india' ? COMPANY.gstin_india : COMPANY.gstin_world}  |  PAN: ${brandKey === 'india' ? COMPANY.pan_india : COMPANY.pan_world}`,
 
     // ── DOC TYPE BADGE (right) ────────────────────────────────────────────────
     const badgeW = 155, badgeH = 26, badgeX = MR - badgeW;
@@ -248,11 +249,11 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
       AMT:  ML + SN_W + DESC_W + HSN_W + QTY_W + UNIT_W + RATE_W + GST_W,
     };
 
-    const HDR_H = 18;
+    const HDR_H = 14;
 
     function drawTableHeader(y) {
       pdf.fillColor(brand.primary).rect(ML, y, CW, HDR_H).fill();
-      pdf.fillColor('#ffffff').fontSize(7).font('Helvetica-Bold');
+      pdf.fillColor('#64748b').fontSize(6.5).font('Helvetica')
       pdf.text('#',                 C.SN,   y + 5, { width: SN_W,   align: 'center' });
       pdf.text('Description',       C.DESC, y + 5, { width: DESC_W });
       pdf.text('HSN',               C.HSN,  y + 5, { width: HSN_W,  align: 'center' });
@@ -267,7 +268,7 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
 
     let iy = tableY + HDR_H;
     let subtotal = 0, totalGst = 0;
-    const ROW_H = 18;
+    const ROW_H = 13;
 
     items.forEach((item, i) => {
       const product = products.find(p => p.id === item.product_id);
