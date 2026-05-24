@@ -9,7 +9,7 @@ const today = () => new Date().toISOString().split('T')[0];
 const futureDate = (d) => new Date(Date.now() + d * 86400000).toISOString().split('T')[0];
 
 const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Pickup.
-1. Payment Terms: As per BVM INDIA Conditions.
+1. Payment Terms: As per BVM Conditions.
 2. Delivery: Immediate.
 3. Warranty: Standard as per OEM.`;
 
@@ -64,8 +64,8 @@ function FlowBar({ current }) {
 function PDFButtons({ docId }) {
   return (
     <div className="pdf-btn-group">
-      <button className="btn btn-sm btn-pdf-india" onClick={() => api.downloadIndiaPDF(docId)} title="BVM INDIA PDF">🟢 India</button>
-      <button className="btn btn-sm btn-pdf-world" onClick={() => api.downloadWorldPDF(docId)} title="BVM WORLD PDF">🔵 World</button>
+      <button className="btn btn-sm btn-pdf-india" onClick={() => api.downloadIndiaPDF(docId)} title="BVM India PDF">🟢 India</button>
+      <button className="btn btn-sm btn-pdf-world" onClick={() => api.downloadWorldPDF(docId)} title="BVM World PDF">🔵 World</button>
       <button className="btn-pdf-both" onClick={() => api.downloadBothPDFs(docId)} title="Download both">⬇ Both</button>
     </div>
   );
@@ -142,15 +142,17 @@ function Dashboard({ onNav }) {
         <div style={{ background:'linear-gradient(135deg,#166534,#15803d)', borderRadius:10, padding:'16px 20px', color:'#fff', display:'flex', alignItems:'center', gap:14 }}>
           <img src={bvmIndiaLogo} alt="BVM India" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
           <div>
-            <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM INDIA</div>
+            <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM India</div>
+            <div style={{ fontSize:11, color:'#86efac', marginTop:2 }}>Trading & Distribution</div>
             <div style={{ fontSize:10, color:'#4ade80', marginTop:3 }}>GSTIN: 06AGYPR1117M1ZT · PAN: AGYPR1117M</div>
           </div>
         </div>
         <div style={{ background:'linear-gradient(135deg,#1e3a5f,#1d4ed8)', borderRadius:10, padding:'16px 20px', color:'#fff', display:'flex', alignItems:'center', gap:14 }}>
-          <img src={bvmWorldLogo} alt="BVM World" style={{ width:256, height:256, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
+          <img src={bvmWorldLogo} alt="BVM World" style={{ width:56, height:56, objectFit:'contain', borderRadius:6, background:'#fff', padding:3 }} />
           <div>
-            <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM WORLD PVT LTD </div>
-            <div style={{ fontSize:10, color:'#60a5fa', marginTop:3 }}>GSTIN: 06AAMCB5079P1ZX · PAN: AAMCB5079P</div>
+            <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>BVM World</div>
+            <div style={{ fontSize:11, color:'#93c5fd', marginTop:2 }}>Global Trading & Distribution</div>
+            <div style={{ fontSize:10, color:'#60a5fa', marginTop:3 }}>GSTIN: 06AGYPR1117M1ZT · PAN: AGYPR1117M</div>
           </div>
         </div>
       </div>
@@ -348,7 +350,7 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
   const [form, setForm] = useState({
-    client_id:clients[0]?.id||'', date:today(),credit_period:30, due_date:futureDate(30),
+    client_id:clients[0]?.id||'', date:today(), due_date:futureDate(30),
     validity:15, currency:'INR', exchange_rate:1,
     po_number:'', so_number:'', notes:'',
     client_quotation_number:'', terms:DEFAULT_TERMS,
@@ -396,32 +398,56 @@ function DocForm({ type, clients, products, onClose, onSaved }) {
           <select value={form.client_id} onChange={e => set('client_id',e.target.value)}>
             {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-       <div className="form-row">
-    <label>Date *</label>
-    <input
-        type="date"
-        value={form.date}
-        onChange={e => set('date', e.target.value)}
-  <div className="form-grid">
-<div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e=>set('date',e.target.value)}/></div>
-{(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Credit Period</label><select value={form.credit_period||30} onChange={e=>{const days=Number(e.target.value);set('credit_period',days);if(form.date){const d=new Date(form.date);d.setDate(d.getDate()+days);set('due_date',d.toISOString().split('T')[0]);}}}><option value="0">Immediate</option><option value="15">15 Days</option><option value="30">30 Days</option><option value="45">45 Days</option><option value="60">60 Days</option><option value="90">90 Days</option></select></div>}
-{(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} readOnly/></div>}
-{(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e=>set('validity',e.target.value)}/></div>}
-<div className="form-row"><label>Client's Ref / Quotation No.</label><input value={form.client_quotation_number} onChange={e=>set('client_quotation_number',e.target.value)} placeholder="Client's own reference"/></div>
-{showPO && <div className="form-row"><label>Purchase Order No.</label><input value={form.po_number} onChange={e=>set('po_number',e.target.value)} placeholder="BVM-PO-0001"/></div>}
-{showSO && <div className="form-row"><label>Sales Order No.</label><input value={form.so_number} onChange={e=>set('so_number',e.target.value)} placeholder="BVM-SO-0001"/></div>}
-<div className="form-row"><label>Currency</label><select value={form.currency} onChange={e=>{set('currency',e.target.value);setItems(prev=>prev.map(it=>({...it,currency:e.target.value})));}}>{api.CURRENCIES.map(c=><option key={c}>{c}</option>)}</select></div>
-{form.currency!=='INR' && <div className="form-row"><label>Exchange Rate (1 {form.currency} = ₹)</label><input type="number" step="0.01" value={form.exchange_rate} onChange={e=>set('exchange_rate',e.target.value)}/></div>}
-</div>
+        </div>
+        <div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e => set('date',e.target.value)}/></div>
+        {(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} onChange={e => set('due_date',e.target.value)}/></div>}
+        {(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e => set('validity',e.target.value)}/></div>}
+        <div className="form-row"><label>Client's Ref / Quotation No.</label><input value={form.client_quotation_number} onChange={e => set('client_quotation_number',e.target.value)} placeholder="Client's own reference"/></div>
+        {showPO && <div className="form-row"><label>Purchase Order No.</label><input value={form.po_number} onChange={e => set('po_number',e.target.value)} placeholder="BVM-PO-0001"/></div>}
+        {showSO && <div className="form-row"><label>Sales Order No.</label><input value={form.so_number} onChange={e => set('so_number',e.target.value)} placeholder="BVM-SO-0001"/></div>}
+        <div className="form-row"><label>Currency</label>
+          <select value={form.currency} onChange={e => {set('currency',e.target.value);setItems(prev=>prev.map(it=>({...it,currency:e.target.value})));}}> 
+            {api.CURRENCIES.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+        {form.currency!=='INR' && <div className="form-row"><label>Exchange Rate (1 {form.currency} = ₹)</label><input type="number" step="0.01" value={form.exchange_rate} onChange={e => set('exchange_rate',e.target.value)}/></div>}
+      </div>
+
+      {!isSO && (
+        <div style={{marginBottom:14}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+            <div className="section-title" style={{margin:0}}>Bill To / Ship To</div>
+            <button className="btn btn-sm" onClick={() => setShowShipTo(v=>!v)}>{showShipTo?'▲ Hide Ship To':'▼ Different Ship To Address'}</button>
+          </div>
+          {selectedClient && (
+            <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#475569'}}>
+              <strong style={{color:'#0f172a'}}>{selectedClient.name}</strong> · {selectedClient.address} · {selectedClient.city}, {selectedClient.state} - {selectedClient.pincode} · GSTIN: {selectedClient.gstin}
+            </div>
+          )}
+          {showShipTo && (
+            <div style={{marginTop:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:8}}>Ship To (if different from Bill To)</div>
+              <div className="form-grid3">
+                <div className="form-row"><label>Ship To Name</label><input value={form.ship_to_name} onChange={e=>set('ship_to_name',e.target.value)}/></div>
+                <div className="form-row"><label>Phone</label><input value={form.ship_to_phone} onChange={e=>set('ship_to_phone',e.target.value)}/></div>
+                <div className="form-row"><label>GSTIN</label><input value={form.ship_to_gstin} onChange={e=>set('ship_to_gstin',e.target.value)}/></div>
+                <div className="form-row col-span2"><label>Address</label><input value={form.ship_to_address} onChange={e=>set('ship_to_address',e.target.value)}/></div>
+                <div className="form-row"><label>City</label><input value={form.ship_to_city} onChange={e=>set('ship_to_city',e.target.value)}/></div>
+                <div className="form-row"><label>State</label><input value={form.ship_to_state} onChange={e=>set('ship_to_state',e.target.value)}/></div>
+                <div className="form-row"><label>Pincode</label><input value={form.ship_to_pincode} onChange={e=>set('ship_to_pincode',e.target.value)}/></div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {isSO && (
         <div style={{marginBottom:14}}>
           <div className="section-title">Bill To (BVM — Buyer)</div>
           <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#166534'}}>
-            <strong>BVM INDIA / BVM WORLD</strong> · #1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk · Gurugram, Haryana - 122001 · GSTIN: 06AGYPR1117M1ZT
+            <strong>BVM India / BVM World</strong> · #1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk · Gurugram, Haryana - 122001 · GSTIN: 06AGYPR1117M1ZT
           </div>
-        
+        </div>
       )}
 
       <div className="section-title">Line Items</div>
@@ -600,7 +626,6 @@ function DocList({ type, clients, products, showNew, onClearNew }) {
                   <button className="btn btn-sm" onClick={() => setViewDoc(doc)}>View</button>
                   {nextType&&doc.status!=='Converted'&&<button className="btn btn-sm btn-purple" onClick={async()=>{await api.convertDocument(doc.id,nextType);load();}}>→ {nextLabel}</button>}
                   {type==='invoice'&&doc.status!=='Paid'&&<button className="btn btn-sm btn-success" onClick={() => setPayModal(doc)}>Pay</button>}
-                  {doc.status!=='Converted'&&<button className="btn btn-sm" style={{background:'#fee2e2',color:'#dc2626',border:'1px solid #fecaca'}} onClick={async()=>{if(window.confirm('Delete '+doc.id+'? This cannot be undone.')){{await api.deleteDocument(doc.id);load();}}}}>🗑</button>}
                 </div>
               </td>
             </tr>);
@@ -851,12 +876,12 @@ export default function App() {
       <aside className="sidebar">
         <div className="logo">
           <div className="logo-brand-row">
-            <img src={bvmIndiaLogo} alt="BVM INDIA" style={{width:34,height:34,objectFit:'contain',borderRadius:4,background:'#fff',padding:2,flexShrink:0}}/>
-            <div className="logo-india">BVM INDIA</div>
+            <img src={bvmIndiaLogo} alt="BVM India" style={{width:34,height:34,objectFit:'contain',borderRadius:4,background:'#fff',padding:2,flexShrink:0}}/>
+            <div className="logo-india">BVM India</div>
           </div>
           <div className="logo-brand-row">
-            <img src={bvmWorldLogo} alt="BVM WORLD" style={{width:34,height:34,objectFit:'contain',borderRadius:4,background:'#fff',padding:2,flexShrink:0}}/>
-            <div className="logo-world">BVM WORLD</div>
+            <img src={bvmWorldLogo} alt="BVM World" style={{width:34,height:34,objectFit:'contain',borderRadius:4,background:'#fff',padding:2,flexShrink:0}}/>
+            <div className="logo-world">BVM World</div>
           </div>
           <div className="logo-sub">Unified ERP · One document<br/>Two branded templates</div>
         </div>
@@ -875,12 +900,12 @@ export default function App() {
         <div className="topbar">
           <div className="topbar-left">
             <div className="brand-tab brand-tab-india">
-              <img src={bvmIndiaLogo} alt="BVM INDIA" style={{width:22,height:22,objectFit:'contain'}}/>
-              BVM INDIA
+              <img src={bvmIndiaLogo} alt="BVM India" style={{width:22,height:22,objectFit:'contain'}}/>
+              BVM India
             </div>
             <div className="brand-tab brand-tab-world">
-              <img src={bvmWorldLogo} alt="BVM WORLD" style={{width:44,height:44,objectFit:'contain',borderRadius:2}}/>
-              BVM WORLD
+              <img src={bvmWorldLogo} alt="BVM World" style={{width:22,height:22,objectFit:'contain',borderRadius:2}}/>
+              BVM World
             </div>
             <div className="topbar-title">{PAGE_TITLES[page]||page}</div>
           </div>
