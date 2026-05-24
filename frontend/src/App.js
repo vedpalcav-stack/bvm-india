@@ -1210,16 +1210,7 @@ ${cfg.name}` : ''
                 set('client_id', e.target.value);
                 const cl = clients.find(c => c.id === e.target.value);
                 const lc = ledgerData.find(l => l.id === e.target.value);
-                if (cl) set('message', `Dear ${cl.name},
-
-This is a reminder from ${cfg.name}.
-${lc && lc.due > 0.01 ? 'Outstanding: INR ' + lc.due.toLocaleString('en-IN', { minimumFractionDigits: 2 }) + '
-' : ''}
-Kindly revert at your earliest.
-
-Best Regards,
-${cfg.name}
-GSTIN: ${cfg.gstin}`);
+                if (cl) set('message', `Dear ${cl.name},\n\nThis is a reminder from ${cfg.name}.\n${lc && lc.due > 0.01 ? 'Outstanding: INR ' + lc.due.toLocaleString('en-IN', { minimumFractionDigits: 2 }) + '\n' : ''}\nKindly revert at your earliest.\n\nBest Regards,\n${cfg.name}\nGSTIN: ${cfg.gstin}`);
               }}>
                 <option value="">— Select Client —</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ''}</option>)}
