@@ -52,13 +52,18 @@ initDb().then(db => {
 
   // ── CLIENTS ──────────────────────────────────────────────────────────────────
   app.get('/api/clients', wrap(async (req, res) => {
-    res.json(await db.prepare('SELECT * FROM clients ORDER BY name').all());
+    const brand = req.query.brand || null;
+    if (brand) {
+      res.json(await db.prepare('SELECT * FROM clients WHERE brand=$1 ORDER BY name').all(brand));
+    } else {
+      res.json(await db.prepare('SELECT * FROM clients ORDER BY name').all());
+    }
   }));
   app.post('/api/clients', wrap(async (req, res) => {
-    const { name, contact, phone, email, gstin, address, city, state, pincode, type } = req.body;
+    const { name, contact, phone, email, gstin, address, city, state, pincode, type, brand } = req.body;
     const id = await nextClientId();
-    await db.prepare(`INSERT INTO clients (id,name,contact,phone,email,gstin,address,city,state,pincode,type,balance) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,0)`)
-      .run(id, name, contact||'', phone||'', email||'', gstin||'', address||'', city||'', state||'', pincode||'', type||'Regular');
+    await db.prepare(`INSERT INTO clients (id,name,contact,phone,email,gstin,address,city,state,pincode,type,balance,brand) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,0,$12)`)
+      .run(id, name, contact||'', phone||'', email||'', gstin||'', address||'', city||'', state||'', pincode||'', type||'Regular', brand||'india');
     res.json(await db.prepare('SELECT * FROM clients WHERE id = $1').get(id));
   }));
   app.put('/api/clients/:id', wrap(async (req, res) => {
@@ -70,13 +75,18 @@ initDb().then(db => {
 
   // ── PRODUCTS ─────────────────────────────────────────────────────────────────
   app.get('/api/products', wrap(async (req, res) => {
-    res.json(await db.prepare('SELECT * FROM products ORDER BY name').all());
+    const brand = req.query.brand || null;
+    if (brand) {
+      res.json(await db.prepare('SELECT * FROM products WHERE brand=$1 ORDER BY name').all(brand));
+    } else {
+      res.json(await db.prepare('SELECT * FROM products ORDER BY name').all());
+    }
   }));
   app.post('/api/products', wrap(async (req, res) => {
-    const { name, sku, category, hsn, unit, rate, gst, opening_stock } = req.body;
+    const { name, sku, category, hsn, unit, rate, gst, opening_stock, brand } = req.body;
     const id = await nextProductId();
-    await db.prepare(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`)
-      .run(id, name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate)||0, parseInt(gst)||18);
+    await db.prepare(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst,brand) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`)
+      .run(id, name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate)||0, parseInt(gst)||18, brand||'india');
     await db.prepare(`INSERT INTO inventory (product_id,stock,reorder,warehouse) VALUES ($1,$2,10,'Main Godown')`)
       .run(id, parseFloat(opening_stock)||0);
     res.json(await db.prepare('SELECT * FROM products WHERE id = $1').get(id));
@@ -104,10 +114,17 @@ initDb().then(db => {
 
   // ── DOCUMENTS ─────────────────────────────────────────────────────────────────
   app.get('/api/documents', wrap(async (req, res) => {
-    const { type } = req.query;
-    const docs = type
-      ? await db.prepare('SELECT * FROM documents WHERE type = $1 ORDER BY created_at DESC').all(type)
-      : await db.prepare('SELECT * FROM documents ORDER BY created_at DESC').all();
+    const { type, brand } = req.query;
+    let docs;
+    if (type && brand) {
+      docs = await db.prepare('SELECT * FROM documents WHERE type=$1 AND brand=$2 ORDER BY created_at DESC').all(type, brand);
+    } else if (type) {
+      docs = await db.prepare('SELECT * FROM documents WHERE type=$1 ORDER BY created_at DESC').all(type);
+    } else if (brand) {
+      docs = await db.prepare('SELECT * FROM documents WHERE brand=$1 ORDER BY created_at DESC').all(brand);
+    } else {
+      docs = await db.prepare('SELECT * FROM documents ORDER BY created_at DESC').all();
+    }
     await Promise.all(docs.map(async d => {
       d.items = await db.prepare('SELECT * FROM document_items WHERE document_id = $1 ORDER BY serial_no, id').all(d.id);
     }));
@@ -241,16 +258,18 @@ initDb().then(db => {
 
   // ── DASHBOARD ─────────────────────────────────────────────────────────────────
   app.get('/api/dashboard', wrap(async (req, res) => {
+    const brand = req.query.brand || null;
+    const brandFilter = brand ? ` AND brand='${brand}'` : '';
     const [cRow, pRow, invoices, payRow, stockRow, qRow, poRow, soRow, recent] = await Promise.all([
-      db.prepare('SELECT COUNT(*) as c FROM clients').get(),
-      db.prepare('SELECT COUNT(*) as c FROM products').get(),
-      db.prepare("SELECT * FROM documents WHERE type='invoice'").all(),
+      db.prepare(`SELECT COUNT(*) as c FROM clients WHERE 1=1${brandFilter}`).get(),
+      db.prepare(`SELECT COUNT(*) as c FROM products WHERE 1=1${brandFilter}`).get(),
+      db.prepare(`SELECT * FROM documents WHERE type='invoice'${brandFilter}`).all(),
       db.prepare('SELECT SUM(amount) as s FROM payments').get(),
       db.prepare('SELECT COUNT(*) as c FROM inventory WHERE stock <= reorder').get(),
-      db.prepare("SELECT COUNT(*) as c FROM documents WHERE type='quotation' AND status NOT IN ('Converted','Rejected')").get(),
-      db.prepare("SELECT COUNT(*) as c FROM documents WHERE type='purchase_order' AND status NOT IN ('Converted','Closed')").get(),
-      db.prepare("SELECT COUNT(*) as c FROM documents WHERE type='sales_order' AND status NOT IN ('Converted','Closed')").get(),
-      db.prepare('SELECT id,type,client_id,date,status FROM documents ORDER BY created_at DESC LIMIT 8').all(),
+      db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='quotation' AND status NOT IN ('Converted','Rejected')${brandFilter}`).get(),
+      db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='purchase_order' AND status NOT IN ('Converted','Closed')${brandFilter}`).get(),
+      db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='sales_order' AND status NOT IN ('Converted','Closed')${brandFilter}`).get(),
+      db.prepare(`SELECT id,type,client_id,date,status FROM documents WHERE 1=1${brandFilter} ORDER BY created_at DESC LIMIT 8`).all(),
     ]);
     await Promise.all(invoices.map(async inv => {
       inv.items = await db.prepare('SELECT * FROM document_items WHERE document_id=$1').all(inv.id);
@@ -270,6 +289,7 @@ initDb().then(db => {
   app.get('/api/search/documents', wrap(async (req, res) => {
     const q = `%${(req.query.q || '').toLowerCase()}%`;
     const type = req.query.type || null;
+    const brand = req.query.brand || null;
     let docs;
     if (type) {
       docs = await db.prepare(
