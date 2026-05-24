@@ -166,13 +166,13 @@ async function initDb() {
   const row = getRow('SELECT COUNT(*) as c FROM clients');
   if (!row || Number(row.c) === 0) {
     console.log('Seeding sample data...');
-    _db.run(`INSERT INTO clients VALUES ('C001','Rajesh Traders Pvt Ltd','Rajesh Kumar','9876543210','rajesh@traders.in','27AABCT1332L1ZA','Shop 12, Trade Centre','Mumbai','Maharashtra','400069','Regular',45000,datetime('now'))`);
-    _db.run(`INSERT INTO clients VALUES ('C002','Sharma Enterprises','Amit Sharma','9812345678','amit@sharma.in','07AAFCS2597P1Z6','B-42, Industrial Area','Delhi','Delhi','110020','Wholesale',-12000,datetime('now'))`);
-    _db.run(`INSERT INTO clients VALUES ('C003','South Goods Co.','Priya Nair','9944332211','priya@southgoods.in','32AADCS1234K1ZB','MG Road, Fort Kochi','Kochi','Kerala','682001','Retail',0,datetime('now'))`);
-    _db.run(`INSERT INTO products VALUES ('P001','Steel Pipe 1 inch','SP001','Steel','7304','Piece',850,18,datetime('now'))`);
-    _db.run(`INSERT INTO products VALUES ('P002','PVC Conduit 25mm','PC025','PVC','3917','Metre',45,18,datetime('now'))`);
-    _db.run(`INSERT INTO products VALUES ('P003','Cable 4mm 3Core','CB403','Cable','8544','Metre',120,18,datetime('now'))`);
-    _db.run(`INSERT INTO products VALUES ('P004','GI Wire 8 SWG','GW008','Steel','7217','Kg',75,18,datetime('now'))`);
+    _db.run(`INSERT INTO clients (id,name,contact,phone,email,gstin,address,city,state,pincode,type,balance,brand,created_at) VALUES ('C001','Rajesh Traders Pvt Ltd','Rajesh Kumar','9876543210','rajesh@traders.in','27AABCT1332L1ZA','Shop 12, Trade Centre','Mumbai','Maharashtra','400069','Regular',45000,'india',datetime('now'))`);
+    _db.run(`INSERT INTO clients (id,name,contact,phone,email,gstin,address,city,state,pincode,type,balance,brand,created_at) VALUES ('C002','Sharma Enterprises','Amit Sharma','9812345678','amit@sharma.in','07AAFCS2597P1Z6','B-42, Industrial Area','Delhi','Delhi','110020','Wholesale',-12000,'india',datetime('now'))`);
+    _db.run(`INSERT INTO clients (id,name,contact,phone,email,gstin,address,city,state,pincode,type,balance,brand,created_at) VALUES ('C003','South Goods Co.','Priya Nair','9944332211','priya@southgoods.in','32AADCS1234K1ZB','MG Road, Fort Kochi','Kochi','Kerala','682001','Retail',0,'india',datetime('now'))`);
+    _db.run(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst,brand,created_at) VALUES ('P001','Steel Pipe 1 inch','SP001','Steel','7304','Piece',850,18,'india',datetime('now'))`);
+    _db.run(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst,brand,created_at) VALUES ('P002','PVC Conduit 25mm','PC025','PVC','3917','Metre',45,18,'india',datetime('now'))`);
+    _db.run(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst,brand,created_at) VALUES ('P003','Cable 4mm 3Core','CB403','Cable','8544','Metre',120,18,'india',datetime('now'))`);
+    _db.run(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst,brand,created_at) VALUES ('P004','GI Wire 8 SWG','GW008','Steel','7217','Kg',75,18,'india',datetime('now'))`);
     _db.run(`INSERT INTO inventory (product_id,stock,reorder,warehouse) VALUES ('P001',240,50,'Main Godown')`);
     _db.run(`INSERT INTO inventory (product_id,stock,reorder,warehouse) VALUES ('P002',15,100,'Main Godown')`);
     _db.run(`INSERT INTO inventory (product_id,stock,reorder,warehouse) VALUES ('P003',680,200,'Main Godown')`);
