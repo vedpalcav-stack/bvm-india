@@ -104,11 +104,19 @@ initDb().then(db => {
   }));
   app.post('/api/inventory/update', wrap(async (req, res) => {
     const { product_id, qty, type, reorder } = req.body;
-    const inv = await db.prepare('SELECT * FROM inventory WHERE product_id = $1').get(product_id);
-    if (!inv) return res.status(404).json({ error: 'Not found' });
-    const newStock = type === 'add' ? Number(inv.stock) + parseFloat(qty) : Math.max(0, Number(inv.stock) - parseFloat(qty));
-    await db.prepare('UPDATE inventory SET stock=$1, updated_at=NOW() WHERE product_id=$2').run(newStock, product_id);
-    if (reorder) await db.prepare('UPDATE inventory SET reorder=$1 WHERE product_id=$2').run(reorder, product_id);
+    console.log('Inventory update:', { product_id, qty, type });
+    if (!product_id) return res.status(400).json({ error: 'product_id required' });
+    let inv = await db.prepare('SELECT * FROM inventory WHERE product_id = $1').get(product_id);
+    if (!inv) {
+      // Auto-create inventory record if missing
+      await db.prepare(`INSERT INTO inventory (product_id, stock, reorder, warehouse) VALUES ($1, 0, 10, 'Main Godown')`).run(product_id);
+      inv = { stock: 0, reorder: 10 };
+    }
+    const newStock = type === 'add'
+      ? Number(inv.stock) + parseFloat(qty || 0)
+      : Math.max(0, Number(inv.stock) - parseFloat(qty || 0));
+    await db.prepare('UPDATE inventory SET stock=$1 WHERE product_id=$2').run(newStock, product_id);
+    if (reorder) await db.prepare('UPDATE inventory SET reorder=$1 WHERE product_id=$2').run(parseFloat(reorder), product_id);
     res.json({ product_id, stock: newStock });
   }));
 
