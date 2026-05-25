@@ -9,8 +9,8 @@ const today = () => new Date().toISOString().split('T')[0];
 const futureDate = (d) => new Date(Date.now() + d * 86400000).toISOString().split('T')[0];
 
 const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Pickup.
-1. Payment Terms: As per BVM Conditions.
-2. Delivery: Immediate.
+1. Payment Terms: As per BVM INDIA Conditions.
+2. Delivery: Immediate  .
 3. Warranty: Standard as per OEM.`;
 
 const BRAND_CONFIG = {
@@ -829,7 +829,7 @@ const addToTracker = async () => {
   const invDate = inv.date;
 
   // Invoice specific credit period
-  const creditPeriod = inv.credit_period || 30;
+  const creditPeriod = inv.credit_period || 45;
 
   const dueDate = new Date(
     new Date(invDate).getTime() +
