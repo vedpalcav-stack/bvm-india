@@ -16,7 +16,7 @@ const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Picku
 const BRAND_CONFIG = {
   india: {
     name: 'BVM INDIA',
-    fullName: 'BVM India',
+    fullName: 'BVM India Pvt Ltd',
     gstin: '06AGYPR1117M1ZT',
     pan: 'AGYPR1117M',
     email: 'accounts@bvmindia.com',
@@ -91,6 +91,7 @@ function BrandSelect({ onSelect }) {
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#4ade80', letterSpacing: -0.5 }}>BVM INDIA</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Private Limited</div>
             <div style={{ fontSize: 11, color: '#475569', marginTop: 8, fontFamily: 'monospace' }}>
               GSTIN: 06AGYPR1117M1ZT
             </div>
@@ -446,7 +447,14 @@ function Inventory({ brand }) {
             <div className="form-row"><label>Quantity</label><input type="number" value={form.qty} onChange={e => setForm(f => ({...f,qty:e.target.value}))}/></div>
           </div>
           <div className="modal-footer"><button className="btn" onClick={() => setModal(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={async () => {await api.updateStock({product_id:form.product_id,qty:+form.qty,type:form.type});setModal(false);load();}}>Update</button>
+            <button className="btn btn-primary" onClick={async () => {
+              try {
+                if (!form.qty || form.qty <= 0) { alert('Please enter a valid quantity'); return; }
+                if (!form.product_id) { alert('Please select a product'); return; }
+                await api.updateStock({product_id:form.product_id,qty:+form.qty,type:form.type});
+                setModal(false); load();
+              } catch(e) { alert('Update failed: ' + e.message); }
+            }}>Update</button>
           </div>
         </Modal>
       )}
