@@ -30,7 +30,7 @@ const BRAND_CONFIG = {
     tabClass: 'brand-tab-india',
   },
   world: {
-    name: 'BVM WORLD',
+    name: 'BVM WORLD PVT. LTD.',
     fullName: 'BVM World Pvt Ltd',
     gstin: '06AAMCB5079P1ZX',
     pan: 'AAMCB5079P',
