@@ -520,7 +520,50 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
             {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
-        <div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e => set('date',e.target.value)}/></div>
+       <div className="form-row">
+<label>Date *</label>
+<input
+type="date"
+value={form.date}
+onChange={e => set('date',e.target.value)}
+/>
+</div>
+
+{(type==='invoice') &&
+<div className="form-row">
+<label>Credit Period</label>
+<select
+value={form.credit_period}
+onChange={e=>{
+  const days=parseInt(e.target.value);
+
+  set('credit_period',days);
+
+  const dueDate = new Date(
+    new Date(form.date).getTime() +
+    days * 86400000
+  ).toISOString().split('T')[0];
+
+  set('due_date',dueDate);
+}}
+>
+<option value="15">15 Days</option>
+<option value="30">30 Days</option>
+<option value="45">45 Days</option>
+<option value="60">60 Days</option>
+<option value="90">90 Days</option>
+</select>
+</div>}
+
+{(type==='invoice') &&
+<div className="form-row">
+<label>Due Date</label>
+<input
+type="date"
+value={form.due_date}
+readOnly
+/>
+</div>}
 { (type==='invoice') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} onChange={e => set('due_date',e.target.value)}/></div>}
         {(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e => set('validity',e.target.value)}/></div>}
         <div className="form-row"><label>Client's Ref No.</label><input value={form.client_quotation_number} onChange={e => set('client_quotation_number',e.target.value)} placeholder="Client's own reference"/></div>
