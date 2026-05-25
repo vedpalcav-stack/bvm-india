@@ -467,7 +467,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   const isSO = type === 'sales_order';
   const cfg = BRAND_CONFIG[brand];
   const [form, setForm] = useState({
-    client_id:clients[0]?.id||'', date:today(), due_date:futureDate(30),
+    client_id:clients[0]?.id||'', date:today(), credit_period:30, due_date:futureDate(30),
     validity:15, currency:'INR', exchange_rate:1,
     po_number:'', so_number:'', notes:'',
     client_quotation_number:'', terms:DEFAULT_TERMS,
