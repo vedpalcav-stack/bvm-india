@@ -85,8 +85,16 @@ textarea{resize:vertical;min-height:60px}
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid #f1f5f9}
 .flow-bar{display:flex;align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;margin-bottom:14px;gap:2px;overflow-x:auto}
 .flow-step{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:72px}
-.flow-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0}
-.flow-step.done .flow-dot{background:#0f172a;color:#fff}
+.flow-step.done .flow-dot{
+background:#0f172a;
+color:#fff
+}
+
+.flow-step.active .flow-dot{
+background:#0f172a;
+color:#fff;
+box-shadow:0 0 0 4px rgba(15,23,42,0.15)
+}
 .flow-step.active .flow-dot{background:#0f172a;color:#fff;box-shadow:0 0 0 4px rgba(15,23,42,0.15)}
 .flow-step.pending .flow-dot{background:#e2e8f0;color:#94a3b8}
 .flow-label{font-size:9px;color:#6b7280;white-space:nowrap;font-weight:600;text-align:center}
