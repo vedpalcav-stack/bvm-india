@@ -261,7 +261,7 @@ function Dashboard({ onNav, brand }) {
         <img src={cfg.logo} alt={cfg.name} style={{ width: 64, height: 64, objectFit:'contain', borderRadius: 10, background:'#fff', padding: 4 }} />
         <div>
           <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.5 }}>{cfg.name}</div>
-          <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}></div>
+          <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>Private Limited</div>
           <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4, fontFamily:'monospace' }}>
             GSTIN: {cfg.gstin} · PAN: {cfg.pan}
           </div>
