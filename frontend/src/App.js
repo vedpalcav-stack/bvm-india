@@ -804,32 +804,53 @@ function Reminders({ clients, brand }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  // Save credit period
-  const saveCreditDays = async () => {
-    await api.updateCreditSettings({ brand, credit_days: tempCredit });
-    setCreditDays(tempCredit);
-    setEditCredit(false);
-    load();
-  };
+ // Save credit period
+const saveCreditDays = async () => {
+  await api.updateCreditSettings({
+    brand,
+    credit_days: tempCredit
+  });
 
-  // Add invoice to due reminder tracker
-  const addToTracker = async () => {
-    const inv = invoices.find(i => i.id === dueForm.invoice_id);
-    if (!inv) return;
-    const invDate = inv.date;
-    const dueDate = new Date(new Date(invDate).getTime() + creditDays * 86400000).toISOString().split('T')[0];
-    await api.createDueReminder({
-      invoice_id: inv.id,
-      client_id: inv.client_id,
-      invoice_date: invDate,
-      due_date: dueDate,
-      credit_days: creditDays,
-      channel: dueForm.channel,
-      brand,
-    });
-    setAddDueModal(false);
-    load();
-  };
+  setCreditDays(tempCredit);
+  setEditCredit(false);
+  load();
+};
+
+
+// Add invoice to due reminder tracker
+const addToTracker = async () => {
+
+  const inv = invoices.find(
+    i => i.id === dueForm.invoice_id
+  );
+
+  if (!inv) return;
+
+  const invDate = inv.date;
+
+  // Invoice specific credit period
+  const creditPeriod = inv.credit_period || 30;
+
+  const dueDate = new Date(
+    new Date(invDate).getTime() +
+    (creditPeriod * 86400000)
+  )
+  .toISOString()
+  .split('T')[0];
+
+  await api.createDueReminder({
+    invoice_id: inv.id,
+    client_id: inv.client_id,
+    invoice_date: invDate,
+    due_date: dueDate,
+    credit_days: creditPeriod,
+    channel: dueForm.channel,
+    brand,
+  });
+
+  setAddDueModal(false);
+  load();
+};
 
   // Send reminder 1 (on invoice date)
   const handleReminder1 = async (dr) => {
