@@ -89,4 +89,3 @@ export const createDueReminder    = (data)        => api('/api/due-reminders', {
 export const sendReminder1        = (id)          => api(`/api/due-reminders/${id}/reminder1`, { method: 'PUT' });
 export const sendReminder2        = (id)          => api(`/api/due-reminders/${id}/reminder2`, { method: 'PUT' });
 export const deleteDueReminder    = (id)          => api(`/api/due-reminders/${id}`, { method: 'DELETE' });
-export const downloadPDF          = (id, brand)   => window.open(`${BASE}/api/documents/${id}/pdf/${brand}`, '_blank');
