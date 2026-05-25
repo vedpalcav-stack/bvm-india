@@ -896,34 +896,128 @@ const addToTracker = async () => {
 };
 
   // Send reminder 1 (on invoice date)
-  const handleReminder1 = async (dr) => {
-    const cl = clients.find(c => c.id === dr.client_id);
-    if (!cl) return;
-    const msg = `Dear ${cl.name},\n\nThis is your first payment reminder from ${cfg.name}.\n\nInvoice: ${dr.invoice_id}\nInvoice Date: ${dr.invoice_date}\nDue Date: ${dr.due_date}\nBalance Due: ${dr.balance > 0 ? 'INR ' + dr.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : 'Cleared'}\n\nKindly arrange payment at your earliest convenience.\n\nBest Regards,\n${cfg.name}\nGSTIN: ${cfg.gstin}`;
-    if (dr.channel === 'whatsapp') {
-      const phone = (cl.phone || '').replace(/\D/g, '');
-      window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(msg)}`, '_blank');
-    } else if (dr.channel === 'email') {
-      window.open(`mailto:${cl.email}?subject=${encodeURIComponent('Payment Reminder - ' + dr.invoice_id)}&body=${encodeURIComponent(msg)}`, '_blank');
-    }
-    await api.sendReminder1(dr.id);
-    load();
-  };
+const handleReminder1 = async (dr) => {
+
+  const cl = clients.find(
+    c => c.id === dr.client_id
+  );
+
+  if (!cl) return;
+
+  const msg =
+`Dear ${cl.name},
+
+Payment Reminder from ${cfg.name}
+
+Invoice: ${dr.invoice_id}
+Invoice Date: ${dr.invoice_date}
+Due Date: ${dr.due_date}
+
+Outstanding:
+₹${dr.balance?.toLocaleString('en-IN',{
+minimumFractionDigits:2
+})}
+
+Kindly arrange payment.
+
+Regards
+${cfg.name}`;
+
+  if(dr.channel==="whatsapp"){
+
+    const phone=(cl.phone||"")
+    .replace(/\D/g,'');
+
+    window.open(
+      `https://wa.me/${
+      phone.startsWith("91")
+      ? phone
+      : "91"+phone
+      }?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
+  }
+
+  if(dr.channel==="sms"){
+
+    window.open(
+      `sms:${cl.phone}
+?body=${encodeURIComponent(msg)}`
+    );
+  }
+
+  await api.sendReminder1(dr.id);
+
+  load();
+
+};
 
   // Send reminder 2 (after credit period)
-  const handleReminder2 = async (dr) => {
-    const cl = clients.find(c => c.id === dr.client_id);
-    if (!cl) return;
-    const msg = `Dear ${cl.name},\n\nThis is your SECOND payment reminder from ${cfg.name}.\n\nYour credit period of ${dr.credit_days} days has ended.\n\nInvoice: ${dr.invoice_id}\nInvoice Date: ${dr.invoice_date}\nDue Date: ${dr.due_date}\nBalance Due: ${dr.balance > 0 ? 'INR ' + dr.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : 'Cleared'}\n\nKindly clear the outstanding immediately to avoid any inconvenience.\n\nBest Regards,\n${cfg.name}\nGSTIN: ${cfg.gstin}`;
-    if (dr.channel === 'whatsapp') {
-      const phone = (cl.phone || '').replace(/\D/g, '');
-      window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(msg)}`, '_blank');
-    } else if (dr.channel === 'email') {
-      window.open(`mailto:${cl.email}?subject=${encodeURIComponent('URGENT: Payment Reminder - ' + dr.invoice_id)}&body=${encodeURIComponent(msg)}`, '_blank');
-    }
-    await api.sendReminder2(dr.id);
-    load();
-  };
+const handleReminder2 = async (dr) => {
+
+  const cl = clients.find(
+    c => c.id === dr.client_id
+  );
+
+  if (!cl) return;
+
+  const overdueDays = Math.floor(
+    (new Date()-new Date(dr.due_date))
+    /86400000
+  );
+
+  const msg =
+`URGENT PAYMENT REMINDER
+
+Dear ${cl.name},
+
+Invoice payment overdue.
+
+Invoice: ${dr.invoice_id}
+
+Due Date: ${dr.due_date}
+
+Overdue By:
+${overdueDays} days
+
+Outstanding:
+₹${dr.balance?.toLocaleString('en-IN',{
+minimumFractionDigits:2
+})}
+
+Please clear immediately.
+
+Regards
+${cfg.name}`;
+
+  if(dr.channel==="whatsapp"){
+
+    const phone=(cl.phone||"")
+    .replace(/\D/g,'');
+
+    window.open(
+      `https://wa.me/${
+      phone.startsWith("91")
+      ? phone
+      : "91"+phone
+      }?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
+  }
+
+  if(dr.channel==="sms"){
+
+    window.open(
+      `sms:${cl.phone}
+?body=${encodeURIComponent(msg)}`
+    );
+  }
+
+  await api.sendReminder2(dr.id);
+
+  load();
+
+};
 
   const openManualModal = (cl = null) => {
     const lc = cl ? ledgerData.find(l => l.id === cl.id) : null;
