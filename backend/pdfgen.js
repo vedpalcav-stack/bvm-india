@@ -11,7 +11,6 @@ const LOGO_WORLD_BUF = Buffer.from(LOGO_WORLD_B64, 'base64');
 const COMPANY = {
   name_india:  'BVM India',
   name_world:  'BVM World',
-  tagline:     'Private Limited',
   line1:       '#1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk',
   line2:       'Gurugram, Haryana - 122001',
   gstin_india: '06AGYPR1117M1ZT',   // <-- BVM India GSTIN
