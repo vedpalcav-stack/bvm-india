@@ -829,7 +829,7 @@ const addToTracker = async () => {
   const invDate = inv.date;
 
   // Invoice specific credit period
-  const creditPeriod = inv.credit_period || 45;
+  const creditPeriod = inv.credit_period || 30;
 
   const dueDate = new Date(
     new Date(invDate).getTime() +
