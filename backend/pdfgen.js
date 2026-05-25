@@ -9,8 +9,8 @@ const LOGO_WORLD_BUF = Buffer.from(LOGO_WORLD_B64, 'base64');
 
 // ── CHANGE YOUR GSTIN / PAN / EMAIL HERE ─────────────────────────────────────
 const COMPANY = {
-  name_india:  'BVM India',
-  name_world:  'BVM World',
+  name_india:  'BVM INDIA',
+  name_world:  'BVM WORLD PVT LTD',
   line1:       '#1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk',
   line2:       'Gurugram, Haryana - 122001',
   gstin_india: '06AGYPR1117M1ZT',   // <-- BVM India GSTIN
@@ -416,15 +416,15 @@ async function generateDocPDF(doc, client, items, products, res, brandKey = 'ind
 async function generateBothPDFs(doc, client, items, products, res) {
   try {
     const [indiaBuf, worldBuf] = await Promise.all([
-      buildPDFBuffer(doc, client, items, products, 'india'),
-      buildPDFBuffer(doc, client, items, products, 'world'),
+      buildPDFBuffer(doc, client, items, products, 'INDIA'),
+      buildPDFBuffer(doc, client, items, products, 'WORLD'),
     ]);
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${doc.id}-both.zip"`);
     const archive = archiver('zip', { zlib: { level: 6 } });
     archive.pipe(res);
-    archive.append(indiaBuf, { name: `${doc.id}-BVM-India.pdf` });
-    archive.append(worldBuf, { name: `${doc.id}-BVM-World.pdf` });
+    archive.append(indiaBuf, { name: `${doc.id}-BVM-INDIA.pdf` });
+    archive.append(worldBuf, { name: `${doc.id}-BVM-WORLD.pdf` });
     await archive.finalize();
   } catch (err) {
     console.error('ZIP error:', err);
