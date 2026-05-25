@@ -16,7 +16,7 @@ const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Picku
 const BRAND_CONFIG = {
   india: {
     name: 'BVM INDIA',
-    fullName: 'BVM India Pvt Ltd',
+    fullName: 'BVM India ',
     gstin: '06AGYPR1117M1ZT',
     pan: 'AGYPR1117M',
     email: 'accounts@bvmindia.com',
