@@ -37,7 +37,6 @@ function InvoiceCard({ doc, client, items, products, brand }) {
       <div style={{ background: '#ffffff', borderBottom: `3px solid ${color}`, padding: '10px 14px', display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
         <div>
           <div style={{ fontSize: 15, fontWeight: 900, color, letterSpacing: -0.3 }}>{name}</div>
-          <div style={{ fontSize: 9, color: accent, marginTop: 2 }}>{tagline}</div>
           <div style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>
             #1, 2nd Floor, Kamla Palace, Gurugram, Haryana - 122001<br />
             GSTIN: {gstin} | PAN: {pan}
@@ -127,7 +126,7 @@ function InvoiceCard({ doc, client, items, products, brand }) {
 }
 
 // ── MAIN DUAL DOC VIEW (EDITABLE) ─────────────────────────────────────────────
-export default function DualDocView({ doc: initialDoc, clients, products, onClose, onRefresh }) {
+export default function DualDocView({ doc: initialDoc, clients, products, onClose, onRefresh, brand }) {
   const [doc,     setDoc]     = useState({ ...initialDoc });
   const [items,   setItems]   = useState([...(initialDoc.items || [])]);
   const [saving,  setSaving]  = useState(false);
@@ -230,17 +229,9 @@ export default function DualDocView({ doc: initialDoc, clients, products, onClos
         {/* PDF Download buttons */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14, padding: '10px 14px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#475569', alignSelf: 'center', marginRight: 4 }}>📄 Download PDF:</div>
-          <button onClick={() => api.downloadIndiaPDF(doc.id)}
-            style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: '#166534', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-            🟢 BVM India PDF
-          </button>
-          <button onClick={() => api.downloadWorldPDF(doc.id)}
-            style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: '#1e3a5f', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-            🔵 BVM World PDF
-          </button>
-          <button onClick={() => api.downloadBothPDFs(doc.id)}
-            style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: 'linear-gradient(135deg,#166534,#1e3a5f)', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
-            ⬇ Both PDFs (ZIP)
+          <button onClick={() => api.downloadPDF(doc.id, brand || 'india')}
+            style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: brand === 'world' ? '#1e3a5f' : '#166534', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+            ⬇ {brand === 'world' ? '🔵 BVM World PDF' : '🟢 BVM India PDF'}
           </button>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
             <button onClick={() => setEditing(e => !e)}
@@ -284,7 +275,7 @@ export default function DualDocView({ doc: initialDoc, clients, products, onClos
             </div>
 
             {/* Editable line items */}
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#92400e', marginBottom: 6, textTransform: 'uppercase' }}>Line Items</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#92400e', marginBottom: 6, textTransform: 'uppercase' }}>Line Items</div>
             <div style={{ overflowX: 'auto' }}>
               <table className="items-table">
                 <thead><tr>
@@ -346,10 +337,9 @@ export default function DualDocView({ doc: initialDoc, clients, products, onClos
           </div>
         )}
 
-        {/* Dual preview (always visible) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-          <InvoiceCard doc={doc} client={cl} items={items} products={products} brand="india" />
-          <InvoiceCard doc={doc} client={cl} items={items} products={products} brand="world" />
+        {/* Preview — shows current brand */}
+        <div style={{ marginBottom: 14 }}>
+          <InvoiceCard doc={doc} client={cl} items={items} products={products} brand={brand || 'india'} />
         </div>
 
         {/* Footer buttons */}
