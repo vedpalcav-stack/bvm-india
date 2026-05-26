@@ -55,7 +55,7 @@ function fmtAmt(n, currency = 'INR') {
 function BrandSelect({ onSelect }) {
   return (
     <div style={{
-      minHeight: '100vh', background: '#0c1220',
+     minHeight: '100vh', background: '#ffffff',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       padding: 24,
