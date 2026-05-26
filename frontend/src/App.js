@@ -9,14 +9,14 @@ const today = () => new Date().toISOString().split('T')[0];
 const futureDate = (d) => new Date(Date.now() + d * 86400000).toISOString().split('T')[0];
 
 const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Pickup.
-1. Payment Terms: As per BVM INDIA Conditions.
-2. Delivery: Immediate  .
+1. Payment Terms: As per BVM Conditions.
+2. Delivery: Immediate.
 3. Warranty: Standard as per OEM.`;
 
 const BRAND_CONFIG = {
   india: {
     name: 'BVM INDIA',
-    fullName: 'BVM India ',
+    fullName: 'BVM India Pvt Ltd',
     gstin: '06AGYPR1117M1ZT',
     pan: 'AGYPR1117M',
     email: 'accounts@bvmindia.com',
@@ -30,7 +30,7 @@ const BRAND_CONFIG = {
     tabClass: 'brand-tab-india',
   },
   world: {
-    name: 'BVM WORLD PVT. LTD.',
+    name: 'BVM WORLD',
     fullName: 'BVM World Pvt Ltd',
     gstin: '06AAMCB5079P1ZX',
     pan: 'AAMCB5079P',
@@ -91,6 +91,7 @@ function BrandSelect({ onSelect }) {
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#4ade80', letterSpacing: -0.5 }}>BVM INDIA</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Private Limited</div>
             <div style={{ fontSize: 11, color: '#475569', marginTop: 8, fontFamily: 'monospace' }}>
               GSTIN: 06AGYPR1117M1ZT
             </div>
@@ -467,7 +468,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   const isSO = type === 'sales_order';
   const cfg = BRAND_CONFIG[brand];
   const [form, setForm] = useState({
-    client_id:clients[0]?.id||'', date:today(), credit_period:30, due_date:futureDate(30),
+    client_id:clients[0]?.id||'', date:today(), due_date:futureDate(30),
     validity:15, currency:'INR', exchange_rate:1,
     po_number:'', so_number:'', notes:'',
     client_quotation_number:'', terms:DEFAULT_TERMS,
@@ -520,51 +521,8 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
             {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
-       <div className="form-row">
-<label>Date *</label>
-<input
-type="date"
-value={form.date}
-onChange={e => set('date',e.target.value)}
-/>
-</div>
-
-{(type==='invoice') &&
-<div className="form-row">
-<label>Credit Period</label>
-<select
-value={form.credit_period}
-onChange={e=>{
-  const days=parseInt(e.target.value);
-
-  set('credit_period',days);
-
-  const dueDate = new Date(
-    new Date(form.date).getTime() +
-    days * 86400000
-  ).toISOString().split('T')[0];
-
-  set('due_date',dueDate);
-}}
->
-<option value="15">15 Days</option>
-<option value="30">30 Days</option>
-<option value="45">45 Days</option>
-<option value="60">60 Days</option>
-<option value="90">90 Days</option>
-</select>
-</div>}
-
-{(type==='invoice') &&
-<div className="form-row">
-<label>Due Date</label>
-<input
-type="date"
-value={form.due_date}
-readOnly
-/>
-</div>}
-{ (type==='invoice') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} onChange={e => set('due_date',e.target.value)}/></div>}
+        <div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e => set('date',e.target.value)}/></div>
+        {(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} onChange={e => set('due_date',e.target.value)}/></div>}
         {(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e => set('validity',e.target.value)}/></div>}
         <div className="form-row"><label>Client's Ref No.</label><input value={form.client_quotation_number} onChange={e => set('client_quotation_number',e.target.value)} placeholder="Client's own reference"/></div>
         {showPO && <div className="form-row"><label>Purchase Order No.</label><input value={form.po_number} onChange={e => set('po_number',e.target.value)}/></div>}
@@ -847,177 +805,64 @@ function Reminders({ clients, brand }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
- // Save credit period
-const saveCreditDays = async () => {
-  await api.updateCreditSettings({
-    brand,
-    credit_days: tempCredit
-  });
+  // Save credit period
+  const saveCreditDays = async () => {
+    await api.updateCreditSettings({ brand, credit_days: tempCredit });
+    setCreditDays(tempCredit);
+    setEditCredit(false);
+    load();
+  };
 
-  setCreditDays(tempCredit);
-  setEditCredit(false);
-  load();
-};
-
-
-// Add invoice to due reminder tracker
-const addToTracker = async () => {
-
-  const inv = invoices.find(
-    i => i.id === dueForm.invoice_id
-  );
-
-  if (!inv) return;
-
-  const invDate = inv.date;
-
-  // Invoice specific credit period
-  const creditPeriod = inv.credit_period || 30;
-
-  const dueDate = new Date(
-    new Date(invDate).getTime() +
-    (creditPeriod * 86400000)
-  )
-  .toISOString()
-  .split('T')[0];
-
-  await api.createDueReminder({
-    invoice_id: inv.id,
-    client_id: inv.client_id,
-    invoice_date: invDate,
-    due_date: dueDate,
-    credit_days: creditPeriod,
-    channel: dueForm.channel,
-    brand,
-  });
-
-  setAddDueModal(false);
-  load();
-};
+  // Add invoice to due reminder tracker
+  const addToTracker = async () => {
+    const inv = invoices.find(i => i.id === dueForm.invoice_id);
+    if (!inv) return;
+    const invDate = inv.date;
+    const dueDate = new Date(new Date(invDate).getTime() + creditDays * 86400000).toISOString().split('T')[0];
+    await api.createDueReminder({
+      invoice_id: inv.id,
+      client_id: inv.client_id,
+      invoice_date: invDate,
+      due_date: dueDate,
+      credit_days: creditDays,
+      channel: dueForm.channel,
+      brand,
+    });
+    setAddDueModal(false);
+    load();
+  };
 
   // Send reminder 1 (on invoice date)
-const handleReminder1 = async (dr) => {
-
-  const cl = clients.find(
-    c => c.id === dr.client_id
-  );
-
-  if (!cl) return;
-
-  const msg =
-`Dear ${cl.name},
-
-Payment Reminder from ${cfg.name}
-
-Invoice: ${dr.invoice_id}
-Invoice Date: ${dr.invoice_date}
-Due Date: ${dr.due_date}
-
-Outstanding:
-₹${dr.balance?.toLocaleString('en-IN',{
-minimumFractionDigits:2
-})}
-
-Kindly arrange payment.
-
-Regards
-${cfg.name}`;
-
-  if(dr.channel==="whatsapp"){
-
-    const phone=(cl.phone||"")
-    .replace(/\D/g,'');
-
-    window.open(
-      `https://wa.me/${
-      phone.startsWith("91")
-      ? phone
-      : "91"+phone
-      }?text=${encodeURIComponent(msg)}`,
-      "_blank"
-    );
-  }
-
-  if(dr.channel==="sms"){
-
-    window.open(
-      `sms:${cl.phone}
-?body=${encodeURIComponent(msg)}`
-    );
-  }
-
-  await api.sendReminder1(dr.id);
-
-  load();
-
-};
+  const handleReminder1 = async (dr) => {
+    const cl = clients.find(c => c.id === dr.client_id);
+    if (!cl) return;
+    const msg = `Dear ${cl.name},\n\nThis is your first payment reminder from ${cfg.name}.\n\nInvoice: ${dr.invoice_id}\nInvoice Date: ${dr.invoice_date}\nDue Date: ${dr.due_date}\nBalance Due: ${dr.balance > 0 ? 'INR ' + dr.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : 'Cleared'}\n\nKindly arrange payment at your earliest convenience.\n\nBest Regards,\n${cfg.name}\nGSTIN: ${cfg.gstin}`;
+    const phone1 = (cl.phone || '').replace(/\D/g, '');
+    const waPhone1 = phone1.startsWith('91') ? phone1 : '91' + phone1;
+    if (dr.channel === 'whatsapp' || dr.channel === 'sms') {
+      window.open(`https://wa.me/${waPhone1}?text=${encodeURIComponent(msg)}`, '_blank');
+    } else if (dr.channel === 'email') {
+      window.open(`mailto:${cl.email}?subject=${encodeURIComponent('Payment Reminder - ' + dr.invoice_id)}&body=${encodeURIComponent(msg)}`, '_blank');
+    }
+    await api.sendReminder1(dr.id);
+    load();
+  };
 
   // Send reminder 2 (after credit period)
-const handleReminder2 = async (dr) => {
-
-  const cl = clients.find(
-    c => c.id === dr.client_id
-  );
-
-  if (!cl) return;
-
-  const overdueDays = Math.floor(
-    (new Date()-new Date(dr.due_date))
-    /86400000
-  );
-
-  const msg =
-`URGENT PAYMENT REMINDER
-
-Dear ${cl.name},
-
-Invoice payment overdue.
-
-Invoice: ${dr.invoice_id}
-
-Due Date: ${dr.due_date}
-
-Overdue By:
-${overdueDays} days
-
-Outstanding:
-₹${dr.balance?.toLocaleString('en-IN',{
-minimumFractionDigits:2
-})}
-
-Please clear immediately.
-
-Regards
-${cfg.name}`;
-
-  if(dr.channel==="whatsapp"){
-
-    const phone=(cl.phone||"")
-    .replace(/\D/g,'');
-
-    window.open(
-      `https://wa.me/${
-      phone.startsWith("91")
-      ? phone
-      : "91"+phone
-      }?text=${encodeURIComponent(msg)}`,
-      "_blank"
-    );
-  }
-
-  if(dr.channel==="sms"){
-
-    window.open(
-      `sms:${cl.phone}
-?body=${encodeURIComponent(msg)}`
-    );
-  }
-
-  await api.sendReminder2(dr.id);
-
-  load();
-
-};
+  const handleReminder2 = async (dr) => {
+    const cl = clients.find(c => c.id === dr.client_id);
+    if (!cl) return;
+    const msg = `Dear ${cl.name},\n\nThis is your SECOND payment reminder from ${cfg.name}.\n\nYour credit period of ${dr.credit_days} days has ended.\n\nInvoice: ${dr.invoice_id}\nInvoice Date: ${dr.invoice_date}\nDue Date: ${dr.due_date}\nBalance Due: ${dr.balance > 0 ? 'INR ' + dr.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : 'Cleared'}\n\nKindly clear the outstanding immediately to avoid any inconvenience.\n\nBest Regards,\n${cfg.name}\nGSTIN: ${cfg.gstin}`;
+    const phone2 = (cl.phone || '').replace(/\D/g, '');
+    const waPhone2 = phone2.startsWith('91') ? phone2 : '91' + phone2;
+    if (dr.channel === 'whatsapp' || dr.channel === 'sms') {
+      window.open(`https://wa.me/${waPhone2}?text=${encodeURIComponent(msg)}`, '_blank');
+    } else if (dr.channel === 'email') {
+      window.open(`mailto:${cl.email}?subject=${encodeURIComponent('URGENT: Payment Reminder - ' + dr.invoice_id)}&body=${encodeURIComponent(msg)}`, '_blank');
+    }
+    await api.sendReminder2(dr.id);
+    load();
+  };
 
   const openManualModal = (cl = null) => {
     const lc = cl ? ledgerData.find(l => l.id === cl.id) : null;
@@ -1034,7 +879,12 @@ ${cfg.name}`;
     if (!cl) return;
     if (form.channel === 'whatsapp') { const phone = (cl.phone || '').replace(/\D/g, ''); window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(form.message)}`, '_blank'); }
     if (form.channel === 'email') { window.open(`mailto:${cl.email}?subject=${encodeURIComponent('Reminder - ' + cfg.name)}&body=${encodeURIComponent(form.message)}`, '_blank'); }
-    if (form.channel === 'sms') { window.open(`sms:${cl.phone}?body=${encodeURIComponent(form.message)}`, '_blank'); }
+    if (form.channel === 'sms') {
+      const phone = (cl.phone || '').replace(/\D/g, '');
+      const smsPhone = phone.startsWith('91') ? phone : '91' + phone;
+      // Try WhatsApp as SMS alternative (works on all devices)
+      window.open(`https://wa.me/${smsPhone}?text=${encodeURIComponent(form.message)}`, '_blank');
+    }
     await api.createReminder(form);
     setModal(false);
     load();
@@ -1313,7 +1163,7 @@ ${cfg.name}`;
               <select value={dueForm.channel} onChange={e => setDueForm(f => ({ ...f, channel: e.target.value }))}>
                 <option value="whatsapp">💬 WhatsApp</option>
                 <option value="email">📧 Email</option>
-                <option value="sms">📱 SMS</option>
+                <option value="sms">📱 SMS (via WhatsApp)</option>
               </select>
             </div>
           </div>
@@ -1348,7 +1198,7 @@ ${cfg.name}`;
               <select value={form.channel} onChange={e => set('channel', e.target.value)}>
                 <option value="whatsapp">💬 WhatsApp</option>
                 <option value="email">📧 Email</option>
-                <option value="sms">📱 SMS</option>
+                <option value="sms">📱 SMS (via WhatsApp)</option>
               </select>
             </div>
             <div className="form-row">
