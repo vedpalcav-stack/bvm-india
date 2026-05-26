@@ -65,7 +65,7 @@ function BrandSelect({ onSelect }) {
         <div style={{ fontSize: 13, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 12 }}>
           UNIFIED ERP SYSTEM
         </div>
-        <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: -1, marginBottom: 8 }}>
+        <div style={{ fontSize: 32, fontWeight: 900,color: '#000', letterSpacing: -1, marginBottom: 8 }}>
           Welcome to BVM ERP
         </div>
         <div style={{ fontSize: 15, color: '#64748b' }}>
@@ -77,7 +77,7 @@ function BrandSelect({ onSelect }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 680, width: '100%' }}>
         {/* BVM India */}
         <button onClick={() => onSelect('india')} style={{
-          background: 'rgba(255,255,255,0.04)',
+          background: '#f5f5f5',
           border: '1px solid rgba(74,222,128,0.3)',
           borderRadius: 16, padding: '32px 24px',
           cursor: 'pointer', transition: 'all 0.2s',
