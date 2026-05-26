@@ -16,7 +16,7 @@ const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Picku
 const BRAND_CONFIG = {
   india: {
     name: 'BVM INDIA',
-    fullName: 'BVM India Pvt Ltd',
+    fullName: 'BVM India',
     gstin: '06AGYPR1117M1ZT',
     pan: 'AGYPR1117M',
     email: 'accounts@bvmindia.com',
@@ -91,7 +91,6 @@ function BrandSelect({ onSelect }) {
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#4ade80', letterSpacing: -0.5 }}>BVM INDIA</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Private Limited</div>
             <div style={{ fontSize: 11, color: '#475569', marginTop: 8, fontFamily: 'monospace' }}>
               GSTIN: 06AGYPR1117M1ZT
             </div>
@@ -117,7 +116,7 @@ function BrandSelect({ onSelect }) {
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#60a5fa', letterSpacing: -0.5 }}>BVM WORLD</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Private Limited</div>
+            <div style={{ fontSize: 18, color: '#64748b', marginTop: 4 }}>Private Limited</div>
             <div style={{ fontSize: 11, color: '#475569', marginTop: 8, fontFamily: 'monospace' }}>
               GSTIN: 06AAMCB5079P1ZX
             </div>
