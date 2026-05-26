@@ -16,8 +16,9 @@ function fmtAmt(n, currency = 'INR') {
 // ── MINI INVOICE CARD ─────────────────────────────────────────────────────────
 function InvoiceCard({ doc, client, items, products, brand }) {
   const isIndia  = brand === 'india';
-  const name     = isIndia ? 'BVM India' : 'BVM World';
-  const tagline  = isIndia ? 'Trading & Distribution' : 'Global Trading & Distribution';
+  const name     = isIndia ? 'BVM INDIA' : 'BVM WORLD PVT LTD';
+  const gstin    = isIndia ? '06AGYPR1117M1ZT' : '06AAMCB5079P1ZX';
+  const pan      = isIndia ? 'AGYPR1117M' : 'AAMCB5079P';
   const color    = isIndia ? '#166534' : '#1e3a5f';
   const accent   = isIndia ? '#16a34a' : '#1d4ed8';
   const lightBg  = isIndia ? '#f0fdf4' : '#eff6ff';
@@ -39,7 +40,7 @@ function InvoiceCard({ doc, client, items, products, brand }) {
           <div style={{ fontSize: 9, color: accent, marginTop: 2 }}>{tagline}</div>
           <div style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>
             #1, 2nd Floor, Kamla Palace, Gurugram, Haryana - 122001<br />
-            GSTIN: 06AGYPR1117M1ZT | PAN: AGYPR1117M
+            GSTIN: {gstin} | PAN: {pan}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -118,7 +119,7 @@ function InvoiceCard({ doc, client, items, products, brand }) {
 
         {/* Footer */}
         <div style={{ marginTop: 8, textAlign: 'center', fontSize: 9, color: accent, fontStyle: 'italic', borderTop: `1px solid ${border}`, paddingTop: 6 }}>
-          Electronic document — No sign or stamp needed · {name} · GSTIN: 06AGYPR1117M1ZT
+          Electronic document — No sign or stamp needed · {name} · GSTIN: {gstin}
         </div>
       </div>
     </div>
@@ -283,7 +284,7 @@ export default function DualDocView({ doc: initialDoc, clients, products, onClos
             </div>
 
             {/* Editable line items */}
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#92400e', marginBottom: 6, textTransform: 'uppercase' }}>Line Items</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#92400e', marginBottom: 6, textTransform: 'uppercase' }}>Line Items</div>
             <div style={{ overflowX: 'auto' }}>
               <table className="items-table">
                 <thead><tr>
