@@ -585,7 +585,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
       <div style={{overflowX:'auto'}}>
         <table className="items-table">
           <thead><tr>
-            <th style={{width:34}}>S.No</th><th style={{width:130}}>Product</th><th style={{width:140}}>Description</th>
+            <th style={{width:34}}>S.No</th><th style={{width:130}}>Product</th><th style={{width:140}}>Make</th>
             <th style={{width:46}}>HSN</th><th style={{width:50}}>Qty</th><th style={{width:70}}>Unit</th>
             <th style={{width:80}}>Rate ({form.currency})</th><th style={{width:46}}>GST%</th><th style={{width:90}}>Amount</th><th style={{width:28}}></th>
           </tr></thead>
@@ -595,7 +595,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
             return (<tr key={i}>
               <td><input type="number" value={it.serial_no} style={{width:40}} onChange={e => updateItem(i,'serial_no',e.target.value)}/></td>
               <td><select value={it.product_id} onChange={e => updateItem(i,'product_id',e.target.value)}>{products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></td>
-              <td><input value={it.description||''} onChange={e => updateItem(i,'description',e.target.value)} placeholder={it.model_no?`Model: ${it.model_no}`:"Part no. / details"}/></td>
+              <td><input value={it.description||''} onChange={e => updateItem(i,'description',e.target.value)} placeholder="Make / Brand"/></td>
               <td><input value={it.hsn||p?.hsn||''} onChange={e => updateItem(i,'hsn',e.target.value)} placeholder={p?.hsn||'HSN'}/></td>
               <td><input type="number" value={it.qty} onChange={e => updateItem(i,'qty',e.target.value)}/></td>
               <td><select value={it.unit} onChange={e => updateItem(i,'unit',e.target.value)}>{['Piece','Pcs','Set','Kg','Gram','Metre','Box','Litre','Bag','Roll','Pair','Nos'].map(u=><option key={u}>{u}</option>)}</select></td>
