@@ -265,7 +265,7 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
     pdf.fillColor(brand.primary).rect(ML, tableY, CW, HDR_H).fill();
     pdf.fillColor('#ffffff').fontSize(6.5).font('Helvetica-Bold');
     pdf.text('#',                C.SN,   tableY + 4, { width: SN_W,   align: 'center' });
-    pdf.text('Make',      C.DESC, tableY + 4, { width: DESC_W });
+    pdf.text('Make',             C.DESC, tableY + 4, { width: DESC_W });
     pdf.text('HSN',              C.HSN,  tableY + 4, { width: HSN_W,  align: 'center' });
     pdf.text('Qty',              C.QTY,  tableY + 4, { width: QTY_W,  align: 'right' });
     pdf.text('Unit',             C.UNIT, tableY + 4, { width: UNIT_W, align: 'center' });
@@ -299,7 +299,8 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
       });
 
       const modelNo = item.model_no || product?.model_no || '';
-      const desc = (item.description || product?.name || '—') + (modelNo ? ' | ' + modelNo : '');
+      const make = item.description || '';
+      const desc = product?.name + (make ? ' | ' + make : '') + (modelNo ? ' | ' + modelNo : '');
       const hsn  = item.hsn || product?.hsn || '—';
       const unit = item.unit || product?.unit || '—';
 
