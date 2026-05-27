@@ -22,18 +22,21 @@ const wrap = fn => (req, res, next) =>
 initDb().then(db => {
 
   // ── HELPERS ──────────────────────────────────────────────────────────────────
-  async function nextId(type) {
+  async function nextId(type, brand) {
     const prefix = DOC_PREFIXES[type] || 'BVM-DOC';
-    const row = await db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type = $1`).get(type);
-    return `${prefix}-${String(Number(row.c) + 1).padStart(4, '0')}`;
+    const brandPrefix = brand === 'world' ? 'W' : 'I';
+    const row = await db.prepare('SELECT COUNT(*) as c FROM documents WHERE type = $1').get(type);
+    return prefix + '-' + brandPrefix + String(Number(row.c) + 1).padStart(4, '0');
   }
-  async function nextClientId() {
-    const row = await db.prepare(`SELECT COUNT(*) as c FROM clients`).get();
-    return `C${String(Number(row.c) + 1).padStart(3, '0')}`;
+  async function nextClientId(brand) {
+    const prefix = brand === 'world' ? 'W' : 'C';
+    const row = await db.prepare('SELECT COUNT(*) as c FROM clients WHERE brand = $1').get(brand || 'india');
+    return prefix + String(Number(row.c) + 1).padStart(3, '0');
   }
-  async function nextProductId() {
-    const row = await db.prepare(`SELECT COUNT(*) as c FROM products`).get();
-    return `P${String(Number(row.c) + 1).padStart(3, '0')}`;
+  async function nextProductId(brand) {
+    const prefix = brand === 'world' ? 'WP' : 'P';
+    const row = await db.prepare('SELECT COUNT(*) as c FROM products WHERE brand = $1').get(brand || 'india');
+    return prefix + String(Number(row.c) + 1).padStart(3, '0');
   }
   async function nextPaymentId() {
     const row = await db.prepare(`SELECT COUNT(*) as c FROM payments`).get();
@@ -61,7 +64,7 @@ initDb().then(db => {
   }));
   app.post('/api/clients', wrap(async (req, res) => {
     const { name, contact, phone, email, gstin, address, city, state, pincode, type, brand } = req.body;
-    const id = await nextClientId();
+    const id = await nextClientId(brand);
     await db.prepare(`INSERT INTO clients (id,name,contact,phone,email,gstin,address,city,state,pincode,type,balance,brand) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,0,$12)`)
       .run(id, name, contact||'', phone||'', email||'', gstin||'', address||'', city||'', state||'', pincode||'', type||'Regular', brand||'india');
     res.json(await db.prepare('SELECT * FROM clients WHERE id = $1').get(id));
@@ -84,7 +87,7 @@ initDb().then(db => {
   }));
   app.post('/api/products', wrap(async (req, res) => {
     const { name, sku, category, hsn, unit, rate, gst, opening_stock, brand } = req.body;
-    const id = await nextProductId();
+    const id = await nextProductId(brand);
     await db.prepare(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst,brand) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`)
       .run(id, name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate)||0, parseInt(gst)||18, brand||'india');
     await db.prepare(`INSERT INTO inventory (product_id,stock,reorder,warehouse) VALUES ($1,$2,10,'Main Godown')`)
@@ -151,7 +154,7 @@ initDb().then(db => {
       ship_to_name, ship_to_address, ship_to_city, ship_to_state,
       ship_to_pincode, ship_to_gstin, ship_to_phone
     } = req.body;
-    const id = await nextId(type);
+    const id = await nextId(type, brand);
     await db.prepare(`
       INSERT INTO documents
         (id,type,client_id,date,due_date,validity,status,paid,currency,exchange_rate,
