@@ -86,18 +86,18 @@ initDb().then(db => {
     }
   }));
   app.post('/api/products', wrap(async (req, res) => {
-    const { name, sku, category, hsn, unit, rate, gst, opening_stock, brand } = req.body;
+    const { name, sku, category, hsn, unit, rate, gst, opening_stock, brand, model_no } = req.body;
     const id = await nextProductId(brand);
-    await db.prepare(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst,brand) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`)
-      .run(id, name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate)||0, parseInt(gst)||18, brand||'india');
+    await db.prepare(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst,brand,model_no) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`)
+      .run(id, name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate)||0, parseInt(gst)||18, brand||'india', model_no||'');
     await db.prepare(`INSERT INTO inventory (product_id,stock,reorder,warehouse) VALUES ($1,$2,10,'Main Godown')`)
       .run(id, parseFloat(opening_stock)||0);
     res.json(await db.prepare('SELECT * FROM products WHERE id = $1').get(id));
   }));
   app.put('/api/products/:id', wrap(async (req, res) => {
-    const { name, sku, category, hsn, unit, rate, gst } = req.body;
-    await db.prepare(`UPDATE products SET name=$1,sku=$2,category=$3,hsn=$4,unit=$5,rate=$6,gst=$7 WHERE id=$8`)
-      .run(name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate), parseInt(gst), req.params.id);
+    const { name, sku, category, hsn, unit, rate, gst, model_no } = req.body;
+    await db.prepare(`UPDATE products SET name=$1,sku=$2,category=$3,hsn=$4,unit=$5,rate=$6,gst=$7,model_no=$8 WHERE id=$9`)
+      .run(name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate), parseInt(gst), model_no||'', req.params.id);
     res.json(await db.prepare('SELECT * FROM products WHERE id = $1').get(req.params.id));
   }));
 
