@@ -265,7 +265,7 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
     pdf.fillColor(brand.primary).rect(ML, tableY, CW, HDR_H).fill();
     pdf.fillColor('#ffffff').fontSize(6.5).font('Helvetica-Bold');
     pdf.text('#',                C.SN,   tableY + 4, { width: SN_W,   align: 'center' });
-    pdf.text('Description',      C.DESC, tableY + 4, { width: DESC_W });
+    pdf.text('Make',      C.DESC, tableY + 4, { width: DESC_W });
     pdf.text('HSN',              C.HSN,  tableY + 4, { width: HSN_W,  align: 'center' });
     pdf.text('Qty',              C.QTY,  tableY + 4, { width: QTY_W,  align: 'right' });
     pdf.text('Unit',             C.UNIT, tableY + 4, { width: UNIT_W, align: 'center' });
