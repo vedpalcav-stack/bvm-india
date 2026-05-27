@@ -16,7 +16,7 @@ const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Picku
 const BRAND_CONFIG = {
   india: {
     name: 'BVM INDIA',
-    fullName: 'BVM India',
+    fullName: 'BVM India Pvt Ltd',
     gstin: '06AGYPR1117M1ZT',
     pan: 'AGYPR1117M',
     email: 'accounts@bvmindia.com',
@@ -55,7 +55,7 @@ function fmtAmt(n, currency = 'INR') {
 function BrandSelect({ onSelect }) {
   return (
     <div style={{
-    minHeight: '100vh', background: '#0c1220',
+      minHeight: '100vh', background: '#0c1220',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       padding: 24,
@@ -65,7 +65,7 @@ function BrandSelect({ onSelect }) {
         <div style={{ fontSize: 13, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 12 }}>
           UNIFIED ERP SYSTEM
         </div>
-        <div style={{ fontSize: 32, fontWeight: 900,color: '#fff', letterSpacing: -1, marginBottom: 8 }}>
+        <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: -1, marginBottom: 8 }}>
           Welcome to BVM ERP
         </div>
         <div style={{ fontSize: 15, color: '#64748b' }}>
@@ -91,6 +91,7 @@ function BrandSelect({ onSelect }) {
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#4ade80', letterSpacing: -0.5 }}>BVM INDIA</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Private Limited</div>
             <div style={{ fontSize: 11, color: '#475569', marginTop: 8, fontFamily: 'monospace' }}>
               GSTIN: 06AGYPR1117M1ZT
             </div>
@@ -116,7 +117,7 @@ function BrandSelect({ onSelect }) {
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#60a5fa', letterSpacing: -0.5 }}>BVM WORLD</div>
-            <div style={{ fontSize: 18, color: '#64748b', marginTop: 4 }}>Private Limited</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Private Limited</div>
             <div style={{ fontSize: 11, color: '#475569', marginTop: 8, fontFamily: 'monospace' }}>
               GSTIN: 06AAMCB5079P1ZX
             </div>
@@ -503,12 +504,12 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
       <FlowBar current={type}/>
       <div style={{background:cfg.light,border:`1px solid ${cfg.border}`,borderRadius:8,padding:'8px 14px',marginBottom:12,fontSize:12,color:cfg.primary,display:'flex',alignItems:'center',gap:8}}>
         <img src={cfg.logo} alt={cfg.name} style={{width:20,height:20,objectFit:'contain'}}/>
-        <strong>{cfg.name}</strong> — GSTIN: {cfg.gstin}
+        <strong>{cfg.name}</strong> - GSTIN: {cfg.gstin}
       </div>
 
       {isSO && (
         <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:8,padding:'10px 14px',marginBottom:12,fontSize:12,color:'#1e3a5f'}}>
-          <strong>ℹ Sales Order:</strong> {cfg.name} is the BUYER. Client appears as Vendor/Supplier.
+          <strong>INFO: Sales Order:</strong> {cfg.name} is the BUYER. Client appears as Vendor/Supplier.
         </div>
       )}
 
@@ -521,7 +522,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
           </select>
         </div>
         <div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e => set('date',e.target.value)}/></div>
-        {(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><',e.target.value)}/></div>}
+        {(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} onChange={e => set('due_date',e.target.value)}/></div>}
         {(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e => set('validity',e.target.value)}/></div>}
         <div className="form-row"><label>Client's Ref No.</label><input value={form.client_quotation_number} onChange={e => set('client_quotation_number',e.target.value)} placeholder="Client's own reference"/></div>
         {showPO && <div className="form-row"><label>Purchase Order No.</label><input value={form.po_number} onChange={e => set('po_number',e.target.value)}/></div>}
