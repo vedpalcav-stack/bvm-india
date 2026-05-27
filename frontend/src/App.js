@@ -389,7 +389,7 @@ function Products({ onDataChange, brand }) {
       {modal && (
         <Modal title={modal==='add'?'Add Product':'Edit Product'} onClose={() => setModal(null)}>
           <div className="form-grid2">
-            {[['Product Name','name','text'],['SKU / Part No.','sku','text'],['Model No.','model_no','text'],['Category','category','text'],['HSN Code','hsn','text'],['Rate (excl. GST)','rate','number']].map(([label,key,type]) => (
+            {[['Product Name','name','text'],['MAKE','sku','text'],['Model No.','model_no','text'],['Category','category','text'],['HSN Code','hsn','text'],['Rate (excl. GST)','rate','number']].map(([label,key,type]) => (
               <div className="form-row" key={key}><label>{label}</label><input type={type} value={form[key]||''} onChange={e => set(key,e.target.value)}/></div>
             ))}
             <div className="form-row"><label>Unit</label>
