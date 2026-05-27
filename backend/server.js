@@ -150,7 +150,7 @@ initDb().then(db => {
     const {
       type, client_id, date, due_date, validity, notes, items,
       currency, exchange_rate, ref_doc_id, po_number, so_number,
-      client_quotation_number, terms,
+      client_quotation_number, terms, brand,
       ship_to_name, ship_to_address, ship_to_city, ship_to_state,
       ship_to_pincode, ship_to_gstin, ship_to_phone
     } = req.body;
@@ -160,14 +160,15 @@ initDb().then(db => {
         (id,type,client_id,date,due_date,validity,status,paid,currency,exchange_rate,
          ref_doc_id,po_number,so_number,notes,client_quotation_number,terms,
          ship_to_name,ship_to_address,ship_to_city,ship_to_state,
-         ship_to_pincode,ship_to_gstin,ship_to_phone)
-      VALUES ($1,$2,$3,$4,$5,$6,'Draft',0,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+         ship_to_pincode,ship_to_gstin,ship_to_phone,brand)
+      VALUES ($1,$2,$3,$4,$5,$6,'Draft',0,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
     `).run(id, type, client_id, date, due_date||null, validity||null,
       currency||'INR', parseFloat(exchange_rate)||1,
       ref_doc_id||null, po_number||null, so_number||null, notes||'',
       client_quotation_number||null, terms||null,
       ship_to_name||null, ship_to_address||null, ship_to_city||null,
-      ship_to_state||null, ship_to_pincode||null, ship_to_gstin||null, ship_to_phone||null);
+      ship_to_state||null, ship_to_pincode||null, ship_to_gstin||null, ship_to_phone||null,
+      brand||'india');
 
     for (let idx = 0; idx < (items||[]).length; idx++) {
       const it = items[idx];
