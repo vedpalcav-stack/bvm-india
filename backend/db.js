@@ -1,11 +1,3 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  BVM ERP — Supabase Database Driver
-//  HOW TO USE:
-//  1. Run: npm install pg dotenv --prefix backend
-//  2. Create backend/.env with your DATABASE_URL
-//  3. Rename this file to db.js (replace the existing one)
-//  4. Run npm run dev:backend
-// ═══════════════════════════════════════════════════════════════════════════
 
 const { Pool } = require('pg');
 const path = require('path');
@@ -84,7 +76,7 @@ async function initDb() {
     CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, sku TEXT DEFAULT '',
       category TEXT DEFAULT '', hsn TEXT DEFAULT '', unit TEXT DEFAULT 'Piece',
-      rate NUMERIC DEFAULT 0, gst INTEGER DEFAULT 18, brand TEXT DEFAULT 'india',
+      rate NUMERIC DEFAULT 0, gst INTEGER DEFAULT 18, brand TEXT DEFAULT 'india', model_no TEXT DEFAULT '',
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS inventory (
@@ -151,6 +143,7 @@ async function initDb() {
     "ALTER TABLE clients ADD COLUMN IF NOT EXISTS brand TEXT DEFAULT 'india'",
     "ALTER TABLE products ADD COLUMN IF NOT EXISTS brand TEXT DEFAULT 'india'",
     "ALTER TABLE documents ADD COLUMN IF NOT EXISTS brand TEXT DEFAULT 'india'",
+    "ALTER TABLE products ADD COLUMN IF NOT EXISTS model_no TEXT DEFAULT ''",
   ]) { try { await pool.query(q); } catch(e) {} }
 
   // Seed default credit settings
