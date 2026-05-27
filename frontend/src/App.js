@@ -427,7 +427,7 @@ function Inventory({ brand }) {
         <table><thead><tr><th>Product</th><th>SKU</th><th>Warehouse</th><th>Unit</th><th>Stock</th><th>Reorder</th><th>Status</th></tr></thead>
         <tbody>{inventory.filter(inv => products.some(p => p.id === inv.product_id)).map(inv => {
           const low = inv.stock <= inv.reorder;
-          return (<tr key={inv.id}><td><strong>{inv.product_name}</strong></td><td><code>{inv.sku}</code></td><td>{inv.warehouse}</td><td>{inv.unit}</td><td className={`bold ${low?'danger':'success'}`}>{inv.stock}</td><td className="muted">{inv.reorder}</td><td><Badge status={low?'Unpaid':'Paid'}/></td></tr>);
+          return (<tr key={inv.id}><td><strong>{inv.product_name}</strong></td><td><code>{inv.sku}</code></td><td>{inv.warehouse}</td><td>{inv.unit}</td><td className={`bold ${low?'danger':'success'}`}>{inv.stock}</td><td className="muted">{inv.reorder}</td><td><span className={`badge ${low?'badge-danger':'badge-success'}`}>{low?'Low Stock':'In Stock'}</span></td></tr>);
         })}</tbody></table>
       </div>
       {modal && (
@@ -449,12 +449,13 @@ function Inventory({ brand }) {
           <div className="modal-footer"><button className="btn" onClick={() => setModal(false)}>Cancel</button>
             <button className="btn btn-primary" onClick={async () => {
               try {
-                if (!form.qty || form.qty <= 0) { alert('Please enter a valid quantity'); return; }
+                const qtyNum = parseFloat(form.qty);
+                if (!qtyNum || qtyNum <= 0) { alert('Please enter a valid quantity greater than 0'); return; }
                 if (!form.product_id) { alert('Please select a product'); return; }
-                await api.updateStock({product_id:form.product_id,qty:+form.qty,type:form.type});
+                await api.updateStock({product_id:form.product_id,qty:qtyNum,type:form.type});
                 setModal(false); load();
               } catch(e) { alert('Update failed: ' + e.message); }
-            }}>Update</button>
+            }}>Update Stock</button>
           </div>
         </Modal>
       )}
@@ -475,28 +476,38 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
     ship_to_name:'', ship_to_address:'', ship_to_city:'',
     ship_to_state:'', ship_to_pincode:'', ship_to_gstin:'', ship_to_phone:'',
   });
-  const [items, setItems] = useState([{serial_no:1,product_id:products[0]?.id||'',description:products[0]?.name||'',hsn:products[0]?.hsn||'',qty:1,unit:products[0]?.unit||'Piece',rate:products[0]?.rate||0,currency:'INR'}]);
+  const [items, setItems] = useState([{serial_no:1,product_id:products[0]?.id||'',description:products[0]?.name||'',hsn:products[0]?.hsn||'',qty:1,unit:products[0]?.unit||'Piece',rate:products[0]?.rate||0,gst:products[0]?.gst||18,currency:'INR'}]);
   const [showShipTo, setShowShipTo] = useState(false);
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
 
   const updateItem = (i, key, val) => {
     setItems(prev => {
       const u=[...prev]; u[i]={...u[i],[key]:val};
-      if(key==='product_id'){const p=products.find(x=>x.id===val);if(p){u[i].description=p.name;u[i].rate=p.rate;u[i].unit=p.unit;u[i].hsn=p.hsn;}}
+      if(key==='product_id'){const p=products.find(x=>x.id===val);if(p){u[i].description=p.name;u[i].rate=p.rate;u[i].unit=p.unit;u[i].hsn=p.hsn;u[i].gst=p.gst||18;}}
       return u;
     });
   };
 
   const subtotal = items.reduce((s,it) => s+(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0),0);
-  const gstAmt = subtotal*0.18;
+  const gstAmt = items.reduce((s,it) => {
+    const amt = (parseFloat(it.qty)||0)*(parseFloat(it.rate)||0);
+    const gstPct = parseFloat(it.gst)||18;
+    return s + amt * gstPct / 100;
+  }, 0);
   const showPO = type==='purchase_order'||type==='sales_order'||type==='invoice';
   const showSO = type==='sales_order'||type==='invoice';
   const selectedClient = clients.find(c => c.id === form.client_id);
 
   const save = async () => {
-    const saved = await api.createDocument({...form, type, brand, items: items.map(it=>({...it,qty:parseFloat(it.qty),rate:parseFloat(it.rate)}))});
-    onSaved(); onClose();
-    setTimeout(() => onSaved(saved), 100);
+    try {
+      if (!form.client_id) { alert('Please select a client'); return; }
+      if (!items.length) { alert('Please add at least one line item'); return; }
+      const saved = await api.createDocument({...form, type, brand, items: items.map(it=>({...it,qty:parseFloat(it.qty)||0,rate:parseFloat(it.rate)||0}))});
+      onSaved(); onClose();
+      setTimeout(() => onSaved(saved), 100);
+    } catch(e) {
+      alert('Save failed: ' + e.message);
+    }
   };
 
   return (
@@ -575,32 +586,39 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
       <div style={{overflowX:'auto'}}>
         <table className="items-table">
           <thead><tr>
-            <th style={{width:38}}>S.No</th><th style={{width:145}}>Product</th><th style={{width:165}}>Description</th>
-            <th style={{width:50}}>HSN</th><th style={{width:55}}>Qty</th><th style={{width:80}}>Unit</th>
-            <th style={{width:90}}>Rate ({form.currency})</th><th style={{width:100}}>Amount</th><th style={{width:32}}></th>
+            <th style={{width:34}}>S.No</th><th style={{width:130}}>Product</th><th style={{width:140}}>Description</th>
+            <th style={{width:46}}>HSN</th><th style={{width:50}}>Qty</th><th style={{width:70}}>Unit</th>
+            <th style={{width:80}}>Rate ({form.currency})</th><th style={{width:46}}>GST%</th><th style={{width:90}}>Amount</th><th style={{width:28}}></th>
           </tr></thead>
           <tbody>{items.map((it,i) => {
             const p = products.find(x=>x.id===it.product_id);
             const amt=(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0);
             return (<tr key={i}>
-              <td><input type="number" value={it.serial_no} style={{width:44}} onChange={e => updateItem(i,'serial_no',e.target.value)}/></td>
+              <td><input type="number" value={it.serial_no} style={{width:40}} onChange={e => updateItem(i,'serial_no',e.target.value)}/></td>
               <td><select value={it.product_id} onChange={e => updateItem(i,'product_id',e.target.value)}>{products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></td>
               <td><input value={it.description||''} onChange={e => updateItem(i,'description',e.target.value)} placeholder="Part no. / details"/></td>
               <td><input value={it.hsn||p?.hsn||''} onChange={e => updateItem(i,'hsn',e.target.value)} placeholder={p?.hsn||'HSN'}/></td>
               <td><input type="number" value={it.qty} onChange={e => updateItem(i,'qty',e.target.value)}/></td>
               <td><select value={it.unit} onChange={e => updateItem(i,'unit',e.target.value)}>{['Piece','Pcs','Set','Kg','Gram','Metre','Box','Litre','Bag','Roll','Pair','Nos'].map(u=><option key={u}>{u}</option>)}</select></td>
               <td><input type="number" step="0.01" value={it.rate} onChange={e => updateItem(i,'rate',e.target.value)}/></td>
+              <td><select value={it.gst||p?.gst||18} onChange={e => updateItem(i,'gst',+e.target.value)} style={{width:60}}>{[0,5,12,18,28].map(g=><option key={g} value={g}>{g}%</option>)}</select></td>
               <td className="bold">{fmtAmt(amt,form.currency)}</td>
               <td><button className="btn-x" onClick={() => setItems(items.filter((_,j)=>j!==i).map((x,idx)=>({...x,serial_no:idx+1})))}>×</button></td>
             </tr>);
           })}</tbody>
         </table>
       </div>
-      <button className="btn mt8 mb8" onClick={() => setItems([...items,{serial_no:items.length+1,product_id:products[0]?.id||'',description:products[0]?.name||'',hsn:products[0]?.hsn||'',qty:1,unit:products[0]?.unit||'Piece',rate:products[0]?.rate||0,currency:form.currency}])}>+ Add Line</button>
+      <button className="btn mt8 mb8" onClick={() => setItems([...items,{serial_no:items.length+1,product_id:products[0]?.id||'',description:products[0]?.name||'',hsn:products[0]?.hsn||'',qty:1,unit:products[0]?.unit||'Piece',rate:products[0]?.rate||0,gst:products[0]?.gst||18,currency:form.currency}])}>+ Add Line</button>
 
       <div className="totals-block">
         <div className="tot-row"><span>Subtotal (excl. GST)</span><span>{fmtAmt(subtotal,form.currency)}</span></div>
-        <div className="tot-row"><span>GST (18%)</span><span>{fmtAmt(gstAmt,form.currency)}</span></div>
+        {[0,5,12,18,28].map(rate => {
+          const rateAmt = items.reduce((s,it) => {
+            if((parseFloat(it.gst)||18)===rate) return s+(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)*rate/100;
+            return s;
+          },0);
+          return rateAmt>0 ? <div key={rate} className="tot-row"><span>GST ({rate}%)</span><span>{fmtAmt(rateAmt,form.currency)}</span></div> : null;
+        })}
         <div className="tot-row grand"><span>Total</span><span>{fmtAmt(subtotal+gstAmt,form.currency)}</span></div>
       </div>
 
