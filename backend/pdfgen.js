@@ -10,7 +10,9 @@ const LOGO_WORLD_BUF = Buffer.from(LOGO_WORLD_B64, 'base64');
 // ── CHANGE YOUR GSTIN / PAN / EMAIL HERE ─────────────────────────────────────
 const COMPANY = {
   name_india:  'BVM INDIA',
-  name_world:  'BVM WORLD PVT LTD',
+  name_world:  'BVM WORLD Pvt Ltd',
+  tagline_india: '',
+  tagline_world: '',
   line1:       '#1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk',
   line2:       'Gurugram, Haryana - 122001',
   gstin_india: '06AGYPR1117M1ZT',   // <-- BVM India GSTIN
@@ -89,6 +91,7 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
   return new Promise((resolve, reject) => {
     const brand     = BRANDS[brandKey];
     const brandName = brandKey === 'india' ? COMPANY.name_india : COMPANY.name_world;
+    const taglineTxt = brandKey === 'world' ? 'Pvt Ltd' : '';
     const logoBuf   = brand.logoBuf;
     const hasLogo   = !!logoBuf;
 
@@ -295,7 +298,8 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
           .strokeColor(brand.borderColor).lineWidth(0.15).stroke();
       });
 
-      const desc = item.description || product?.name || '—';
+      const modelNo = item.model_no || product?.model_no || '';
+      const desc = (item.description || product?.name || '—') + (modelNo ? ' | ' + modelNo : '');
       const hsn  = item.hsn || product?.hsn || '—';
       const unit = item.unit || product?.unit || '—';
 
