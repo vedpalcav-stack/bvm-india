@@ -9,15 +9,16 @@ const LOGO_WORLD_BUF = Buffer.from(LOGO_WORLD_B64, 'base64');
 
 // ── CHANGE YOUR GSTIN / PAN / EMAIL HERE ─────────────────────────────────────
 const COMPANY = {
-  name_india:  'BVM INDIA',
-  name_world:  'BVM WORLD PVT LTD',
+  name_india:  'BVM India',
+  name_world:  'BVM World',
+  tagline:     'Private Limited',
   line1:       '#1, 2nd Floor, Kamla Palace, Jail Road, Sohna Chowk',
   line2:       'Gurugram, Haryana - 122001',
   gstin_india: '06AGYPR1117M1ZT',   // <-- BVM India GSTIN
   pan_india:   'AGYPR1117M',         // <-- BVM India PAN
   email_india: 'accounts@bvmindia.com',
-  gstin_world: '06AAMCB5079P1ZX',   // <-- BVM World GSTIN
-  pan_world:   'AAMCB5079P',         // <-- BVM World PAN
+  gstin_world: '06AGYPR1117M1ZT',   // <-- BVM World GSTIN
+  pan_world:   'AGYPR1117M',         // <-- BVM World PAN
   email_world: 'accounts@bvmworld.com',
 };
 // ─────────────────────────────────────────────────────────────────────────────
@@ -278,7 +279,7 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
       const qty     = Number(item.qty)  || 0;
       const rate    = Number(item.rate) || 0;
       const amt     = qty * rate;
-      const gstPct  = Number(product?.gst) || 18;
+      const gstPct  = Number(item.gst || product?.gst) || 18;
       subtotal  += amt;
       totalGst  += amt * gstPct / 100;
 
@@ -362,12 +363,28 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
     }
 
     totRow('Subtotal (excl. GST)', fmtC(subtotal, currency));
-    if (sameState) {
-      totRow('CGST (9%)', fmtC(totalGst / 2, currency));
-      totRow('SGST (9%)', fmtC(totalGst / 2, currency));
-    } else {
-      totRow('IGST (18%)', fmtC(totalGst, currency));
-    }
+
+    // Group GST by rate and show breakdown
+    const gstByRate = {};
+    items.forEach(item => {
+      const product = products.find(p => p.id === item.product_id);
+      const qty  = Number(item.qty)  || 0;
+      const rate = Number(item.rate) || 0;
+      const amt  = qty * rate;
+      const gstPct = Number(item.gst || product?.gst) || 18;
+      if (!gstByRate[gstPct]) gstByRate[gstPct] = 0;
+      gstByRate[gstPct] += amt * gstPct / 100;
+    });
+
+    Object.keys(gstByRate).sort((a,b)=>a-b).forEach(rate => {
+      const gstAmt = gstByRate[rate];
+      if (sameState) {
+        totRow(`CGST (${rate/2}%)`, fmtC(gstAmt / 2, currency));
+        totRow(`SGST (${rate/2}%)`, fmtC(gstAmt / 2, currency));
+      } else {
+        totRow(`IGST (${rate}%)`, fmtC(gstAmt, currency));
+      }
+    });
     if (Number(doc.paid) > 0) {
       totRow('Amount Paid', '- ' + fmtC(doc.paid, currency));
     }
@@ -416,15 +433,15 @@ async function generateDocPDF(doc, client, items, products, res, brandKey = 'ind
 async function generateBothPDFs(doc, client, items, products, res) {
   try {
     const [indiaBuf, worldBuf] = await Promise.all([
-      buildPDFBuffer(doc, client, items, products, 'INDIA'),
-      buildPDFBuffer(doc, client, items, products, 'WORLD'),
+      buildPDFBuffer(doc, client, items, products, 'india'),
+      buildPDFBuffer(doc, client, items, products, 'world'),
     ]);
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${doc.id}-both.zip"`);
     const archive = archiver('zip', { zlib: { level: 6 } });
     archive.pipe(res);
-    archive.append(indiaBuf, { name: `${doc.id}-BVM-INDIA.pdf` });
-    archive.append(worldBuf, { name: `${doc.id}-BVM-WORLD.pdf` });
+    archive.append(indiaBuf, { name: `${doc.id}-BVM-India.pdf` });
+    archive.append(worldBuf, { name: `${doc.id}-BVM-World.pdf` });
     await archive.finalize();
   } catch (err) {
     console.error('ZIP error:', err);
