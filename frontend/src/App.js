@@ -470,7 +470,17 @@ return(
 
 <td>₹{rate.toLocaleString()}</td>
 
-</div><td className={`bold ${low?'danger':'success'}`}>{inv.stock}</td><td className="muted">{inv.reorder}</td><td><span className={`badge ${low?'badge-danger':'badge-success'}`}>{low?'Low Stock':'In Stock'}</span></td></tr>);
+<td className="bold">
+₹{totalAmount.toLocaleString()}
+</td>
+
+<td>{inv.reorder}</td>
+
+<td>
+<span className={`badge ${low ? 'badge-danger' : 'badge-success'}`}>
+{low ? 'Low Stock' : 'In Stock'}
+</span>
+</td></tr>);
         })}</tbody></table>
       </div>
       {modal && (
