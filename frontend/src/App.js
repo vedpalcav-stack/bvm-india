@@ -423,10 +423,29 @@ function Inventory({ brand }) {
     <div>
       <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({product_id:products[0]?.id,type:'add',qty:''});setModal(true);}}>Update Stock</button></div>
       <div className="card">
-        <table><thead><tr><th>Product</th><th>SKU</th><th>Warehouse</th><th>Unit</th><th>Stock</th><th>Reorder</th><th>Status</th></tr></thead>
+       <thead>
+<tr>
+<th>Product</th>
+<th>Make</th>
+<th>Warehouse</th>
+<th>Unit</th>
+<th>Stock Qty</th>
+<th>Unit Rate</th>
+<th>Total Amount</th>
+<th>Reorder</th>
+<th>Status</th>
+</tr>
+</thead>
         <tbody>{inventory.filter(inv => products.some(p => p.id === inv.product_id)).map(inv => {
           const low = inv.stock <= inv.reorder;
-          return (<tr key={inv.id}><td><strong>{inv.product_name}</strong></td><td><code>{inv.sku}</code></td><td>{inv.warehouse}</td><td>{inv.unit}</td><td className={`bold ${low?'danger':'success'}`}>{inv.stock}</td><td className="muted">{inv.reorder}</td><td><span className={`badge ${low?'badge-danger':'badge-success'}`}>{low?'Low Stock':'In Stock'}</span></td></tr>);
+          return (<tr key={inv.id}>const product = products.find(
+p => p.id === inv.product_id
+);
+
+const rate = product?.rate || 0;
+
+const totalAmount =
+(inv.stock || 0) * rate;<td className={`bold ${low?'danger':'success'}`}>{inv.stock}</td><td className="muted">{inv.reorder}</td><td><span className={`badge ${low?'badge-danger':'badge-success'}`}>{low?'Low Stock':'In Stock'}</span></td></tr>);
         })}</tbody></table>
       </div>
       {modal && (
