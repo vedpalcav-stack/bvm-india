@@ -69,7 +69,7 @@ function InvoiceCard({ doc, client, items, products, brand }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
           <thead>
             <tr style={{ background: color }}>
-              {['#', 'Description', 'HSN', 'Qty', 'Unit', `Rate(${currency})`, `Amt(${currency})`].map(h => (
+              {['#', 'Make', 'HSN', 'Qty', 'Unit', `Rate(${currency})`, `Amt(${currency})`].map(h => (
                 <th key={h} style={{ color: '#fff', padding: '4px 6px', fontSize: 9, textAlign: h === 'Description' ? 'left' : 'right', fontWeight: 700 }}>{h}</th>
               ))}
             </tr>
@@ -281,7 +281,7 @@ export default function DualDocView({ doc: initialDoc, clients, products, onClos
                 <thead><tr>
                   <th style={{ width: 38 }}>S.No</th>
                   <th style={{ width: 140 }}>Product</th>
-                  <th style={{ width: 160 }}>Description</th>
+                  <th style={{ width: 160 }}>Make</th>
                   <th style={{ width: 50 }}>HSN</th>
                   <th style={{ width: 55 }}>Qty</th>
                   <th style={{ width: 80 }}>Unit</th>
