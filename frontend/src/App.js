@@ -16,7 +16,7 @@ const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Picku
 const BRAND_CONFIG = {
   india: {
     name: 'BVM INDIA',
-    fullName: 'BVM India',
+    fullName: 'BVM INDIA',
     gstin: '06AGYPR1117M1ZT',
     pan: 'AGYPR1117M',
     email: 'accounts@bvmindia.com',
@@ -31,7 +31,7 @@ const BRAND_CONFIG = {
   },
   world: {
     name: 'BVM WORLD',
-    fullName: 'BVM World Pvt Ltd',
+    fullName: 'BVM WORLD PVT LTD',
     gstin: '06AAMCB5079P1ZX',
     pan: 'AAMCB5079P',
     email: 'accounts@bvmworld.com',
@@ -116,7 +116,7 @@ function BrandSelect({ onSelect }) {
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#60a5fa', letterSpacing: -0.5 }}>BVM WORLD</div>
-            <div style={{ fontSize: 18, color: '#64748b', marginTop: 4 }}>Private Limited</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Pvt Ltd</div>
             <div style={{ fontSize: 11, color: '#475569', marginTop: 8, fontFamily: 'monospace' }}>
               GSTIN: 06AAMCB5079P1ZX
             </div>
@@ -261,7 +261,7 @@ function Dashboard({ onNav, brand }) {
         <img src={cfg.logo} alt={cfg.name} style={{ width: 64, height: 64, objectFit:'contain', borderRadius: 10, background:'#fff', padding: 4 }} />
         <div>
           <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.5 }}>{cfg.name}</div>
-          <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>Private Limited</div>
+          <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>{brand === 'world' ? 'Pvt Ltd' : ''}</div>
           <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4, fontFamily:'monospace' }}>
             GSTIN: {cfg.gstin} · PAN: {cfg.pan}
           </div>
@@ -376,10 +376,10 @@ function Products({ onDataChange, brand }) {
     <div>
       <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({gst:18,unit:'Piece'});setModal('add');}}>+ Add Product</button></div>
       <div className="card">
-        <table><thead><tr><th>SKU</th><th>Product Name</th><th>Category</th><th>HSN</th><th>Unit</th><th>Rate</th><th>GST</th><th></th></tr></thead>
+        <table><thead><tr><th>SKU</th><th>Product Name</th><th>Model No.</th><th>Category</th><th>HSN</th><th>Unit</th><th>Rate</th><th>GST</th><th></th></tr></thead>
         <tbody>{products.map(p => (
           <tr key={p.id}>
-            <td><code>{p.sku}</code></td><td><strong>{p.name}</strong></td><td>{p.category}</td>
+            <td><code>{p.sku}</code></td><td><strong>{p.name}</strong></td><td><code>{p.model_no||'—'}</code></td><td>{p.category}</td>
             <td>{p.hsn}</td><td>{p.unit}</td><td className="bold">{fmtAmt(p.rate)}</td>
             <td><Badge status={`${p.gst}%`}/></td>
             <td><button className="btn btn-sm" onClick={() => {setForm(p);setModal('edit');}}>Edit</button></td>
@@ -389,7 +389,7 @@ function Products({ onDataChange, brand }) {
       {modal && (
         <Modal title={modal==='add'?'Add Product':'Edit Product'} onClose={() => setModal(null)}>
           <div className="form-grid2">
-            {[['Product Name','name','text'],['SKU / Part No.','sku','text'],['Category','category','text'],['HSN Code','hsn','text'],['Rate (excl. GST)','rate','number']].map(([label,key,type]) => (
+            {[['Product Name','name','text'],['SKU / Part No.','sku','text'],['Model No.','model_no','text'],['Category','category','text'],['HSN Code','hsn','text'],['Rate (excl. GST)','rate','number']].map(([label,key,type]) => (
               <div className="form-row" key={key}><label>{label}</label><input type={type} value={form[key]||''} onChange={e => set(key,e.target.value)}/></div>
             ))}
             <div className="form-row"><label>Unit</label>
@@ -482,7 +482,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   const updateItem = (i, key, val) => {
     setItems(prev => {
       const u=[...prev]; u[i]={...u[i],[key]:val};
-      if(key==='product_id'){const p=products.find(x=>x.id===val);if(p){u[i].description=p.name;u[i].rate=p.rate;u[i].unit=p.unit;u[i].hsn=p.hsn;u[i].gst=p.gst||18;}}
+      if(key==='product_id'){const p=products.find(x=>x.id===val);if(p){u[i].description=p.name;u[i].rate=p.rate;u[i].unit=p.unit;u[i].hsn=p.hsn;u[i].gst=p.gst||18;u[i].model_no=p.model_no||'';}}
       return u;
     });
   };
@@ -595,7 +595,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
             return (<tr key={i}>
               <td><input type="number" value={it.serial_no} style={{width:40}} onChange={e => updateItem(i,'serial_no',e.target.value)}/></td>
               <td><select value={it.product_id} onChange={e => updateItem(i,'product_id',e.target.value)}>{products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></td>
-              <td><input value={it.description||''} onChange={e => updateItem(i,'description',e.target.value)} placeholder="Part no. / details"/></td>
+              <td><input value={it.description||''} onChange={e => updateItem(i,'description',e.target.value)} placeholder={it.model_no?`Model: ${it.model_no}`:"Part no. / details"}/></td>
               <td><input value={it.hsn||p?.hsn||''} onChange={e => updateItem(i,'hsn',e.target.value)} placeholder={p?.hsn||'HSN'}/></td>
               <td><input type="number" value={it.qty} onChange={e => updateItem(i,'qty',e.target.value)}/></td>
               <td><select value={it.unit} onChange={e => updateItem(i,'unit',e.target.value)}>{['Piece','Pcs','Set','Kg','Gram','Metre','Box','Litre','Bag','Roll','Pair','Nos'].map(u=><option key={u}>{u}</option>)}</select></td>
