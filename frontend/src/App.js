@@ -645,8 +645,6 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   })}
 
   {/* GRAND TOTAL */}
-```jsx
-```jsx
 <div className="totals-block">
 
   {/* SUBTOTAL */}
