@@ -150,10 +150,13 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
       [DOC_PREFIX_LABELS[doc.type] || 'Doc No', doc.id],
       doc.client_quotation_number ? ["Client Ref", doc.client_quotation_number] : null,
       ['Date', doc.date],
-      doc.due_date   ? ['Due',       doc.due_date]              : null,
+      doc.due_date && doc.type === 'invoice' ? ['Due Date', doc.due_date] : null,
+      doc.due_date && (doc.type === 'purchase_order' || doc.type === 'sales_order') ? ['ETA', doc.due_date] : null,
+      doc.due_date && doc.type !== 'invoice' && doc.type !== 'purchase_order' && doc.type !== 'sales_order' ? ['Due', doc.due_date] : null,
       doc.validity   ? ['Valid',     doc.validity + ' days']    : null,
       doc.po_number  ? ['PO No',     doc.po_number]             : null,
-      doc.so_number  ? ['SO No',     doc.so_number]             : null,
+      doc.so_number && doc.type !== 'invoice' ? ['SO No', doc.so_number] : null,
+      doc.so_number && doc.type === 'invoice'  ? ['Inv No', doc.so_number] : null,
       currency !== 'INR' ? ['Curr', currency + ' @ ' + (doc.exchange_rate||1)] : null,
     ].filter(Boolean);
 
@@ -300,13 +303,21 @@ function buildPDFBuffer(doc, client, items, products, brandKey) {
 
       const modelNo = item.model_no || product?.model_no || '';
       const make = item.description || '';
-      const desc = product?.name + (make ? ' | ' + make : '') + (modelNo ? ' | ' + modelNo : '');
+      const prodName = product?.name || '—';
+      const makeModel = [make, modelNo].filter(Boolean).join(' | ');
+      const desc = makeModel ? prodName + '\n' + makeModel : prodName;
       const hsn  = item.hsn || product?.hsn || '—';
       const unit = item.unit || product?.unit || '—';
 
       pdf.fillColor(brand.textDark).fontSize(6.5).font('Helvetica');
       pdf.text(String(item.serial_no || i + 1), C.SN,   iy + 3, { width: SN_W,   align: 'center' });
-      pdf.text(desc,                              C.DESC + 2, iy + 3, { width: DESC_W - 4, lineBreak: false });
+      // Product name on first line, Make/Model smaller below
+      pdf.text(prodName, C.DESC + 2, iy + 2, { width: DESC_W - 4, lineBreak: false });
+      if (makeModel) {
+        pdf.fillColor('#64748b').fontSize(5.5)
+          .text(makeModel, C.DESC + 2, iy + 9, { width: DESC_W - 4, lineBreak: false });
+        pdf.fillColor(brand.textDark).fontSize(6.5).font('Helvetica');
+      }
       pdf.text(hsn,                               C.HSN,  iy + 3, { width: HSN_W,  align: 'center' });
       pdf.text(String(qty),                       C.QTY,  iy + 3, { width: QTY_W,  align: 'right' });
       pdf.text(unit,                              C.UNIT, iy + 3, { width: UNIT_W, align: 'center' });
