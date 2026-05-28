@@ -625,11 +625,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
         <div className="tot-row grand"><span>Total</span><span>{fmtAmt(subtotal+gstAmt,form.currency)}</span></div>
       </div>
 
-      <div className="section-title" style={{marginTop:14}}>Terms &amp; Conditions</div>
-      <textarea rows={5} value={form.terms} onChange={e => set('terms',e.target.value)}
-        style={{width:'100%',fontFamily:'inherit',fontSize:12,lineHeight:1.8,padding:'8px 10px',border:'1px solid #d1d5db',borderRadius:6,color:'#78350f',background:'#fffbeb'}}/>
-      <button className="btn" style={{fontSize:11,marginTop:4}} onClick={() => set('terms',DEFAULT_TERMS)}>↺ Reset to Default</button>
-          <div
+    <div
   style={{
     textAlign:'right',
     marginTop:'20px',
@@ -637,7 +633,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   }}
 >
   <img
-  src=" https://kriqnuuspbgnkoxofnxz.supabase.co/storage/v1/object/public/Vedpal%20Raghav%20Sig/Vedpal%20Sig.png
+    src="https://kriqnuuspbgnkoxofnxz.supabase.co/storage/v1/object/public/Vedpal%20Raghav%20Sig/Vedpal%20Sig.png"
     alt="Signature"
     style={{
       width:'150px',
@@ -657,7 +653,6 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
     Authorized Signatory
   </div>
 </div>
-
       <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
       <div className="modal-footer">
         <button className="btn" onClick={onClose}>Cancel</button>
