@@ -633,7 +633,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   }}
 >
   <img
-    src="https://kriqnuuspbgnkoxofnxz.supabase.co/storage/v1/object/public/Vedpal%20Raghav%20Sig/Vedpal%20Sig.png"
+    https://kriqnuuspbgnkoxofnxz.supabase.co/storage/v1/object/public/Vedpal%20Raghav%20Sig/Vedpal%20Sig.png
     alt="Signature"
     style={{
       width:'150px',
