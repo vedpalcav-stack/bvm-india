@@ -622,28 +622,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
           },0);
           return rateAmt>0 ? <div key={rate} className="tot-row"><span>GST ({rate}%)</span><span>{fmtAmt(rateAmt,form.currency)}</span></div> : null;
         })}
-       <div className="totals-block">
-
-  <div className="tot-row">
-    <span>Subtotal (excl. GST)</span>
-    <span>{fmtAmt(subtotal,form.currency)}</span>
-  </div>
-
-  {[0,5,12,18,28].map(rate => {
-    const rateAmt = items.reduce((s,it) => {
-      if((parseFloat(it.gst)||18)===rate)
-        return s+(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)*rate/100;
-      return s;
-    },0);
-
-    return rateAmt>0 ? (
-      <div key={rate} className="tot-row">
-        <span>GST ({rate}%)</span>
-        <span>{fmtAmt(rateAmt,form.currency)}</span>
-      </div>
-    ) : null;
-  })}
-
+  
   {/* GRAND TOTAL */}
 <div className="totals-block">
 
@@ -738,7 +717,6 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
     </div>
   </div>
 
-</div>```
 
 <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
       <div className="modal-footer">
