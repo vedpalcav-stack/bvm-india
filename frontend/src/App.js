@@ -376,7 +376,7 @@ function Products({ onDataChange, brand }) {
     <div>
       <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({gst:18,unit:'Piece'});setModal('add');}}>+ Add Product</button></div>
       <div className="card">
-        <table><thead><tr><th>MAKE</th><th>Product Name</th><th>Model No.</th><th>Category</th><th>HSN</th><th>Unit</th><th>Rate</th><th>GST</th><th></th></tr></thead>
+        <table><thead><tr><th>SKU</th><th>Product Name</th><th>Model No.</th><th>Category</th><th>HSN</th><th>Unit</th><th>Rate</th><th>GST</th><th></th></tr></thead>
         <tbody>{products.map(p => (
           <tr key={p.id}>
             <td><code>{p.sku}</code></td><td><strong>{p.name}</strong></td><td><code>{p.model_no||'—'}</code></td><td>{p.category}</td>
@@ -389,7 +389,7 @@ function Products({ onDataChange, brand }) {
       {modal && (
         <Modal title={modal==='add'?'Add Product':'Edit Product'} onClose={() => setModal(null)}>
           <div className="form-grid2">
-            {[['Product Name','name','text'],['MAKE','sku','text'],['Model No.','model_no','text'],['Category','category','text'],['HSN Code','hsn','text'],['Rate (excl. GST)','rate','number']].map(([label,key,type]) => (
+            {[['Product Name','name','text'],['SKU / Part No.','sku','text'],['Model No.','model_no','text'],['Category','category','text'],['HSN Code','hsn','text'],['Rate (excl. GST)','rate','number']].map(([label,key,type]) => (
               <div className="form-row" key={key}><label>{label}</label><input type={type} value={form[key]||''} onChange={e => set(key,e.target.value)}/></div>
             ))}
             <div className="form-row"><label>Unit</label>
@@ -403,6 +403,7 @@ function Products({ onDataChange, brand }) {
               </select>
             </div>
             {modal==='add' && <div className="form-row"><label>Opening Stock</label><input type="number" value={form.opening_stock||''} onChange={e => set('opening_stock',e.target.value)}/></div>}
+            <div className="form-row col-span2"><label>Product Description</label><textarea rows={2} value={form.description||''} onChange={e => set('description',e.target.value)} placeholder="Detailed product description, specs, notes..."/></div>
           </div>
           <div className="modal-footer"><button className="btn" onClick={() => setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={save}>Save Product</button></div>
         </Modal>
@@ -422,65 +423,11 @@ function Inventory({ brand }) {
   return (
     <div>
       <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({product_id:products[0]?.id,type:'add',qty:''});setModal(true);}}>Update Stock</button></div>
-<div className="card">
-<table>
-
-<thead>
-<tr>
-<th>Product</th>
-<th>Make</th>
-<th>Warehouse</th>
-<th>Unit</th>
-<th>Stock Qty</th>
-<th>Unit Rate</th>
-<th>Total Amount</th>
-<th>Reorder</th>
-<th>Status</th>
-</tr>
-</thead>
-
-<tbody>
-{inventory
-.filter(inv => products.some(p=>p.id===inv.product_id))
-.map(inv=>{
-
-const product = products.find(
-p=>p.id===inv.product_id
-);
-
-const rate = product?.rate || 0;
-
-const totalAmount =
-(inv.stock || 0) * rate;
-
-const low =
-inv.stock <= inv.reorder;
-
-return(
-
-<tr key={inv.id}>
-<td><strong>{inv.product_name}</strong></td>
-<td><code>{inv.sku}</code></td>
-<td>{inv.warehouse}</td>
-<td>{inv.unit}</td>
-
-<td className={`bold ${low?'danger':'success'}`}>
-{inv.stock}
-</td>
-
-<td>₹{rate.toLocaleString()}</td>
-
-<td className="bold">
-₹{totalAmount.toLocaleString()}
-</td>
-
-<td>{inv.reorder}</td>
-
-<td>
-<span className={`badge ${low ? 'badge-danger' : 'badge-success'}`}>
-{low ? 'Low Stock' : 'In Stock'}
-</span>
-</td></tr>);
+      <div className="card">
+        <table><thead><tr><th>Product</th><th>SKU</th><th>Warehouse</th><th>Unit</th><th>Stock</th><th>Reorder</th><th>Status</th></tr></thead>
+        <tbody>{inventory.filter(inv => products.some(p => p.id === inv.product_id)).map(inv => {
+          const low = inv.stock <= inv.reorder;
+          return (<tr key={inv.id}><td><strong>{inv.product_name}</strong></td><td><code>{inv.sku}</code></td><td>{inv.warehouse}</td><td>{inv.unit}</td><td className={`bold ${low?'danger':'success'}`}>{inv.stock}</td><td className="muted">{inv.reorder}</td><td><span className={`badge ${low?'badge-danger':'badge-success'}`}>{low?'Low Stock':'In Stock'}</span></td></tr>);
         })}</tbody></table>
       </div>
       {modal && (
@@ -524,7 +471,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   const [form, setForm] = useState({
     client_id:clients[0]?.id||'', date:today(), due_date:futureDate(30),
     validity:15, currency:'INR', exchange_rate:1,
-    po_number:'', so_number:'', notes:'',
+    po_number:'', so_number:'', notes:'', credit_days:30,
     client_quotation_number:'', terms:DEFAULT_TERMS,
     ship_to_name:'', ship_to_address:'', ship_to_city:'',
     ship_to_state:'', ship_to_pincode:'', ship_to_gstin:'', ship_to_phone:'',
@@ -586,11 +533,14 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
           </select>
         </div>
         <div className="form-row"><label>Date *</label><input type="date" value={form.date} onChange={e => set('date',e.target.value)}/></div>
-        {(type==='invoice'||type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} onChange={e => set('due_date',e.target.value)}/></div>}
+        {type==='invoice' && <div className="form-row"><label>Due Date</label><input type="date" value={form.due_date} onChange={e => set('due_date',e.target.value)}/></div>}
+        {type==='invoice' && <div className="form-row"><label>Credit Period (days)</label><input type="number" value={form.credit_days||30} onChange={e=>{set('credit_days',+e.target.value);set('due_date',new Date(Date.now()+(+e.target.value)*86400000).toISOString().split('T')[0]);}}/></div>}
+        {(type==='purchase_order'||type==='sales_order') && <div className="form-row"><label>ETA (Expected Delivery)</label><input type="date" value={form.due_date} onChange={e => set('due_date',e.target.value)}/></div>}
         {(type==='quotation'||type==='proforma') && <div className="form-row"><label>Validity (days)</label><input type="number" value={form.validity} onChange={e => set('validity',e.target.value)}/></div>}
         <div className="form-row"><label>Client's Ref No.</label><input value={form.client_quotation_number} onChange={e => set('client_quotation_number',e.target.value)} placeholder="Client's own reference"/></div>
         {showPO && <div className="form-row"><label>Purchase Order No.</label><input value={form.po_number} onChange={e => set('po_number',e.target.value)}/></div>}
-        {showSO && <div className="form-row"><label>Sales Order No.</label><input value={form.so_number} onChange={e => set('so_number',e.target.value)}/></div>}
+        {showSO && type!=='invoice' && <div className="form-row"><label>Sales Order No.</label><input value={form.so_number} onChange={e => set('so_number',e.target.value)}/></div>}
+        {type==='invoice' && <div className="form-row"><label>Invoice No. (editable)</label><input value={form.so_number} onChange={e => set('so_number',e.target.value)} placeholder="Custom invoice number (optional)"/></div>}
         <div className="form-row"><label>Currency</label>
           <select value={form.currency} onChange={e => {set('currency',e.target.value);setItems(prev=>prev.map(it=>({...it,currency:e.target.value})));}}> 
             {api.CURRENCIES.map(c => <option key={c}>{c}</option>)}
@@ -712,7 +662,18 @@ function PayForm({ doc, clients, onClose }) {
         <div className="form-row col-span2"><label>Note</label><input value={form.note} onChange={e => set('note',e.target.value)}/></div>
       </div>
       <div className="modal-footer"><button className="btn" onClick={onClose}>Cancel</button>
-        <button className="btn btn-success" onClick={async () => {await api.createPayment(form);onClose();}}>Record Payment</button>
+        <button className="btn btn-success" onClick={async () => {
+          await api.createPayment(form);
+          // Auto-delete due reminder for this invoice if fully paid
+          if (form.invoice_id) {
+            try {
+              const drs = await api.getDueReminders();
+              const dr = (drs||[]).find(r => r.invoice_id === form.invoice_id);
+              if (dr) await api.deleteDueReminder(dr.id);
+            } catch(e) {}
+          }
+          onClose();
+        }}>Record Payment</button>
       </div>
     </Modal>
   );
@@ -779,7 +740,8 @@ function DocList({ type, clients, products, showNew, onClearNew, brand }) {
         ) : (
           <table><thead><tr>
             <th>ID</th><th>Client</th><th>Date</th>
-            {type==='invoice'&&<th>Due</th>}
+            {type==='invoice'&&<th>Due Date</th>}
+            {(type==='purchase_order'||type==='sales_order')&&<th>ETA</th>}
             {(type==='purchase_order'||type==='sales_order'||type==='invoice')&&<th>PO/SO</th>}
             <th>Currency</th><th>Amount</th>
             {type==='invoice'&&<th>Paid</th>}
@@ -795,6 +757,7 @@ function DocList({ type, clients, products, showNew, onClearNew, brand }) {
               <td><strong>{cl?.name||'—'}</strong></td>
               <td>{doc.date}</td>
               {type==='invoice'&&<td>{doc.due_date||'—'}</td>}
+              {(type==='purchase_order'||type==='sales_order')&&<td>{doc.due_date||'—'}</td>}
               {(type==='purchase_order'||type==='sales_order'||type==='invoice')&&<td><small className="muted">{[doc.po_number,doc.so_number].filter(Boolean).join('/')||'—'}</small></td>}
               <td><span className="badge badge-gray">{currency}</span></td>
               <td className="bold">{fmtAmt(total,currency)}</td>
@@ -824,24 +787,66 @@ function DocList({ type, clients, products, showNew, onClearNew, brand }) {
 // ── PAYMENTS ──────────────────────────────────────────────────────────────────
 function Payments({ clients }) {
   const [payments, setPayments] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [modal, setModal] = useState(false);
-  const load = useCallback(() => api.getPayments().then(setPayments).catch(()=>{}), []);
+  const load = useCallback(() => {
+    api.getPayments().then(setPayments).catch(()=>{});
+    api.getDocuments('invoice').then(setInvoices).catch(()=>{});
+  }, []);
   useEffect(() => { load(); }, [load]);
-  const total = payments.reduce((s,p) => s+p.amount,0);
+  // FIX 7: Correct total sum using parseFloat
+  const total = payments.reduce((s,p) => s + parseFloat(p.amount||0), 0);
+  const thisMonth = payments.filter(p=>p.date?.startsWith(new Date().toISOString().slice(0,7))).reduce((s,p)=>s+parseFloat(p.amount||0),0);
   return (
     <div>
-      <div className="topbar-actions"><button className="btn btn-primary" onClick={() => setModal(true)}>+ Record Payment</button></div>
+      <div style={{display:'flex',gap:8,marginBottom:14,justifyContent:'flex-end'}}>
+        <button className="btn" onClick={load}>↺ Refresh</button>
+        <button className="btn btn-primary" onClick={() => setModal(true)}>+ Record Payment</button>
+      </div>
       <div className="grid3 mb16">
         <div className="metric"><div className="metric-label">Transactions</div><div className="metric-val">{payments.length}</div></div>
         <div className="metric"><div className="metric-label">Total Received</div><div className="metric-val green">{fmtAmt(total)}</div></div>
-        <div className="metric"><div className="metric-label">This Month</div><div className="metric-val blue">{fmtAmt(payments.filter(p=>p.date?.startsWith(new Date().toISOString().slice(0,7))).reduce((s,p)=>s+p.amount,0))}</div></div>
+        <div className="metric"><div className="metric-label">This Month</div><div className="metric-val blue">{fmtAmt(thisMonth)}</div></div>
       </div>
       <div className="card">
-        <table><thead><tr><th>ID</th><th>Invoice</th><th>Client</th><th>Date</th><th>Amount</th><th>Mode</th><th>Reference</th></tr></thead>
-        <tbody>{payments.map(p => {
-          const cl=clients.find(c=>c.id===p.client_id);
-          return (<tr key={p.id}><td><code>{p.id}</code></td><td><code>{p.invoice_id||'—'}</code></td><td>{cl?.name||'—'}</td><td>{p.date}</td><td className="success bold">{fmtAmt(p.amount,p.currency)}</td><td>{p.mode}</td><td><small className="muted">{p.ref}</small></td></tr>);
-        })}</tbody></table>
+        <table>
+          <thead><tr>
+            <th>Invoice</th><th>Client</th><th>Date</th>
+            <th style={{textAlign:'right'}}>Paid Amount</th>
+            <th style={{textAlign:'right'}}>Due Balance</th>
+            <th>Reference</th><th></th>
+          </tr></thead>
+          <tbody>{payments.map(p => {
+            const cl = clients.find(c=>c.id===p.client_id);
+            const inv = invoices.find(i=>i.id===p.invoice_id);
+            const invItems = inv?.items||[];
+            const invTotal = invItems.reduce((s,it)=>s+(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0),0)*1.18;
+            const paidAmt = parseFloat(p.amount||0);
+            const dueBalance = inv ? Math.max(0, invTotal - parseFloat(inv.paid||0)) : null;
+            return (
+              <tr key={p.id}>
+                <td><code>{p.invoice_id||'—'}</code></td>
+                <td><strong>{cl?.name||'—'}</strong></td>
+                <td style={{fontSize:12}}>{p.date}</td>
+                <td style={{textAlign:'right'}} className="success bold">{fmtAmt(paidAmt,p.currency)}</td>
+                <td style={{textAlign:'right'}}>
+                  {dueBalance !== null
+                    ? <span style={{fontWeight:700,color:dueBalance>0?'#dc2626':'#15803d'}}>{dueBalance>0?fmtAmt(dueBalance,p.currency):'✓ Cleared'}</span>
+                    : <span className="muted">—</span>}
+                </td>
+                <td><small className="muted">{p.ref||'—'}</small></td>
+                <td>
+                  <button className="btn-x" style={{fontSize:15}} onClick={async()=>{
+                    if(window.confirm('Delete this payment record?')) {
+                      await api.deletePayment(p.id);
+                      load();
+                    }
+                  }}>🗑</button>
+                </td>
+              </tr>
+            );
+          })}</tbody>
+        </table>
       </div>
       {modal&&<PayForm clients={clients} onClose={() => {setModal(false);load();}}/>}
     </div>
