@@ -497,8 +497,8 @@ function Products({ onDataChange, brand }) {
         );
       })}
   </tbody>
-</table>  </tbody>
-</table>// ── DOC FORM ──────────────────────────────────────────────────────────────────
+</table>
+    </table>// ── DOC FORM ──────────────────────────────────────────────────────────────────
 function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
