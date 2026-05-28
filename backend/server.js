@@ -26,34 +26,48 @@ initDb().then(db => {
     const prefix = DOC_PREFIXES[type] || 'BVM-DOC';
     const brandPrefix = brand === 'world' ? 'W' : 'I';
     const fullPrefix = prefix + '-' + brandPrefix;
-    // Get all IDs with this prefix and find the max number
-    const rows = await db.prepare("SELECT id FROM documents WHERE id LIKE $1").all(fullPrefix + '%');
+    // Try sequential first, fallback to timestamp to avoid duplicates
+    const rows = await db.prepare("SELECT id FROM documents WHERE id LIKE $1 ORDER BY created_at DESC").all(fullPrefix + '%');
     let maxN = 0;
     rows.forEach(r => {
-      const num = parseInt(r.id.replace(fullPrefix, '')) || 0;
+      const suffix = r.id.slice(fullPrefix.length);
+      const num = parseInt(suffix) || 0;
       if (num > maxN) maxN = num;
     });
-    return fullPrefix + String(maxN + 1).padStart(4, '0');
+    const candidate = fullPrefix + String(maxN + 1).padStart(4, '0');
+    // Verify candidate doesn't exist
+    const exists = await db.prepare("SELECT id FROM documents WHERE id = $1").get(candidate);
+    if (exists) {
+      // Fallback: use timestamp-based ID
+      return fullPrefix + String(Date.now()).slice(-6);
+    }
+    return candidate;
   }
   async function nextClientId(brand) {
     const prefix = brand === 'world' ? 'W' : 'C';
     const rows = await db.prepare("SELECT id FROM clients WHERE id LIKE $1").all(prefix + '%');
     let maxN = 0;
     rows.forEach(r => {
-      const num = parseInt(r.id.replace(prefix, '')) || 0;
+      const num = parseInt(r.id.slice(prefix.length)) || 0;
       if (num > maxN) maxN = num;
     });
-    return prefix + String(maxN + 1).padStart(3, '0');
+    const candidate = prefix + String(maxN + 1).padStart(3, '0');
+    const exists = await db.prepare("SELECT id FROM clients WHERE id = $1").get(candidate);
+    if (exists) return prefix + String(Date.now()).slice(-5);
+    return candidate;
   }
   async function nextProductId(brand) {
     const prefix = brand === 'world' ? 'WP' : 'P';
     const rows = await db.prepare("SELECT id FROM products WHERE id LIKE $1").all(prefix + '%');
     let maxN = 0;
     rows.forEach(r => {
-      const num = parseInt(r.id.replace(prefix, '')) || 0;
+      const num = parseInt(r.id.slice(prefix.length)) || 0;
       if (num > maxN) maxN = num;
     });
-    return prefix + String(maxN + 1).padStart(3, '0');
+    const candidate = prefix + String(maxN + 1).padStart(3, '0');
+    const exists = await db.prepare("SELECT id FROM products WHERE id = $1").get(candidate);
+    if (exists) return prefix + String(Date.now()).slice(-5);
+    return candidate;
   }
   async function nextPaymentId() {
     const row = await db.prepare(`SELECT COUNT(*) as c FROM payments`).get();
@@ -103,18 +117,18 @@ initDb().then(db => {
     }
   }));
   app.post('/api/products', wrap(async (req, res) => {
-    const { name, sku, category, hsn, unit, rate, gst, opening_stock, brand, model_no } = req.body;
+    const { name, sku, category, hsn, unit, rate, gst, opening_stock, brand, model_no, description } = req.body;
     const id = await nextProductId(brand);
-    await db.prepare(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst,brand,model_no) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`)
-      .run(id, name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate)||0, parseInt(gst)||18, brand||'india', model_no||'');
+    await db.prepare(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst,brand,model_no,description) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`)
+      .run(id, name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate)||0, parseInt(gst)||18, brand||'india', model_no||'', description||'');
     await db.prepare(`INSERT INTO inventory (product_id,stock,reorder,warehouse) VALUES ($1,$2,10,'Main Godown')`)
       .run(id, parseFloat(opening_stock)||0);
     res.json(await db.prepare('SELECT * FROM products WHERE id = $1').get(id));
   }));
   app.put('/api/products/:id', wrap(async (req, res) => {
-    const { name, sku, category, hsn, unit, rate, gst, model_no } = req.body;
-    await db.prepare(`UPDATE products SET name=$1,sku=$2,category=$3,hsn=$4,unit=$5,rate=$6,gst=$7,model_no=$8 WHERE id=$9`)
-      .run(name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate), parseInt(gst), model_no||'', req.params.id);
+    const { name, sku, category, hsn, unit, rate, gst, model_no, description } = req.body;
+    await db.prepare(`UPDATE products SET name=$1,sku=$2,category=$3,hsn=$4,unit=$5,rate=$6,gst=$7,model_no=$8,description=$9 WHERE id=$10`)
+      .run(name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate), parseInt(gst), model_no||'', description||'', req.params.id);
     res.json(await db.prepare('SELECT * FROM products WHERE id = $1').get(req.params.id));
   }));
 
@@ -461,6 +475,11 @@ initDb().then(db => {
 
   app.delete('/api/due-reminders/:id', wrap(async (req, res) => {
     await db.prepare('DELETE FROM due_reminders WHERE id=$1').run(req.params.id);
+    res.json({ deleted: true });
+  }));
+
+  app.delete('/api/payments/:id', wrap(async (req, res) => {
+    await db.prepare('DELETE FROM payments WHERE id=$1').run(req.params.id);
     res.json({ deleted: true });
   }));
 
