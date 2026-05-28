@@ -1788,8 +1788,19 @@ function Payments({ clients }) {
             );
           })}</tbody>
         </table>
-      </div>
-      {modal&&<PayForm clients={clients} onClose={() => {setModal(false);load();}}/>}
+      </div>      {modal && (
+        <PayForm
+          clients={clients}
+          onClose={() => {
+            setModal(false);
+            load();
+          }}
+        />
+      )}
+
+    </div>
+  );
+}(false);load();}}/>}
     </div>
   );
 }
