@@ -565,8 +565,9 @@ function Inventory({ brand }) {
 
   );
 
-}    ── DOC FORM ──────────────────────────────────────────────────────────────────
-function DocForm({ type, clients, products, onClose, onSaved, brand }) {
+}
+
+// ── DOC FORM ──────────────────────────────────────────────────────────────────function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
   const cfg = BRAND_CONFIG[brand];
