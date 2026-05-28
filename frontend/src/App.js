@@ -622,27 +622,17 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
           },0);
           return rateAmt>0 ? <div key={rate} className="tot-row"><span>GST ({rate}%)</span><span>{fmtAmt(rateAmt,form.currency)}</span></div> : null;
         })}
-        <div className="tot-row grand"><span>Total</span><span>{fmtAmt(subtotal+gstAmt,form.currency)}</span></div>
-      </div>
-
-    <div
-  style={{
-    textAlign:'right',
-    marginTop:'20px',
-    paddingRight:'20px'
-  }}
->
-  <img
-<div
+        <div className="tot-row grand"><div
   style={{
     textAlign: "right",
     marginTop: "20px",
     paddingRight: "20px"
   }}
 >
-  
+  <img
     src="https://kriqnuuspbgnkoxofnxz.supabase.co/storage/v1/object/public/Vedpal%20Raghav%20Sig/Vedpal%20Sig.png"
     alt="Signature"
+    crossOrigin="anonymous"
     style={{
       width: "150px",
       height: "auto",
@@ -659,8 +649,8 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
     }}
   >
     Authorized Signatory
-  
-</div>      <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
+  </div>
+</div></div>      <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
       <div className="modal-footer">
         <button className="btn" onClick={onClose}>Cancel</button>
         <button className="btn btn-primary" onClick={save}>Save {label}</button>
