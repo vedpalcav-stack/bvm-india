@@ -783,7 +783,7 @@ function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
   const [products, setProducts] = useState([]);
 
-  // STOCK POPUP
+  // STOCK ENTRY MODAL
   const [stockModal, setStockModal] = useState(false);
 
   const [stockForm, setStockForm] = useState({
@@ -796,7 +796,7 @@ function Inventory({ brand }) {
     warehouse: 'Main Warehouse'
   });
 
-  // LOAD DATA
+  // LOAD INVENTORY + PRODUCTS
   const load = useCallback(async () => {
 
     try {
@@ -849,13 +849,14 @@ function Inventory({ brand }) {
 
       const qty = Number(stockForm.qty || 0);
 
-      // EXISTING INVENTORY
+      // FIND EXISTING STOCK
       const current = inventory.find(
         i => i.product_id === stockForm.product_id
       );
 
       let newStock = qty;
 
+      // UPDATE EXISTING
       if (current) {
 
         newStock =
@@ -871,11 +872,16 @@ function Inventory({ brand }) {
 
           make: stockForm.make,
 
-          model: stockForm.model
+          model: stockForm.model,
+
+          warehouse: stockForm.warehouse
 
         });
 
-      } else {
+      }
+
+      // CREATE NEW
+      else {
 
         await api.createInventory({
 
@@ -905,7 +911,18 @@ function Inventory({ brand }) {
 
       }
 
+      // RESET
       setStockModal(false);
+
+      setStockForm({
+        product_id: '',
+        type: 'IN',
+        qty: '',
+        rate: '',
+        make: '',
+        model: '',
+        warehouse: 'Main Warehouse'
+      });
 
       load();
 
@@ -923,28 +940,18 @@ function Inventory({ brand }) {
 
     <div>
 
-      {/* TOP BUTTON */}
+      {/* TOP ACTION BAR */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'flex-end',
-          marginBottom: '12px'
+          marginBottom: '14px'
         }}
       >
 
         <button
           className="btn btn-primary"
           onClick={() => {
-
-            setStockForm({
-              product_id: '',
-              type: 'IN',
-              qty: '',
-              rate: '',
-              make: '',
-              model: '',
-              warehouse: 'Main Warehouse'
-            });
 
             setStockModal(true);
 
@@ -955,7 +962,7 @@ function Inventory({ brand }) {
 
       </div>
 
-      {/* TABLE */}
+      {/* INVENTORY TABLE */}
       <div className="card">
 
         <table>
@@ -978,7 +985,7 @@ function Inventory({ brand }) {
 
               <th>Unit Rate</th>
 
-              <th>Stock/QTY</th>
+              <th>Stock / Qty</th>
 
               <th>Total Amount</th>
 
@@ -1021,7 +1028,9 @@ function Inventory({ brand }) {
 
                     {/* SKU */}
                     <td>
-                      <code>{inv.sku}</code>
+                      <code>
+                        {inv.sku}
+                      </code>
                     </td>
 
                     {/* WAREHOUSE */}
@@ -1101,7 +1110,7 @@ function Inventory({ brand }) {
 
       </div>
 
-      {/* STOCK MODAL */}
+      {/* STOCK ENTRY MODAL */}
       {stockModal && (
 
         <Modal
@@ -1159,6 +1168,7 @@ function Inventory({ brand }) {
                 }}
               >
 
+                {/* PURCHASE */}
                 <button
                   type="button"
                   className={`btn ${
@@ -1173,6 +1183,7 @@ function Inventory({ brand }) {
                   Purchase IN
                 </button>
 
+                {/* SALE */}
                 <button
                   type="button"
                   className={`btn ${
