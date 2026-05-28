@@ -1,4 +1,4 @@
-\const express = require('express');
+const express = require('express');
 const cors    = require('cors');
 const { initDb }                        = require('./db');
 const { generateDocPDF, generateBothPDFs } = require('./pdfgen');
@@ -26,28 +26,34 @@ initDb().then(db => {
     const prefix = DOC_PREFIXES[type] || 'BVM-DOC';
     const brandPrefix = brand === 'world' ? 'W' : 'I';
     const fullPrefix = prefix + '-' + brandPrefix;
-    // Use MAX to find highest existing number — avoids duplicate key on recount
-    const row = await db.prepare(
-      "SELECT MAX(CAST(SUBSTRING(id, $1) AS INTEGER)) as maxn FROM documents WHERE id LIKE $2"
-    ).get(fullPrefix.length + 1, fullPrefix + '%');
-    const next = (Number(row?.maxn) || 0) + 1;
-    return fullPrefix + String(next).padStart(4, '0');
+    // Get all IDs with this prefix and find the max number
+    const rows = await db.prepare("SELECT id FROM documents WHERE id LIKE $1").all(fullPrefix + '%');
+    let maxN = 0;
+    rows.forEach(r => {
+      const num = parseInt(r.id.replace(fullPrefix, '')) || 0;
+      if (num > maxN) maxN = num;
+    });
+    return fullPrefix + String(maxN + 1).padStart(4, '0');
   }
   async function nextClientId(brand) {
     const prefix = brand === 'world' ? 'W' : 'C';
-    const row = await db.prepare(
-      "SELECT MAX(CAST(SUBSTRING(id, $1) AS INTEGER)) as maxn FROM clients WHERE id LIKE $2"
-    ).get(prefix.length + 1, prefix + '%');
-    const next = (Number(row?.maxn) || 0) + 1;
-    return prefix + String(next).padStart(3, '0');
+    const rows = await db.prepare("SELECT id FROM clients WHERE id LIKE $1").all(prefix + '%');
+    let maxN = 0;
+    rows.forEach(r => {
+      const num = parseInt(r.id.replace(prefix, '')) || 0;
+      if (num > maxN) maxN = num;
+    });
+    return prefix + String(maxN + 1).padStart(3, '0');
   }
   async function nextProductId(brand) {
     const prefix = brand === 'world' ? 'WP' : 'P';
-    const row = await db.prepare(
-      "SELECT MAX(CAST(SUBSTRING(id, $1) AS INTEGER)) as maxn FROM products WHERE id LIKE $2"
-    ).get(prefix.length + 1, prefix + '%');
-    const next = (Number(row?.maxn) || 0) + 1;
-    return prefix + String(next).padStart(3, '0');
+    const rows = await db.prepare("SELECT id FROM products WHERE id LIKE $1").all(prefix + '%');
+    let maxN = 0;
+    rows.forEach(r => {
+      const num = parseInt(r.id.replace(prefix, '')) || 0;
+      if (num > maxN) maxN = num;
+    });
+    return prefix + String(maxN + 1).padStart(3, '0');
   }
   async function nextPaymentId() {
     const row = await db.prepare(`SELECT COUNT(*) as c FROM payments`).get();
