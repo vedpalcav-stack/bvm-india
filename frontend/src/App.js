@@ -705,10 +705,10 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
         color: '#111827'
       }}
     >
-      Authorized Signatory
-  
-  </div>
+           Authorized Signatory
+    </div>
 
+  </div>
 
 <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
       <div className="modal-footer">
