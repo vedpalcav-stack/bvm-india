@@ -413,92 +413,159 @@ function Products({ onDataChange, brand }) {
 }
 
 // ── INVENTORY ─────────────────────────────────────────────────────────────────
-<table>
-  <thead>
-    <tr>
-      <th>Product</th>
-      <th>SKU</th>
-      <th>Warehouse</th>
-      <th>Unit</th>
+function Inventory({ brand }) {
 
-      {/* NEW COLUMNS */}
-      <th>Unit Rate</th>
-      <th>Stock/QTY</th>
-      <th>Total Amount</th>
+  const [inventory, setInventory] = useState([]);
+  const [products, setProducts] = useState([]);
 
-      <th>Reorder</th>
-      <th>Status</th>
-    </tr>
-  </thead>
+  const load = useCallback(async () => {
 
-  <tbody>
-    {inventory
-      .filter(inv => products.some(p => p.id === inv.product_id))
-      .map(inv => {
+    try {
 
-        const low = inv.stock <= inv.reorder;
+      const inv = await api.getInventory(brand);
+      const prod = await api.getProducts(brand);
 
-        // WITHOUT GST
-        const totalAmount =
-          Number(inv.stock || 0) *
-          Number(inv.unit_rate || 0);
+      setInventory(inv || []);
+      setProducts(prod || []);
 
-        return (
-          <tr key={inv.id}>
+    } catch (err) {
 
-            {/* Product */}
-            <td>
-              <strong>{inv.product_name}</strong>
-            </td>
+      console.error("Inventory Load Error:", err);
 
-            {/* SKU */}
-            <td>
-              <code>{inv.sku}</code>
-            </td>
+    }
 
-            {/* Warehouse */}
-            <td>{inv.warehouse}</td>
+  }, [brand]);
 
-            {/* Unit */}
-            <td>{inv.unit}</td>
+  useEffect(() => {
 
-            {/* Unit Rate */}
-            <td className="bold">
-              ₹{Number(inv.unit_rate || 0).toLocaleString()}
-            </td>
+    load();
 
-            {/* Stock/QTY */}
-            <td className={`bold ${low ? 'danger' : 'success'}`}>
-              {inv.stock}
-            </td>
+  }, [load]);
 
-            {/* Total Amount WITHOUT GST */}
-            <td className="bold">
-              ₹{totalAmount.toLocaleString()}
-            </td>
+  return (
 
-            {/* Reorder */}
-            <td className="muted">
-              {inv.reorder}
-            </td>
+    <div className="card">
 
-            {/* Status */}
-            <td>
-              <span
-                className={`badge ${
-                  low ? 'badge-danger' : 'badge-success'
-                }`}
-              >
-                {low ? 'Low Stock' : 'In Stock'}
-              </span>
-            </td>
+      <table>
+
+        <thead>
+          <tr>
+
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Warehouse</th>
+            <th>Unit</th>
+
+            {/* NEW COLUMNS */}
+            <th>Unit Rate</th>
+            <th>Stock/QTY</th>
+            <th>Total Amount</th>
+
+            <th>Reorder</th>
+            <th>Status</th>
 
           </tr>
-        );
-      })}
-  </tbody>
-</table>
-    ── DOC FORM ──────────────────────────────────────────────────────────────────
+        </thead>
+
+        <tbody>
+
+          {inventory
+            .filter(inv =>
+              products.some(p => p.id === inv.product_id)
+            )
+            .map(inv => {
+
+              const low =
+                Number(inv.stock || 0) <=
+                Number(inv.reorder || 0);
+
+              // TOTAL WITHOUT GST
+              const totalAmount =
+                Number(inv.stock || 0) *
+                Number(inv.unit_rate || 0);
+
+              return (
+
+                <tr key={inv.id}>
+
+                  {/* PRODUCT */}
+                  <td>
+                    <strong>{inv.product_name}</strong>
+                  </td>
+
+                  {/* SKU */}
+                  <td>
+                    <code>{inv.sku}</code>
+                  </td>
+
+                  {/* WAREHOUSE */}
+                  <td>
+                    {inv.warehouse}
+                  </td>
+
+                  {/* UNIT */}
+                  <td>
+                    {inv.unit}
+                  </td>
+
+                  {/* UNIT RATE */}
+                  <td className="bold">
+                    ₹{Number(
+                      inv.unit_rate || 0
+                    ).toLocaleString()}
+                  </td>
+
+                  {/* STOCK / QTY */}
+                  <td
+                    className={`bold ${
+                      low ? 'danger' : 'success'
+                    }`}
+                  >
+                    {inv.stock}
+                  </td>
+
+                  {/* TOTAL AMOUNT */}
+                  <td className="bold">
+                    ₹{totalAmount.toLocaleString()}
+                  </td>
+
+                  {/* REORDER */}
+                  <td className="muted">
+                    {inv.reorder}
+                  </td>
+
+                  {/* STATUS */}
+                  <td>
+
+                    <span
+                      className={`badge ${
+                        low
+                          ? 'badge-danger'
+                          : 'badge-success'
+                      }`}
+                    >
+                      {low
+                        ? 'Low Stock'
+                        : 'In Stock'}
+                    </span>
+
+                  </td>
+
+                </tr>
+
+              );
+
+            })}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  );
+
+}    ── DOC FORM ──────────────────────────────────────────────────────────────────
 function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
