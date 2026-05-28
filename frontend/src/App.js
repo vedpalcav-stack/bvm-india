@@ -616,7 +616,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
      
   
   {/* GRAND TOTAL */}
-<div className="totals-block">
+
 
   {/* SUBTOTAL */}
   <div className="tot-row">
@@ -706,7 +706,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
       }}
     >
       Authorized Signatory
-    </div>
+  
   </div>
 
 
