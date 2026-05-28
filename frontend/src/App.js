@@ -640,7 +640,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
     paddingRight: "20px"
   }}
 >
-  <img
+  
     src="https://kriqnuuspbgnkoxofnxz.supabase.co/storage/v1/object/public/Vedpal%20Raghav%20Sig/Vedpal%20Sig.png"
     alt="Signature"
     style={{
@@ -659,7 +659,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
     }}
   >
     Authorized Signatory
-  </div>
+  
 </div>      <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
       <div className="modal-footer">
         <button className="btn" onClick={onClose}>Cancel</button>
