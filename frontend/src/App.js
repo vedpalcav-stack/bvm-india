@@ -633,7 +633,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   }}
 >
   <img
-  <div
+<div
   style={{
     textAlign: "right",
     marginTop: "20px",
@@ -652,33 +652,15 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
 
   <div
     style={{
-      marginTop: "5px",
-      fontWeight: "bold"
+      fontSize: "13px",
+      fontWeight: "700",
+      marginTop: "6px",
+      color: "#111827"
     }}
   >
     Authorized Signatory
   </div>
-</div>
-    alt="Signature"
-    style={{
-      width:'150px',
-      height:'auto',
-      objectFit:'contain'
-    }}
-  />
-
-  <div
-    style={{
-      fontSize:'13px',
-      fontWeight:'700',
-      marginTop:'6px',
-      color:'#111827'
-    }}
-  >
-    Authorized Signatory
-  </div>
-</div>
-      <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
+</div>      <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
       <div className="modal-footer">
         <button className="btn" onClick={onClose}>Cancel</button>
         <button className="btn btn-primary" onClick={save}>Save {label}</button>
