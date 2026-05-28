@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import * as api from './utils/api';
 
 const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Pickup.
-1. Payment Terms: 100% Wire Transfer at the time of Availability.
+1. Payment Terms: As per BVM Conditions.
 2. Delivery: Immediate.
 3. Warranty: Standard as per OEM.`;
 
@@ -16,7 +16,8 @@ function fmtAmt(n, currency = 'INR') {
 // ── MINI INVOICE CARD ─────────────────────────────────────────────────────────
 function InvoiceCard({ doc, client, items, products, brand }) {
   const isIndia  = brand === 'india';
-  const name     = isIndia ? 'BVM INDIA' : 'BVM WORLD PVT LTD';
+  const name     = isIndia ? 'BVM INDIA' : 'BVM WORLD';
+  const tagline  = brand === 'world' ? 'Pvt Ltd' : '';
   const gstin    = isIndia ? '06AGYPR1117M1ZT' : '06AAMCB5079P1ZX';
   const pan      = isIndia ? 'AGYPR1117M' : 'AAMCB5079P';
   const color    = isIndia ? '#166534' : '#1e3a5f';
@@ -25,9 +26,13 @@ function InvoiceCard({ doc, client, items, products, brand }) {
   const border   = isIndia ? '#bbf7d0' : '#bfdbfe';
 
   const currency = doc.currency || 'INR';
-  const subtotal = items.reduce((s, it) => s + (it.qty || 0) * (it.rate || 0), 0);
-  const gst      = subtotal * 0.18;
-  const total    = subtotal + gst;
+  const subtotal = items.reduce((s, it) => s + (parseFloat(it.qty) || 0) * (parseFloat(it.rate) || 0), 0);
+  const gst = items.reduce((s, it) => {
+    const amt = (parseFloat(it.qty)||0)*(parseFloat(it.rate)||0);
+    const gstPct = parseFloat(it.gst) || 18;
+    return s + amt * gstPct / 100;
+  }, 0);
+  const total = subtotal + gst;
   const isSameState = (client?.state || '').toLowerCase() === 'haryana';
   const typeLabel = api.FLOW_LABELS[doc.type] || doc.type;
 
@@ -37,6 +42,7 @@ function InvoiceCard({ doc, client, items, products, brand }) {
       <div style={{ background: '#ffffff', borderBottom: `3px solid ${color}`, padding: '10px 14px', display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
         <div>
           <div style={{ fontSize: 15, fontWeight: 900, color, letterSpacing: -0.3 }}>{name}</div>
+          {tagline && <div style={{ fontSize: 9, color: accent, marginTop: 2 }}>{tagline}</div>}
           <div style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>
             #1, 2nd Floor, Kamla Palace, Gurugram, Haryana - 122001<br />
             GSTIN: {gstin} | PAN: {pan}
@@ -49,9 +55,9 @@ function InvoiceCard({ doc, client, items, products, brand }) {
           <table style={{ fontSize: 9 }}><tbody>
             <tr><td style={{ color: '#64748b', paddingRight: 6, fontWeight: 600 }}>No.</td><td style={{ fontWeight: 800, color }}>{doc.id}</td></tr>
             <tr><td style={{ color: '#64748b', paddingRight: 6, fontWeight: 600 }}>Date</td><td>{doc.date}</td></tr>
-            {doc.due_date   && <tr><td style={{ color: '#64748b', paddingRight: 6, fontWeight: 600 }}>Due</td><td>{doc.due_date}</td></tr>}
+            {doc.due_date && <tr><td style={{ color: '#64748b', paddingRight: 6, fontWeight: 600 }}>{doc.type==='purchase_order'||doc.type==='sales_order' ? 'ETA' : 'Due'}</td><td>{doc.due_date}</td></tr>}
             {doc.po_number  && <tr><td style={{ color: '#64748b', paddingRight: 6, fontWeight: 600 }}>PO</td><td>{doc.po_number}</td></tr>}
-            {doc.so_number  && <tr><td style={{ color: '#64748b', paddingRight: 6, fontWeight: 600 }}>SO</td><td>{doc.so_number}</td></tr>}
+            {doc.so_number && <tr><td style={{ color: '#64748b', paddingRight: 6, fontWeight: 600 }}>{doc.type==='invoice' ? 'Inv No' : 'SO'}</td><td>{doc.so_number}</td></tr>}
             {currency !== 'INR' && <tr><td style={{ color: '#64748b', paddingRight: 6, fontWeight: 600 }}>Curr</td><td>{currency}@{doc.exchange_rate}</td></tr>}
           </tbody></table>
         </div>
@@ -69,8 +75,8 @@ function InvoiceCard({ doc, client, items, products, brand }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
           <thead>
             <tr style={{ background: color }}>
-              {['#', 'Make', 'HSN', 'Qty', 'Unit', `Rate(${currency})`, `Amt(${currency})`].map(h => (
-                <th key={h} style={{ color: '#fff', padding: '4px 6px', fontSize: 9, textAlign: h === 'Description' ? 'left' : 'right', fontWeight: 700 }}>{h}</th>
+              {['#', 'Product', 'Make', 'HSN', 'Qty', 'Unit', `Rate(${currency})`, 'GST%', `Amt(${currency})`].map(h => (
+                <th key={h} style={{ color: '#fff', padding: '4px 6px', fontSize: 9, textAlign: (h==='Product'||h==='Make') ? 'left' : 'right', fontWeight: 700 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -81,11 +87,13 @@ function InvoiceCard({ doc, client, items, products, brand }) {
               return (
                 <tr key={i} style={{ background: i % 2 === 0 ? lightBg : '#fff' }}>
                   <td style={{ padding: '3px 6px', textAlign: 'right', borderBottom: `1px solid ${border}` }}>{it.serial_no || i + 1}</td>
-                  <td style={{ padding: '3px 6px', borderBottom: `1px solid ${border}` }}>{it.description || p?.name}</td>
+                  <td style={{ padding: '3px 6px', borderBottom: `1px solid ${border}` }}>{p?.name || '—'}{it.model_no ? <span style={{color:'#94a3b8',fontSize:9}}> | {it.model_no}</span> : null}</td>
+                  <td style={{ padding: '3px 6px', borderBottom: `1px solid ${border}` }}>{it.description || '—'}</td>
                   <td style={{ padding: '3px 6px', textAlign: 'right', borderBottom: `1px solid ${border}` }}>{it.hsn || p?.hsn}</td>
                   <td style={{ padding: '3px 6px', textAlign: 'right', borderBottom: `1px solid ${border}` }}>{it.qty}</td>
                   <td style={{ padding: '3px 6px', textAlign: 'right', borderBottom: `1px solid ${border}` }}>{it.unit || p?.unit}</td>
                   <td style={{ padding: '3px 6px', textAlign: 'right', borderBottom: `1px solid ${border}` }}>{fmtAmt(it.rate, currency)}</td>
+                  <td style={{ padding: '3px 6px', textAlign: 'right', borderBottom: `1px solid ${border}` }}>{parseFloat(it.gst)||18}%</td>
                   <td style={{ padding: '3px 6px', textAlign: 'right', fontWeight: 700, color, borderBottom: `1px solid ${border}` }}>{fmtAmt(amt, currency)}</td>
                 </tr>
               );
@@ -98,10 +106,21 @@ function InvoiceCard({ doc, client, items, products, brand }) {
           <table style={{ width: 200 }}>
             <tbody>
               <tr><td style={{ color: '#64748b', fontSize: 10 }}>Subtotal</td><td style={{ textAlign: 'right', fontSize: 10 }}>{fmtAmt(subtotal, currency)}</td></tr>
-              {isSameState ? <>
-                <tr><td style={{ color: '#64748b', fontSize: 10 }}>CGST (9%)</td><td style={{ textAlign: 'right', fontSize: 10 }}>{fmtAmt(gst / 2, currency)}</td></tr>
-                <tr><td style={{ color: '#64748b', fontSize: 10 }}>SGST (9%)</td><td style={{ textAlign: 'right', fontSize: 10 }}>{fmtAmt(gst / 2, currency)}</td></tr>
-              </> : <tr><td style={{ color: '#64748b', fontSize: 10 }}>IGST (18%)</td><td style={{ textAlign: 'right', fontSize: 10 }}>{fmtAmt(gst, currency)}</td></tr>}
+              {[0,5,12,18,28].map(rate => {
+                const rateAmt = items.reduce((s,it) => {
+                  if((parseFloat(it.gst)||18)===rate) return s+(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)*rate/100;
+                  return s;
+                },0);
+                if(rateAmt<=0) return null;
+                return isSameState ? (
+                  <React.Fragment key={rate}>
+                    <tr><td style={{color:'#64748b',fontSize:10}}>CGST ({rate/2}%)</td><td style={{textAlign:'right',fontSize:10}}>{fmtAmt(rateAmt/2,currency)}</td></tr>
+                    <tr><td style={{color:'#64748b',fontSize:10}}>SGST ({rate/2}%)</td><td style={{textAlign:'right',fontSize:10}}>{fmtAmt(rateAmt/2,currency)}</td></tr>
+                  </React.Fragment>
+                ) : (
+                  <tr key={rate}><td style={{color:'#64748b',fontSize:10}}>IGST ({rate}%)</td><td style={{textAlign:'right',fontSize:10}}>{fmtAmt(rateAmt,currency)}</td></tr>
+                );
+              })}
               {doc.paid > 0 && <tr><td style={{ color: '#15803d', fontSize: 10 }}>Paid</td><td style={{ textAlign: 'right', color: '#15803d', fontSize: 10 }}>- {fmtAmt(doc.paid, currency)}</td></tr>}
               <tr style={{ borderTop: `2px solid ${color}` }}>
                 <td style={{ fontWeight: 900, fontSize: 12, color, paddingTop: 4 }}>Total Due</td>
@@ -113,7 +132,7 @@ function InvoiceCard({ doc, client, items, products, brand }) {
 
         {/* Terms */}
         <div style={{ marginTop: 8, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 5, padding: '6px 10px', fontSize: 9, color: '#78350f', lineHeight: 1.8 }}>
-          <strong>T&C:</strong> Freight Forwarder confirmed at Pickup · 100% Wire Transfer · Immediate Delivery · Standard OEM Warranty
+          <strong>T&C:</strong> {doc.terms ? doc.terms.split('\n').filter(Boolean).join(' · ') : 'Freight Forwarder confirmed at Pickup · As per BVM Conditions · Immediate Delivery · Standard OEM Warranty'}
         </div>
 
         {/* Footer */}
@@ -188,7 +207,7 @@ export default function DualDocView({ doc: initialDoc, clients, products, onClos
   };
 
   const subtotal = items.reduce((s, it) => s + (parseFloat(it.qty) || 0) * (parseFloat(it.rate) || 0), 0);
-  const gstAmt   = subtotal * 0.18;
+  const gstAmt = items.reduce((s,it)=>{const amt=(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0);return s+amt*(parseFloat(it.gst)||18)/100;},0);
 
   // Flow bar
   const flowSteps = [
@@ -281,7 +300,8 @@ export default function DualDocView({ doc: initialDoc, clients, products, onClos
                 <thead><tr>
                   <th style={{ width: 38 }}>S.No</th>
                   <th style={{ width: 140 }}>Product</th>
-                  <th style={{ width: 160 }}>Make</th>
+                  <th style={{ width: 120 }}>Make</th>
+                  <th style={{ width: 46 }}>GST%</th>
                   <th style={{ width: 50 }}>HSN</th>
                   <th style={{ width: 55 }}>Qty</th>
                   <th style={{ width: 80 }}>Unit</th>
@@ -297,7 +317,8 @@ export default function DualDocView({ doc: initialDoc, clients, products, onClos
                       <td><select value={it.product_id} onChange={e => updateItem(i, 'product_id', e.target.value)}>
                         {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                       </select></td>
-                      <td><input value={it.description || ''} onChange={e => updateItem(i, 'description', e.target.value)} /></td>
+                      <td><input value={it.description || ''} onChange={e => updateItem(i, 'description', e.target.value)} placeholder="Make/Brand"/></td>
+                      <td><select value={it.gst||18} onChange={e => updateItem(i,'gst',+e.target.value)} style={{width:60}}>{[0,5,12,18,28].map(g=><option key={g} value={g}>{g}%</option>)}</select></td>
                       <td><input value={it.hsn || ''} onChange={e => updateItem(i, 'hsn', e.target.value)} /></td>
                       <td><input type="number" value={it.qty} onChange={e => updateItem(i, 'qty', e.target.value)} /></td>
                       <td><select value={it.unit} onChange={e => updateItem(i, 'unit', e.target.value)}>
@@ -317,7 +338,7 @@ export default function DualDocView({ doc: initialDoc, clients, products, onClos
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
               <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 14px', minWidth: 240, fontSize: 13 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}><span>Subtotal</span><span>{fmtAmt(subtotal, currency)}</span></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}><span>GST (18%)</span><span>{fmtAmt(gstAmt, currency)}</span></div>
+                {[0,5,12,18,28].map(rate=>{const rA=items.reduce((s,it)=>(parseFloat(it.gst)||18)===rate?s+(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)*rate/100:s,0);return rA>0?<div key={rate} style={{display:'flex',justifyContent:'space-between',color:'#64748b'}}><span>GST ({rate}%)</span><span>{fmtAmt(rA,currency)}</span></div>:null;})}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: 15, borderTop: '2px solid #0f172a', paddingTop: 6, marginTop: 6 }}>
                   <span>Total</span><span>{fmtAmt(subtotal + gstAmt, currency)}</span>
                 </div>
