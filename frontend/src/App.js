@@ -656,6 +656,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   {/* GST BREAKUP */}
   {[0,5,12,18,28].map(rate => {
     const rateAmt = items.reduce((s,it) => {
+
       if ((parseFloat(it.gst) || 18) === rate) {
         return s + (
           (parseFloat(it.qty) || 0) *
@@ -663,7 +664,9 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
           rate / 100
         );
       }
+
       return s;
+
     }, 0);
 
     return rateAmt > 0 ? (
@@ -735,8 +738,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
     </div>
   </div>
 
-</div>
-```
+</div>```
 
 <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
       <div className="modal-footer">
