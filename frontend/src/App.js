@@ -633,7 +633,32 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   }}
 >
   <img
-    https://kriqnuuspbgnkoxofnxz.supabase.co/storage/v1/object/public/Vedpal%20Raghav%20Sig/Vedpal%20Sig.png
+  <div
+  style={{
+    textAlign: "right",
+    marginTop: "20px",
+    paddingRight: "20px"
+  }}
+>
+  <img
+    src="https://kriqnuuspbgnkoxofnxz.supabase.co/storage/v1/object/public/Vedpal%20Raghav%20Sig/Vedpal%20Sig.png"
+    alt="Signature"
+    style={{
+      width: "150px",
+      height: "auto",
+      objectFit: "contain"
+    }}
+  />
+
+  <div
+    style={{
+      marginTop: "5px",
+      fontWeight: "bold"
+    }}
+  >
+    Authorized Signatory
+  </div>
+</div>
     alt="Signature"
     style={{
       width:'150px',
