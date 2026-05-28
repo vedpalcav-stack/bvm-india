@@ -25,18 +25,29 @@ initDb().then(db => {
   async function nextId(type, brand) {
     const prefix = DOC_PREFIXES[type] || 'BVM-DOC';
     const brandPrefix = brand === 'world' ? 'W' : 'I';
-    const row = await db.prepare('SELECT COUNT(*) as c FROM documents WHERE type = $1').get(type);
-    return prefix + '-' + brandPrefix + String(Number(row.c) + 1).padStart(4, '0');
+    const fullPrefix = prefix + '-' + brandPrefix;
+    // Use MAX to find highest existing number — avoids duplicate key on recount
+    const row = await db.prepare(
+      "SELECT MAX(CAST(SUBSTRING(id, $1) AS INTEGER)) as maxn FROM documents WHERE id LIKE $2"
+    ).get(fullPrefix.length + 1, fullPrefix + '%');
+    const next = (Number(row?.maxn) || 0) + 1;
+    return fullPrefix + String(next).padStart(4, '0');
   }
   async function nextClientId(brand) {
     const prefix = brand === 'world' ? 'W' : 'C';
-    const row = await db.prepare('SELECT COUNT(*) as c FROM clients WHERE brand = $1').get(brand || 'india');
-    return prefix + String(Number(row.c) + 1).padStart(3, '0');
+    const row = await db.prepare(
+      "SELECT MAX(CAST(SUBSTRING(id, $1) AS INTEGER)) as maxn FROM clients WHERE id LIKE $2"
+    ).get(prefix.length + 1, prefix + '%');
+    const next = (Number(row?.maxn) || 0) + 1;
+    return prefix + String(next).padStart(3, '0');
   }
   async function nextProductId(brand) {
     const prefix = brand === 'world' ? 'WP' : 'P';
-    const row = await db.prepare('SELECT COUNT(*) as c FROM products WHERE brand = $1').get(brand || 'india');
-    return prefix + String(Number(row.c) + 1).padStart(3, '0');
+    const row = await db.prepare(
+      "SELECT MAX(CAST(SUBSTRING(id, $1) AS INTEGER)) as maxn FROM products WHERE id LIKE $2"
+    ).get(prefix.length + 1, prefix + '%');
+    const next = (Number(row?.maxn) || 0) + 1;
+    return prefix + String(next).padStart(3, '0');
   }
   async function nextPaymentId() {
     const row = await db.prepare(`SELECT COUNT(*) as c FROM payments`).get();
