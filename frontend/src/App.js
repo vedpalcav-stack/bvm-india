@@ -645,6 +645,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   })}
 
   {/* GRAND TOTAL */}
+```jsx
 <div className="totals-block">
 
   {/* SUBTOTAL */}
@@ -735,7 +736,9 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
     </div>
   </div>
 
-</div><div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
+</div>
+```
+<div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
       <div className="modal-footer">
         <button className="btn" onClick={onClose}>Cancel</button>
         <button className="btn btn-primary" onClick={save}>Save {label}</button>
