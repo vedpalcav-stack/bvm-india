@@ -622,35 +622,90 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
           },0);
           return rateAmt>0 ? <div key={rate} className="tot-row"><span>GST ({rate}%)</span><span>{fmtAmt(rateAmt,form.currency)}</span></div> : null;
         })}
-        <div className="tot-row grand"><div
-  style={{
-    textAlign: "right",
-    marginTop: "20px",
-    paddingRight: "20px"
-  }}
->
-  <img
-    src="https://kriqnuuspbgnkoxofnxz.supabase.co/storage/v1/object/public/Vedpal%20Raghav%20Sig/Vedpal%20Sig.png"
-    alt="Signature"
-    crossOrigin="anonymous"
-    style={{
-      width: "150px",
-      height: "auto",
-      objectFit: "contain"
-    }}
-  />
+       <div className="totals-block">
 
+  <div className="tot-row">
+    <span>Subtotal (excl. GST)</span>
+    <span>{fmtAmt(subtotal,form.currency)}</span>
+  </div>
+
+  {[0,5,12,18,28].map(rate => {
+    const rateAmt = items.reduce((s,it) => {
+      if((parseFloat(it.gst)||18)===rate)
+        return s+(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)*rate/100;
+      return s;
+    },0);
+
+    return rateAmt>0 ? (
+      <div key={rate} className="tot-row">
+        <span>GST ({rate}%)</span>
+        <span>{fmtAmt(rateAmt,form.currency)}</span>
+      </div>
+    ) : null;
+  })}
+
+  {/* GRAND TOTAL */}
   <div
+    className="tot-row grand"
     style={{
-      fontSize: "13px",
-      fontWeight: "700",
-      marginTop: "6px",
-      color: "#111827"
+      borderTop:'2px solid #dc2626',
+      paddingTop:'10px',
+      marginTop:'8px'
     }}
   >
-    Authorized Signatory
+    <span
+      style={{
+        color:'#dc2626',
+        fontWeight:'800',
+        fontSize:'18px'
+      }}
+    >
+      Grand Total
+    </span>
+
+    <span
+      style={{
+        color:'#dc2626',
+        fontWeight:'900',
+        fontSize:'20px'
+      }}
+    >
+      {fmtAmt(subtotal + gstAmt, form.currency)}
+    </span>
   </div>
-</div></div>      <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
+
+  {/* SIGNATURE */}
+  <div
+    style={{
+      textAlign:"right",
+      marginTop:"25px",
+      paddingRight:"20px"
+    }}
+  >
+    <img
+      src="https://kriqnuuspbgnkoxofnxz.supabase.co/storage/v1/object/public/Vedpal%20Raghav%20Sig/Vedpal%20Sig.png"
+      alt="Signature"
+      crossOrigin="anonymous"
+      style={{
+        width:"150px",
+        height:"auto",
+        objectFit:"contain"
+      }}
+    />
+
+    <div
+      style={{
+        fontSize:"13px",
+        fontWeight:"700",
+        marginTop:"6px",
+        color:"#111827"
+      }}
+    >
+      Authorized Signatory
+    </div>
+  </div>
+
+</div>     <div className="form-row mt8"><label>Additional Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)}/></div>
       <div className="modal-footer">
         <button className="btn" onClick={onClose}>Cancel</button>
         <button className="btn btn-primary" onClick={save}>Save {label}</button>
