@@ -613,15 +613,7 @@ function DocForm({ type, clients, products, onClose, onSaved, brand }) {
       </div>
       <button className="btn mt8 mb8" onClick={() => setItems([...items,{serial_no:items.length+1,product_id:products[0]?.id||'',description:products[0]?.name||'',hsn:products[0]?.hsn||'',qty:1,unit:products[0]?.unit||'Piece',rate:products[0]?.rate||0,gst:products[0]?.gst||18,currency:form.currency}])}>+ Add Line</button>
 
-      <div className="totals-block">
-        <div className="tot-row"><span>Subtotal (excl. GST)</span><span>{fmtAmt(subtotal,form.currency)}</span></div>
-        {[0,5,12,18,28].map(rate => {
-          const rateAmt = items.reduce((s,it) => {
-            if((parseFloat(it.gst)||18)===rate) return s+(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)*rate/100;
-            return s;
-          },0);
-          return rateAmt>0 ? <div key={rate} className="tot-row"><span>GST ({rate}%)</span><span>{fmtAmt(rateAmt,form.currency)}</span></div> : null;
-        })}
+     
   
   {/* GRAND TOTAL */}
 <div className="totals-block">
