@@ -89,3 +89,5 @@ export const createDueReminder    = (data)        => api('/api/due-reminders', {
 export const sendReminder1        = (id)          => api(`/api/due-reminders/${id}/reminder1`, { method: 'PUT' });
 export const sendReminder2        = (id)          => api(`/api/due-reminders/${id}/reminder2`, { method: 'PUT' });
 export const deleteDueReminder    = (id)          => api(`/api/due-reminders/${id}`, { method: 'DELETE' });
+
+export const deletePayment = (id) => api(`/api/payments/${id}`, { method: 'DELETE' });
