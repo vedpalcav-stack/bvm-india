@@ -783,19 +783,35 @@ function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
   const [products, setProducts] = useState([]);
 
+  // STOCK POPUP
+  const [stockModal, setStockModal] = useState(false);
+
+  const [stockForm, setStockForm] = useState({
+    product_id: '',
+    type: 'IN',
+    qty: '',
+    rate: '',
+    make: '',
+    model: '',
+    warehouse: 'Main Warehouse'
+  });
+
+  // LOAD DATA
   const load = useCallback(async () => {
 
     try {
 
       const inv = await api.getInventory(brand);
+
       const prod = await api.getProducts(brand);
 
       setInventory(inv || []);
+
       setProducts(prod || []);
 
     } catch (err) {
 
-      console.error("Inventory Load Error:", err);
+      console.error(err);
 
     }
 
@@ -807,131 +823,495 @@ function Inventory({ brand }) {
 
   }, [load]);
 
+  // STOCK FORM SETTER
+  const stockSet = (k, v) =>
+    setStockForm(f => ({
+      ...f,
+      [k]: v
+    }));
+
+  // SAVE STOCK
+  const saveStock = async () => {
+
+    try {
+
+      const product = products.find(
+        p => p.id === stockForm.product_id
+      );
+
+      if (!product) {
+
+        alert('Select Product');
+
+        return;
+
+      }
+
+      const qty = Number(stockForm.qty || 0);
+
+      // EXISTING INVENTORY
+      const current = inventory.find(
+        i => i.product_id === stockForm.product_id
+      );
+
+      let newStock = qty;
+
+      if (current) {
+
+        newStock =
+          stockForm.type === 'IN'
+            ? Number(current.stock || 0) + qty
+            : Number(current.stock || 0) - qty;
+
+        await api.updateInventory(current.id, {
+
+          stock: newStock,
+
+          unit_rate: stockForm.rate,
+
+          make: stockForm.make,
+
+          model: stockForm.model
+
+        });
+
+      } else {
+
+        await api.createInventory({
+
+          brand,
+
+          product_id: stockForm.product_id,
+
+          product_name: product.name,
+
+          sku: product.sku,
+
+          warehouse: stockForm.warehouse,
+
+          unit: product.unit,
+
+          stock: qty,
+
+          reorder: 5,
+
+          unit_rate: stockForm.rate,
+
+          make: stockForm.make,
+
+          model: stockForm.model
+
+        });
+
+      }
+
+      setStockModal(false);
+
+      load();
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert('Stock update failed');
+
+    }
+
+  };
+
   return (
 
-    <div className="card">
+    <div>
 
-      <table>
+      {/* TOP BUTTON */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginBottom: '12px'
+        }}
+      >
 
-        <thead>
-          <tr>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
 
-            <th>Product</th>
-            <th>SKU</th>
-            <th>Warehouse</th>
-            <th>Unit</th>
+            setStockForm({
+              product_id: '',
+              type: 'IN',
+              qty: '',
+              rate: '',
+              make: '',
+              model: '',
+              warehouse: 'Main Warehouse'
+            });
 
-            {/* NEW COLUMNS */}
-            <th>Unit Rate</th>
-            <th>Stock/QTY</th>
-            <th>Total Amount</th>
+            setStockModal(true);
 
-            <th>Reorder</th>
-            <th>Status</th>
+          }}
+        >
+          + Stock Entry
+        </button>
 
-          </tr>
-        </thead>
+      </div>
 
-        <tbody>
+      {/* TABLE */}
+      <div className="card">
 
-          {inventory
-            .filter(inv =>
-              products.some(p => p.id === inv.product_id)
-            )
-            .map(inv => {
+        <table>
 
-              const low =
-                Number(inv.stock || 0) <=
-                Number(inv.reorder || 0);
+          <thead>
 
-              // TOTAL WITHOUT GST
-              const totalAmount =
-                Number(inv.stock || 0) *
-                Number(inv.unit_rate || 0);
+            <tr>
 
-              return (
+              <th>Product</th>
 
-                <tr key={inv.id}>
+              <th>SKU</th>
 
-                  {/* PRODUCT */}
-                  <td>
-                    <strong>{inv.product_name}</strong>
-                  </td>
+              <th>Warehouse</th>
 
-                  {/* SKU */}
-                  <td>
-                    <code>{inv.sku}</code>
-                  </td>
+              <th>Make</th>
 
-                  {/* WAREHOUSE */}
-                  <td>
-                    {inv.warehouse}
-                  </td>
+              <th>Model</th>
 
-                  {/* UNIT */}
-                  <td>
-                    {inv.unit}
-                  </td>
+              <th>Unit</th>
 
-                  {/* UNIT RATE */}
-                  <td className="bold">
-                    ₹{Number(
-                      inv.unit_rate || 0
-                    ).toLocaleString()}
-                  </td>
+              <th>Unit Rate</th>
 
-                  {/* STOCK / QTY */}
-                  <td
-                    className={`bold ${
-                      low ? 'danger' : 'success'
-                    }`}
-                  >
-                    {inv.stock}
-                  </td>
+              <th>Stock/QTY</th>
 
-                  {/* TOTAL AMOUNT */}
-                  <td className="bold">
-                    ₹{totalAmount.toLocaleString()}
-                  </td>
+              <th>Total Amount</th>
 
-                  {/* REORDER */}
-                  <td className="muted">
-                    {inv.reorder}
-                  </td>
+              <th>Reorder</th>
 
-                  {/* STATUS */}
-                  <td>
+              <th>Status</th>
 
-                    <span
-                      className={`badge ${
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {inventory
+              .filter(inv =>
+                products.some(
+                  p => p.id === inv.product_id
+                )
+              )
+              .map(inv => {
+
+                const low =
+                  Number(inv.stock || 0) <=
+                  Number(inv.reorder || 0);
+
+                const totalAmount =
+                  Number(inv.stock || 0) *
+                  Number(inv.unit_rate || 0);
+
+                return (
+
+                  <tr key={inv.id}>
+
+                    {/* PRODUCT */}
+                    <td>
+                      <strong>
+                        {inv.product_name}
+                      </strong>
+                    </td>
+
+                    {/* SKU */}
+                    <td>
+                      <code>{inv.sku}</code>
+                    </td>
+
+                    {/* WAREHOUSE */}
+                    <td>
+                      {inv.warehouse}
+                    </td>
+
+                    {/* MAKE */}
+                    <td>
+                      {inv.make || '-'}
+                    </td>
+
+                    {/* MODEL */}
+                    <td>
+                      {inv.model || '-'}
+                    </td>
+
+                    {/* UNIT */}
+                    <td>
+                      {inv.unit}
+                    </td>
+
+                    {/* RATE */}
+                    <td className="bold">
+                      ₹{Number(
+                        inv.unit_rate || 0
+                      ).toLocaleString()}
+                    </td>
+
+                    {/* STOCK */}
+                    <td
+                      className={`bold ${
                         low
-                          ? 'badge-danger'
-                          : 'badge-success'
+                          ? 'danger'
+                          : 'success'
                       }`}
                     >
-                      {low
-                        ? 'Low Stock'
-                        : 'In Stock'}
-                    </span>
+                      {inv.stock}
+                    </td>
 
-                  </td>
+                    {/* TOTAL */}
+                    <td className="bold">
+                      ₹{totalAmount.toLocaleString()}
+                    </td>
 
-                </tr>
+                    {/* REORDER */}
+                    <td className="muted">
+                      {inv.reorder}
+                    </td>
 
-              );
+                    {/* STATUS */}
+                    <td>
 
-            })}
+                      <span
+                        className={`badge ${
+                          low
+                            ? 'badge-danger'
+                            : 'badge-success'
+                        }`}
+                      >
+                        {low
+                          ? 'Low Stock'
+                          : 'In Stock'}
+                      </span>
 
-        </tbody>
+                    </td>
 
-      </table>
+                  </tr>
+
+                );
+
+              })}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      {/* STOCK MODAL */}
+      {stockModal && (
+
+        <Modal
+          title="Stock Entry"
+          onClose={() =>
+            setStockModal(false)
+          }
+        >
+
+          <div className="form-grid2">
+
+            {/* PRODUCT */}
+            <div className="form-row">
+
+              <label>Product</label>
+
+              <select
+                value={stockForm.product_id}
+                onChange={e =>
+                  stockSet(
+                    'product_id',
+                    e.target.value
+                  )
+                }
+              >
+
+                <option value="">
+                  Select Product
+                </option>
+
+                {products.map(p => (
+
+                  <option
+                    key={p.id}
+                    value={p.id}
+                  >
+                    {p.name}
+                  </option>
+
+                ))}
+
+              </select>
+
+            </div>
+
+            {/* STOCK TYPE */}
+            <div className="form-row">
+
+              <label>Stock Type</label>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '10px'
+                }}
+              >
+
+                <button
+                  type="button"
+                  className={`btn ${
+                    stockForm.type === 'IN'
+                      ? 'btn-success'
+                      : ''
+                  }`}
+                  onClick={() =>
+                    stockSet('type', 'IN')
+                  }
+                >
+                  Purchase IN
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn ${
+                    stockForm.type === 'OUT'
+                      ? 'btn-danger'
+                      : ''
+                  }`}
+                  onClick={() =>
+                    stockSet('type', 'OUT')
+                  }
+                >
+                  Sale OUT
+                </button>
+
+              </div>
+
+            </div>
+
+            {/* MAKE */}
+            <div className="form-row">
+
+              <label>Make</label>
+
+              <input
+                value={stockForm.make}
+                onChange={e =>
+                  stockSet(
+                    'make',
+                    e.target.value
+                  )
+                }
+                placeholder="Brand / Make"
+              />
+
+            </div>
+
+            {/* MODEL */}
+            <div className="form-row">
+
+              <label>Model</label>
+
+              <input
+                value={stockForm.model}
+                onChange={e =>
+                  stockSet(
+                    'model',
+                    e.target.value
+                  )
+                }
+                placeholder="Model Number"
+              />
+
+            </div>
+
+            {/* QTY */}
+            <div className="form-row">
+
+              <label>Qty</label>
+
+              <input
+                type="number"
+                value={stockForm.qty}
+                onChange={e =>
+                  stockSet(
+                    'qty',
+                    e.target.value
+                  )
+                }
+              />
+
+            </div>
+
+            {/* RATE */}
+            <div className="form-row">
+
+              <label>Rate</label>
+
+              <input
+                type="number"
+                value={stockForm.rate}
+                onChange={e =>
+                  stockSet(
+                    'rate',
+                    e.target.value
+                  )
+                }
+              />
+
+            </div>
+
+            {/* WAREHOUSE */}
+            <div className="form-row col-span2">
+
+              <label>Warehouse</label>
+
+              <input
+                value={stockForm.warehouse}
+                onChange={e =>
+                  stockSet(
+                    'warehouse',
+                    e.target.value
+                  )
+                }
+              />
+
+            </div>
+
+          </div>
+
+          {/* FOOTER */}
+          <div className="modal-footer">
+
+            <button
+              className="btn"
+              onClick={() =>
+                setStockModal(false)
+              }
+            >
+              Cancel
+            </button>
+
+            <button
+              className="btn btn-primary"
+              onClick={saveStock}
+            >
+              Save Stock
+            </button>
+
+          </div>
+
+        </Modal>
+
+      )}
 
     </div>
 
   );
 
 }
-
 // ── DOC FORM ──────────────────────────────────────────────────────────────────
 
 function DocForm({ type, clients, products, onClose, onSaved, brand }) {
