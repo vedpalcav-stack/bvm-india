@@ -1788,7 +1788,7 @@ function Payments({ clients }) {
             );
           })}</tbody>
         </table>
-      </div>      {modal && (
+      </div>         {modal && (
         <PayForm
           clients={clients}
           onClose={() => {
@@ -1800,9 +1800,7 @@ function Payments({ clients }) {
 
     </div>
   );
-}(false);load();}}/>}
-    </div>
-  );
+}
 }
 
 // ── REMINDERS ─────────────────────────────────────────────────────────────────
