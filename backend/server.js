@@ -134,48 +134,89 @@ initDb().then(db => {
 
 // ── INVENTORY ────────────────────────────────────────────────────────────────
 
-app.get('/api/inventory', wrap(async (req, res) => {
-
-const rows = await db.prepare(`     SELECT
-      i.*,
-      p.name AS product_name,
-      p.model_no,
-      p.description AS product_description,
-      p.sku,
-      p.unit,
-      p.rate,
-      p.gst
-    FROM inventory i
-    JOIN products p
-      ON i.product_id = p.id
-    ORDER BY p.name
-  `).all();
-
-res.json(rows);
-
-}));
-
 app.post('/api/inventory/update', wrap(async (req, res) => {
 
-const {
-product_id,
-qty,
-type,
-reorder,
-unit_rate,
-total_amount,
-description
-} = req.body;
+  const {
+    product_id,
+    qty,
+    type,
+    reorder,
+    unit_rate,
+    total_amount,
+    description
+  } = req.body;
 
-console.log('Inventory Update Request:', req.body);
+  if (!product_id) {
+    return res.status(400).json({
+      error: 'product_id required'
+    });
+  }
 
-if (!product_id) {
-return res.status(400).json({
-success: false,
-error: 'product_id required'
-});
-}
+  let inv = await db.prepare(
+    'SELECT * FROM inventory WHERE product_id = $1'
+  ).get(product_id);
 
+  if (!inv) {
+
+    await db.prepare(`
+      INSERT INTO inventory
+      (
+        product_id,
+        stock,
+        reorder,
+        warehouse,
+        unit_rate,
+        total_amount,
+        description
+      )
+      VALUES
+      (
+        $1,
+        0,
+        10,
+        'Main Godown',
+        0,
+        0,
+        ''
+      )
+    `).run(product_id);
+
+    inv = {
+      stock: 0,
+      reorder: 10
+    };
+  }
+
+  const newStock =
+    type === 'add'
+      ? Number(inv.stock) + Number(qty || 0)
+      : Math.max(
+          0,
+          Number(inv.stock) - Number(qty || 0)
+        );
+
+  await db.prepare(`
+    UPDATE inventory
+    SET
+      stock = $1,
+      unit_rate = $2,
+      total_amount = $3,
+      description = $4
+    WHERE product_id = $5
+  `).run(
+    newStock,
+    Number(unit_rate || 0),
+    Number(total_amount || 0),
+    description || '',
+    product_id
+  );
+
+  res.json({
+    success: true,
+    stock: newStock
+  });
+
+}));
 let inv = await db.prepare(
 'SELECT * FROM inventory WHERE product_id = $1'
 ).get(product_id);
