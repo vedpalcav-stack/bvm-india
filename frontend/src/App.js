@@ -871,14 +871,43 @@ function Inventory() {
               }}
             >
               Update Stock
-            </button>
+          <div className="modal-footer">
 
-          </div>
+  <button
+    className="btn"
+    onClick={() => setModal(null)}
+  >
+    Cancel
+  </button>
 
-        </Modal>
-      )}
+  <button
+    type="button"
+    className="btn btn-primary"
+    onClick={async () => {
 
-    </div>
+      try {
+
+        await save();
+
+        alert('Product Saved Successfully');
+
+      } catch (err) {
+
+        console.error(err);
+
+        alert(
+          err?.message ||
+          'Failed to Save Product'
+        );
+
+      }
+
+    }}
+  >
+    Save Product
+  </button>
+
+</div>
   );
 }// ── DOC FORM ──────────────────────────────────────────────────────────────────
 function DocForm({ type, clients, products, onClose, onSaved }) {
