@@ -132,93 +132,103 @@ initDb().then(db => {
     res.json(await db.prepare('SELECT * FROM products WHERE id = $1').get(req.params.id));
   }));
 
-// ── INVENTORY ─────────────────────────────────────────────────────────────────
+// ── INVENTORY ────────────────────────────────────────────────────────────────
 
 app.get('/api/inventory', wrap(async (req, res) => {
 
-  res.json(
-    await db.prepare(`
-      SELECT
-        i.*,
-        p.name AS product_name,
-        p.model_no,
-        p.description AS product_description,
-        p.sku,
-        p.unit,
-        p.rate,
-        p.gst
-      FROM inventory i
-      JOIN products p
+const rows = await db.prepare(`     SELECT
+      i.*,
+      p.name AS product_name,
+      p.model_no,
+      p.description AS product_description,
+      p.sku,
+      p.unit,
+      p.rate,
+      p.gst
+    FROM inventory i
+    JOIN products p
       ON i.product_id = p.id
-      ORDER BY p.name
-    `).all()
-  );
+    ORDER BY p.name
+  `).all();
+
+res.json(rows);
 
 }));
 
 app.post('/api/inventory/update', wrap(async (req, res) => {
 
-  const {
+const {
+product_id,
+qty,
+type,
+reorder,
+unit_rate,
+total_amount,
+description
+} = req.body;
+
+console.log('Inventory Update Request:', req.body);
+
+if (!product_id) {
+return res.status(400).json({
+success: false,
+error: 'product_id required'
+});
+}
+
+let inv = await db.prepare(
+'SELECT * FROM inventory WHERE product_id = $1'
+).get(product_id);
+
+if (!inv) {
+
+```
+await db.prepare(`
+  INSERT INTO inventory
+  (
     product_id,
-    qty,
-    type,
+    stock,
     reorder,
+    warehouse,
     unit_rate,
     total_amount,
     description
-  } = req.body;
+  )
+  VALUES
+  (
+    $1,
+    0,
+    10,
+    'Main Godown',
+    0,
+    0,
+    ''
+  )
+`).run(product_id);
 
-  if (!product_id) {
-    return res.status(400).json({
-      error: 'product_id required'
-    });
-  }
+inv = {
+  stock: 0,
+  reorder: 10
+};
+```
 
-  let inv = await db.prepare(
-    'SELECT * FROM inventory WHERE product_id = $1'
-  ).get(product_id);
+}
 
-  if (!inv) {
+const currentStock =
+Number(inv.stock || 0);
 
-    await db.prepare(`
-      INSERT INTO inventory
-      (
-        product_id,
-        stock,
-        reorder,
-        warehouse,
-        unit_rate,
-        total_amount,
-        description
-      )
-      VALUES
-      (
-        $1,
-        0,
-        10,
-        'Main Godown',
-        0,
-        0,
-        ''
-      )
-    `).run(product_id);
+const qtyValue =
+Number(qty || 0);
 
-    inv = {
-      stock: 0,
-      reorder: 10
-    };
-  }
+const newStock =
+type === 'add'
+? currentStock + qtyValue
+: Math.max(
+0,
+currentStock - qtyValue
+);
 
-  const newStock =
-    type === 'add'
-      ? Number(inv.stock) + Number(qty || 0)
-      : Math.max(
-          0,
-          Number(inv.stock) - Number(qty || 0)
-        );
-
-  await db.prepare(`
-    UPDATE inventory
+await db.prepare(`     UPDATE inventory
     SET
       stock = $1,
       unit_rate = $2,
@@ -226,34 +236,53 @@ app.post('/api/inventory/update', wrap(async (req, res) => {
       description = $4
     WHERE product_id = $5
   `).run(
-    newStock,
-    Number(unit_rate || 0),
-    Number(total_amount || 0),
-    description || '',
-    product_id
-  );
+newStock,
+Number(unit_rate || 0),
+Number(total_amount || 0),
+description || '',
+product_id
+);
 
-  if (reorder) {
-    await db.prepare(`
-      UPDATE inventory
-      SET reorder = $1
-      WHERE product_id = $2
-    `).run(
-      Number(reorder),
-      product_id
-    );
-  }
+if (
+reorder !== undefined &&
+reorder !== null &&
+reorder !== ''
+) {
 
-  res.json({
-    success: true,
-    product_id,
-    stock: newStock,
-    unit_rate,
-    total_amount,
-    description
-  });
+```
+await db.prepare(`
+  UPDATE inventory
+  SET reorder = $1
+  WHERE product_id = $2
+`).run(
+  Number(reorder),
+  product_id
+);
+```
 
-}));  // ── DOCUMENTS ─────────────────────────────────────────────────────────────────
+}
+
+const updatedInventory =
+await db.prepare(`       SELECT
+        i.*,
+        p.name AS product_name,
+        p.model_no,
+        p.sku,
+        p.unit
+      FROM inventory i
+      JOIN products p
+        ON i.product_id = p.id
+      WHERE i.product_id = $1
+    `).get(product_id);
+
+res.json({
+success: true,
+message: 'Stock Updated Successfully',
+inventory: updatedInventory
+});
+
+}));
+// ── DOCUMENTS ─────────────────────────────────────────────────────────────────
   app.get('/api/documents', wrap(async (req, res) => {
     const { type, brand } = req.query;
     let docs;
