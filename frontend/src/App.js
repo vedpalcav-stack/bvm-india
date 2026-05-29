@@ -254,54 +254,290 @@ function Clients({ onDataChange }) {
 function Products({ onDataChange }) {
   const [products, setProducts] = useState([]);
   const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({gst:18,unit:'Piece'});
-  const load = useCallback(() => api.getProducts().then(setProducts), []);
-  useEffect(() => { load(); }, [load]);
-  const set = (k,v) => setForm(f => ({...f,[k]:v}));
+  const [form, setForm] = useState({
+    gst: 18,
+    unit: 'Piece',
+    opening_stock: 0
+  });
+
+  const load = useCallback(
+    () => api.getProducts().then(setProducts),
+    []
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const set = (k, v) =>
+    setForm(f => ({
+      ...f,
+      [k]: v
+    }));
+
   const save = async () => {
-    if (modal==='add') await api.createProduct(form);
-    else await api.updateProduct(form.id,form);
-    setModal(null); load(); onDataChange && onDataChange();
+    if (modal === 'add') {
+      await api.createProduct(form);
+    } else {
+      await api.updateProduct(form.id, form);
+    }
+
+    setModal(null);
+    load();
+
+    if (onDataChange) {
+      onDataChange();
+    }
   };
+
   return (
     <div>
-      <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({gst:18,unit:'Piece'});setModal('add');}}>+ Add Product</button></div>
-      <div className="card">
-        <table><thead><tr><th>SKU</th><th>Product Name</th><th>Category</th><th>HSN</th><th>Unit</th><th>Rate</th><th>GST</th><th></th></tr></thead>
-        <tbody>{products.map(p => (
-          <tr key={p.id}>
-            <td><code>{p.sku}</code></td><td><strong>{p.name}</strong></td><td>{p.category}</td>
-            <td>{p.hsn}</td><td>{p.unit}</td><td className="bold">{fmtAmt(p.rate)}</td>
-            <td><Badge status={`${p.gst}%`}/></td>
-            <td><button className="btn btn-sm" onClick={() => {setForm(p);setModal('edit');}}>Edit</button></td>
-          </tr>
-        ))}</tbody></table>
+
+      <div className="topbar-actions">
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setForm({
+              gst: 18,
+              unit: 'Piece',
+              opening_stock: 0
+            });
+            setModal('add');
+          }}
+        >
+          + Add Product
+        </button>
       </div>
+
+      <div className="card">
+        <table>
+
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Product Name</th>
+              <th>Category</th>
+              <th>HSN</th>
+              <th>Unit</th>
+              <th>Rate</th>
+              <th>Stock Qty</th>
+              <th>Total Amount</th>
+              <th>GST</th>
+              <th></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {products.map(p => {
+
+              const stockQty =
+                Number(p.opening_stock || 0);
+
+              const rate =
+                Number(p.rate || 0);
+
+              const totalAmount =
+                stockQty * rate;
+
+              return (
+                <tr key={p.id}>
+
+                  <td>
+                    <code>{p.sku}</code>
+                  </td>
+
+                  <td>
+                    <strong>{p.name}</strong>
+                  </td>
+
+                  <td>{p.category}</td>
+
+                  <td>{p.hsn}</td>
+
+                  <td>{p.unit}</td>
+
+                  <td className="bold">
+                    {fmtAmt(rate)}
+                  </td>
+
+                  <td className="bold">
+                    {stockQty}
+                  </td>
+
+                  <td className="bold">
+                    {fmtAmt(totalAmount)}
+                  </td>
+
+                  <td>
+                    <Badge status={`${p.gst}%`} />
+                  </td>
+
+                  <td>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => {
+                        setForm({
+                          ...p,
+                          opening_stock:
+                            p.opening_stock || 0
+                        });
+                        setModal('edit');
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </td>
+
+                </tr>
+              );
+            })}
+          </tbody>
+
+        </table>
+      </div>
+
       {modal && (
-        <Modal title={modal==='add'?'Add Product':'Edit Product'} onClose={() => setModal(null)}>
+        <Modal
+          title={
+            modal === 'add'
+              ? 'Add Product'
+              : 'Edit Product'
+          }
+          onClose={() => setModal(null)}
+        >
+
           <div className="form-grid2">
-            {[['Product Name','name','text'],['SKU / Part No.','sku','text'],['Category','category','text'],['HSN Code','hsn','text'],['Rate (excl. GST)','rate','number']].map(([label,key,type]) => (
-              <div className="form-row" key={key}><label>{label}</label><input type={type} value={form[key]||''} onChange={e => set(key,e.target.value)}/></div>
+
+            {[
+              ['Product Name', 'name', 'text'],
+              ['SKU / Part No.', 'sku', 'text'],
+              ['Category', 'category', 'text'],
+              ['HSN Code', 'hsn', 'text'],
+              ['Rate (excl. GST)', 'rate', 'number']
+            ].map(([label, key, type]) => (
+              <div
+                className="form-row"
+                key={key}
+              >
+                <label>{label}</label>
+
+                <input
+                  type={type}
+                  value={form[key] || ''}
+                  onChange={e =>
+                    set(key, e.target.value)
+                  }
+                />
+              </div>
             ))}
-            <div className="form-row"><label>Unit</label>
-              <select value={form.unit||'Piece'} onChange={e => set('unit',e.target.value)}>
-                {['Piece','Pcs','Set','Kg','Gram','Metre','Box','Litre','Bag','Roll','Pair','Nos'].map(u => <option key={u}>{u}</option>)}
+
+            <div className="form-row">
+              <label>Unit</label>
+
+              <select
+                value={form.unit || 'Piece'}
+                onChange={e =>
+                  set('unit', e.target.value)
+                }
+              >
+                {[
+                  'Piece',
+                  'Pcs',
+                  'Set',
+                  'Kg',
+                  'Gram',
+                  'Metre',
+                  'Box',
+                  'Litre',
+                  'Bag',
+                  'Roll',
+                  'Pair',
+                  'Nos'
+                ].map(u => (
+                  <option key={u}>
+                    {u}
+                  </option>
+                ))}
               </select>
             </div>
-            <div className="form-row"><label>GST %</label>
-              <select value={form.gst||18} onChange={e => set('gst',+e.target.value)}>
-                {[0,5,12,18,28].map(g => <option key={g} value={g}>{g}%</option>)}
+
+            <div className="form-row">
+              <label>Stock Qty</label>
+
+              <input
+                type="number"
+                value={form.opening_stock || ''}
+                onChange={e =>
+                  set(
+                    'opening_stock',
+                    Number(e.target.value)
+                  )
+                }
+              />
+            </div>
+
+            <div className="form-row">
+              <label>GST %</label>
+
+              <select
+                value={form.gst || 18}
+                onChange={e =>
+                  set(
+                    'gst',
+                    Number(e.target.value)
+                  )
+                }
+              >
+                {[0, 5, 12, 18, 28].map(g => (
+                  <option
+                    key={g}
+                    value={g}
+                  >
+                    {g}%
+                  </option>
+                ))}
               </select>
             </div>
-            {modal==='add' && <div className="form-row"><label>Opening Stock</label><input type="number" value={form.opening_stock||''} onChange={e => set('opening_stock',e.target.value)}/></div>}
+
+            <div className="form-row">
+              <label>Total Amount</label>
+
+              <input
+                type="text"
+                readOnly
+                value={fmtAmt(
+                  (Number(form.rate || 0)) *
+                  (Number(form.opening_stock || 0))
+                )}
+              />
+            </div>
+
           </div>
-          <div className="modal-footer"><button className="btn" onClick={() => setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={save}>Save Product</button></div>
+
+          <div className="modal-footer">
+
+            <button
+              className="btn"
+              onClick={() => setModal(null)}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="btn btn-primary"
+              onClick={save}
+            >
+              Save Product
+            </button>
+
+          </div>
+
         </Modal>
       )}
+
     </div>
   );
 }
-
 // ── INVENTORY ─────────────────────────────────────────────────────────────────
 function Inventory() {
   const [inventory, setInventory] = useState([]);
