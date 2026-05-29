@@ -543,45 +543,344 @@ function Inventory() {
   const [inventory, setInventory] = useState([]);
   const [products, setProducts] = useState([]);
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({type:'add',qty:''});
-  const load = useCallback(() => Promise.all([api.getInventory(),api.getProducts()]).then(([inv,prods]) => {setInventory(inv);setProducts(prods);}), []);
-  useEffect(() => { load(); }, [load]);
+
+  const [form, setForm] = useState({
+    product_id: '',
+    type: 'add',
+    qty: '',
+    unit_rate: '',
+    description: ''
+  });
+
+  const load = useCallback(
+    () =>
+      Promise.all([
+        api.getInventory(),
+        api.getProducts()
+      ]).then(([inv, prods]) => {
+        setInventory(inv);
+        setProducts(prods);
+      }),
+    []
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const totalAmount =
+    Number(form.qty || 0) *
+    Number(form.unit_rate || 0);
+
   return (
     <div>
-      <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({product_id:products[0]?.id,type:'add',qty:''});setModal(true);}}>Update Stock</button></div>
-      <div className="card">
-        <table><thead><tr><th>Product</th><th>SKU</th><th>Warehouse</th><th>Unit</th><th>Stock</th><th>Reorder</th><th>Status</th></tr></thead>
-        <tbody>{inventory.map(inv => {
-          const low = inv.stock <= inv.reorder;
-          return (<tr key={inv.id}><td><strong>{inv.product_name}</strong></td><td><code>{inv.sku}</code></td><td>{inv.warehouse}</td><td>{inv.unit}</td><td className={`bold ${low?'danger':'success'}`}>{inv.stock}</td><td className="muted">{inv.reorder}</td><td><Badge status={low?'Unpaid':'Paid'}/></td></tr>);
-        })}</tbody></table>
+
+      <div className="topbar-actions">
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setForm({
+              product_id: products[0]?.id || '',
+              type: 'add',
+              qty: '',
+              unit_rate: '',
+              description: ''
+            });
+
+            setModal(true);
+          }}
+        >
+          Update Stock
+        </button>
       </div>
+
+      <div className="card">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>SKU</th>
+              <th>Warehouse</th>
+              <th>Unit</th>
+              <th>Stock Qty</th>
+              <th>Unit Rate</th>
+              <th>Total Amount</th>
+              <th>Description</th>
+              <th>Reorder</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {inventory.map(inv => {
+
+              const low =
+                Number(inv.stock) <=
+                Number(inv.reorder);
+
+              const total =
+                Number(inv.stock || 0) *
+                Number(inv.unit_rate || 0);
+
+              return (
+                <tr key={inv.id}>
+
+                  <td>
+                    <strong>
+                      {inv.product_name}
+                    </strong>
+                  </td>
+
+                  <td>
+                    <code>{inv.sku}</code>
+                  </td>
+
+                  <td>
+                    {inv.warehouse}
+                  </td>
+
+                  <td>
+                    {inv.unit}
+                  </td>
+
+                  <td
+                    className={`bold ${
+                      low
+                        ? 'danger'
+                        : 'success'
+                    }`}
+                  >
+                    {inv.stock}
+                  </td>
+
+                  <td>
+                    {fmtAmt(
+                      inv.unit_rate || 0
+                    )}
+                  </td>
+
+                  <td className="bold">
+                    {fmtAmt(total)}
+                  </td>
+
+                  <td>
+                    {inv.description || '-'}
+                  </td>
+
+                  <td className="muted">
+                    {inv.reorder}
+                  </td>
+
+                  <td>
+                    <Badge
+                      status={
+                        low
+                          ? 'Low Stock'
+                          : 'In Stock'
+                      }
+                    />
+                  </td>
+
+                </tr>
+              );
+            })}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
       {modal && (
-        <Modal title="Update Stock" onClose={() => setModal(false)}>
+        <Modal
+          title="Update Stock"
+          onClose={() =>
+            setModal(false)
+          }
+        >
+
           <div className="form-grid2">
-            <div className="form-row col-span2"><label>Product</label>
-              <select value={form.product_id} onChange={e => setForm(f => ({...f,product_id:e.target.value}))}>
-                {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
+
+            <div className="form-row col-span2">
+              <label>Product</label>
+
+              <select
+                value={form.product_id}
+                onChange={e =>
+                  setForm(f => ({
+                    ...f,
+                    product_id:
+                      e.target.value
+                  }))
+                }
+              >
+                {products.map(p => (
+                  <option
+                    key={p.id}
+                    value={p.id}
+                  >
+                    {p.name} ({p.sku})
+                  </option>
+                ))}
               </select>
             </div>
-            <div className="form-row"><label>Type</label>
-              <select value={form.type} onChange={e => setForm(f => ({...f,type:e.target.value}))}>
-                <option value="add">Add (Purchase / Received)</option>
-                <option value="sub">Subtract (Sale / Damage)</option>
+
+            <div className="form-row">
+              <label>
+                Stock Action
+              </label>
+
+              <select
+                value={form.type}
+                onChange={e =>
+                  setForm(f => ({
+                    ...f,
+                    type:
+                      e.target.value
+                  }))
+                }
+              >
+                <option value="add">
+                  Stock In
+                </option>
+
+                <option value="sub">
+                  Stock Out
+                </option>
               </select>
             </div>
-            <div className="form-row"><label>Quantity</label><input type="number" value={form.qty} onChange={e => setForm(f => ({...f,qty:e.target.value}))}/></div>
+
+            <div className="form-row">
+              <label>
+                Stock Qty
+              </label>
+
+              <input
+                type="number"
+                value={form.qty}
+                onChange={e =>
+                  setForm(f => ({
+                    ...f,
+                    qty:
+                      e.target.value
+                  }))
+                }
+              />
+            </div>
+
+            <div className="form-row">
+              <label>
+                Unit Rate
+              </label>
+
+              <input
+                type="number"
+                value={
+                  form.unit_rate
+                }
+                onChange={e =>
+                  setForm(f => ({
+                    ...f,
+                    unit_rate:
+                      e.target.value
+                  }))
+                }
+              />
+            </div>
+
+            <div className="form-row">
+              <label>
+                Total Amount
+              </label>
+
+              <input
+                readOnly
+                value={fmtAmt(
+                  totalAmount
+                )}
+              />
+            </div>
+
+            <div className="form-row col-span2">
+              <label>
+                Description
+              </label>
+
+              <textarea
+                rows="3"
+                value={
+                  form.description
+                }
+                onChange={e =>
+                  setForm(f => ({
+                    ...f,
+                    description:
+                      e.target.value
+                  }))
+                }
+              />
+            </div>
+
           </div>
-          <div className="modal-footer"><button className="btn" onClick={() => setModal(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={async () => {await api.updateStock({product_id:form.product_id,qty:+form.qty,type:form.type});setModal(false);load();}}>Update</button>
+
+          <div className="modal-footer">
+
+            <button
+              className="btn"
+              onClick={() =>
+                setModal(false)
+              }
+            >
+              Cancel
+            </button>
+
+            <button
+              className="btn btn-primary"
+              onClick={async () => {
+
+                await api.updateStock({
+                  product_id:
+                    form.product_id,
+
+                  qty:
+                    Number(
+                      form.qty
+                    ),
+
+                  type:
+                    form.type,
+
+                  unit_rate:
+                    Number(
+                      form.unit_rate
+                    ),
+
+                  total_amount:
+                    totalAmount,
+
+                  description:
+                    form.description
+                });
+
+                setModal(false);
+
+                load();
+              }}
+            >
+              Update Stock
+            </button>
+
           </div>
+
         </Modal>
       )}
+
     </div>
   );
-}
-
-// ── DOC FORM ──────────────────────────────────────────────────────────────────
+}// ── DOC FORM ──────────────────────────────────────────────────────────────────
 function DocForm({ type, clients, products, onClose, onSaved }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
