@@ -6,7 +6,7 @@ import bvmIndiaLogo from './assets/bvm-india.png';
 import bvmWorldLogo from './assets/bvm-world.jpg';
 
 const today = () => new Date().toISOString().split('T')[0];
-const futureDate = (d) => new Date(Date.now() + d * 86400000).toISOString().split('T')[0];
+const futureDate = (d) => new Date(Date.now() + d * 86400000).toISOString().split('T')[0]; 
 
 const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Pickup.
 1. Payment Terms: As per BVM Conditions.
