@@ -826,51 +826,66 @@ function Inventory() {
 
           </div>
 
-          <div className="modal-footer">
+<div className="modal-footer">
 
-            <button
-              className="btn"
-              onClick={() =>
-                setModal(false)
-              }
-            >
-              Cancel
-            </button>
+  <button
+    className="btn"
+    onClick={() => setModal(false)}
+  >
+    Cancel
+  </button>
 
-            <button
-              className="btn btn-primary"
-              onClick={async () => {
+  <button
+    type="button"
+    className="btn btn-primary"
+    onClick={async () => {
 
-                await api.updateStock({
-                  product_id:
-                    form.product_id,
+      try {
 
-                  qty:
-                    Number(
-                      form.qty
-                    ),
+        await api.updateStock({
+          product_id: form.product_id,
+          qty: Number(form.qty),
+          type: form.type,
+          unit_rate: Number(form.unit_rate || 0),
+          total_amount: totalAmount,
+          description: form.description || ''
+        });
 
-                  type:
-                    form.type,
+        alert('Stock Updated Successfully');
 
-                  unit_rate:
-                    Number(
-                      form.unit_rate
-                    ),
+        setModal(false);
 
-                  total_amount:
-                    totalAmount,
+        await load();
 
-                  description:
-                    form.description
-                });
+      } catch (err) {
 
-                setModal(false);
+        console.error(err);
 
-                load();
-              }}
-            >
-             <div className="modal-footer">
+        alert('Stock Update Failed');
+
+      }
+
+    }}
+  >
+    Update Stock
+  </button>
+
+</div>
+
+        </Modal>
+      )}
+
+    </div>
+  );
+}
+           ── DOC FORM ──────────────────────────────────────────────────────────────────
+function DocForm({ type, clients, products, onClose, onSaved }) {
+  const label = api.FLOW_LABELS[type]||type;
+  const isSO = type === 'sales_order';
+  const [form, setForm] = useState({
+    client_id:clients[0]?.id||'', date:today(), due_date:futureDate(30),
+    validity:15, currency:'INR', exchange_rate:1,
+    po_  <div className="modal-footer">
 
   <button
     className="btn"
@@ -916,14 +931,7 @@ function Inventory() {
     Update Stock
   </button>
 
-</div>// ── DOC FORM ──────────────────────────────────────────────────────────────────
-function DocForm({ type, clients, products, onClose, onSaved }) {
-  const label = api.FLOW_LABELS[type]||type;
-  const isSO = type === 'sales_order';
-  const [form, setForm] = useState({
-    client_id:clients[0]?.id||'', date:today(), due_date:futureDate(30),
-    validity:15, currency:'INR', exchange_rate:1,
-    po_number:'', so_number:'', notes:'',
+</div>// number:'', so_number:'', notes:'',
     client_quotation_number:'', terms:DEFAULT_TERMS,
     ship_to_name:'', ship_to_address:'', ship_to_city:'',
     ship_to_state:'', ship_to_pincode:'', ship_to_gstin:'', ship_to_phone:'',
