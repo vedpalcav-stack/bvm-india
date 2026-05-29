@@ -552,17 +552,15 @@ function Inventory() {
     description: ''
   });
 
-  const load = useCallback(
-    () =>
-      Promise.all([
-        api.getInventory(),
-        api.getProducts()
-      ]).then(([inv, prods]) => {
-        setInventory(inv);
-        setProducts(prods);
-      }),
-    []
-  );
+  const load = useCallback(async () => {
+    const [inv, prods] = await Promise.all([
+      api.getInventory(),
+      api.getProducts()
+    ]);
+
+    setInventory(inv);
+    setProducts(prods);
+  }, []);
 
   useEffect(() => {
     load();
@@ -600,15 +598,14 @@ function Inventory() {
 
           <thead>
             <tr>
-              <th>Product</th>
+              <th>Make</th>
+              <th>Model</th>
               <th>SKU</th>
-              <th>Warehouse</th>
               <th>Unit</th>
               <th>Stock Qty</th>
               <th>Unit Rate</th>
               <th>Total Amount</th>
               <th>Description</th>
-              <th>Reorder</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -635,11 +632,11 @@ function Inventory() {
                   </td>
 
                   <td>
-                    <code>{inv.sku}</code>
+                    {inv.model_no || '-'}
                   </td>
 
                   <td>
-                    {inv.warehouse}
+                    <code>{inv.sku}</code>
                   </td>
 
                   <td>
@@ -657,21 +654,19 @@ function Inventory() {
                   </td>
 
                   <td>
-                    {fmtAmt(
+                    ₹{Number(
                       inv.unit_rate || 0
-                    )}
+                    ).toLocaleString()}
                   </td>
 
                   <td className="bold">
-                    {fmtAmt(total)}
+                    ₹{Number(
+                      total
+                    ).toLocaleString()}
                   </td>
 
                   <td>
                     {inv.description || '-'}
-                  </td>
-
-                  <td className="muted">
-                    {inv.reorder}
                   </td>
 
                   <td>
@@ -686,6 +681,7 @@ function Inventory() {
 
                 </tr>
               );
+
             })}
 
           </tbody>
@@ -695,6 +691,7 @@ function Inventory() {
       </div>
 
       {modal && (
+
         <Modal
           title="Update Stock"
           onClose={() =>
@@ -705,7 +702,7 @@ function Inventory() {
           <div className="form-grid2">
 
             <div className="form-row col-span2">
-              <label>Product</label>
+              <label>Make</label>
 
               <select
                 value={form.product_id}
@@ -722,16 +719,14 @@ function Inventory() {
                     key={p.id}
                     value={p.id}
                   >
-                    {p.name} ({p.sku})
+                    {p.name}
                   </option>
                 ))}
               </select>
             </div>
 
             <div className="form-row">
-              <label>
-                Stock Action
-              </label>
+              <label>Stock Action</label>
 
               <select
                 value={form.type}
@@ -754,9 +749,7 @@ function Inventory() {
             </div>
 
             <div className="form-row">
-              <label>
-                Stock Qty
-              </label>
+              <label>Stock Qty</label>
 
               <input
                 type="number"
@@ -772,15 +765,11 @@ function Inventory() {
             </div>
 
             <div className="form-row">
-              <label>
-                Unit Rate
-              </label>
+              <label>Unit Rate</label>
 
               <input
                 type="number"
-                value={
-                  form.unit_rate
-                }
+                value={form.unit_rate}
                 onChange={e =>
                   setForm(f => ({
                     ...f,
@@ -792,28 +781,20 @@ function Inventory() {
             </div>
 
             <div className="form-row">
-              <label>
-                Total Amount
-              </label>
+              <label>Total Amount</label>
 
               <input
                 readOnly
-                value={fmtAmt(
-                  totalAmount
-                )}
+                value={`₹${totalAmount.toLocaleString()}`}
               />
             </div>
 
             <div className="form-row col-span2">
-              <label>
-                Description
-              </label>
+              <label>Description</label>
 
               <textarea
                 rows="3"
-                value={
-                  form.description
-                }
+                value={form.description}
                 onChange={e =>
                   setForm(f => ({
                     ...f,
@@ -826,59 +807,73 @@ function Inventory() {
 
           </div>
 
-<div className="modal-footer">
+          <div className="modal-footer">
 
-  <button
-    className="btn"
-    onClick={() => setModal(false)}
-  >
-    Cancel
-  </button>
+            <button
+              className="btn"
+              onClick={() =>
+                setModal(false)
+              }
+            >
+              Cancel
+            </button>
 
-  <button
-    type="button"
-    className="btn btn-primary"
-    onClick={async () => {
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={async () => {
 
-      try {
+                try {
 
-        await api.updateStock({
-          product_id: form.product_id,
-          qty: Number(form.qty),
-          type: form.type,
-          unit_rate: Number(form.unit_rate || 0),
-          total_amount: totalAmount,
-          description: form.description || ''
-        });
+                  await api.updateStock({
+                    product_id:
+                      form.product_id,
+                    qty:
+                      Number(form.qty),
+                    type:
+                      form.type,
+                    unit_rate:
+                      Number(
+                        form.unit_rate || 0
+                      ),
+                    total_amount:
+                      totalAmount,
+                    description:
+                      form.description || ''
+                  });
 
-        alert('Stock Updated Successfully');
+                  alert(
+                    'Stock Updated Successfully'
+                  );
 
-        setModal(false);
+                  setModal(false);
 
-        await load();
+                  await load();
 
-      } catch (err) {
+                } catch (err) {
 
-        console.error(err);
+                  console.error(err);
 
-        alert('Stock Update Failed');
+                  alert(
+                    'Stock Update Failed'
+                  );
 
-      }
+                }
 
-    }}
-  >
-    Update Stock
-  </button>
+              }}
+            >
+              Update Stock
+            </button>
 
-</div>
+          </div>
 
         </Modal>
+
       )}
 
     </div>
   );
-}
-           ── DOC FORM ──────────────────────────────────────────────────────────────────
+} //  ── DOC FORM ──────────────────────────────────────────────────────────────────
 function DocForm({ type, clients, products, onClose, onSaved }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
