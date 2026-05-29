@@ -874,77 +874,90 @@ function Inventory() {
     </div>
   );
 }
-//  ── DOC FORM ──────────────────────────────────────────────────────────────────
+// ── DOC FORM ──────────────────────────────────────────────────────────────────
 function DocForm({ type, clients, products, onClose, onSaved }) {
-  const label = api.FLOW_LABELS[type]||type;
+
+  const label = api.FLOW_LABELS[type] || type;
   const isSO = type === 'sales_order';
+
   const [form, setForm] = useState({
-    client_id:clients[0]?.id||'', date:today(), due_date:futureDate(30),
-    validity:15, currency:'INR', exchange_rate:1,
-    po_  <div className="modal-footer">
+    client_id: clients[0]?.id || '',
+    date: today(),
+    due_date: futureDate(30),
 
-  <button
-    className="btn"
-    onClick={() => setModal(false)}
-  >
-    Cancel
-  </button>
+    validity: 15,
+    currency: 'INR',
+    exchange_rate: 1,
 
-  <button
-    type="button"
-    className="btn btn-primary"
-    onClick={async () => {
+    po_number: '',
+    so_number: '',
+    notes: '',
 
-      try {
+    client_quotation_number: '',
+    terms: DEFAULT_TERMS,
 
-        await api.updateStock({
-          product_id: form.product_id,
-          qty: Number(form.qty),
-          type: form.type,
-          unit_rate: Number(form.unit_rate || 0),
-          total_amount:
-            Number(form.qty || 0) *
-            Number(form.unit_rate || 0),
-          description: form.description || ''
-        });
-
-        setModal(false);
-
-        await load();
-
-        alert('Stock Updated Successfully');
-
-      } catch (err) {
-
-        console.error(err);
-
-        alert('Stock Update Failed');
-
-      }
-
-    }}
-  >
-    Update Stock
-  </button>
-
-</div>// number:'', so_number:'', notes:'',
-    client_quotation_number:'', terms:DEFAULT_TERMS,
-    ship_to_name:'', ship_to_address:'', ship_to_city:'',
-    ship_to_state:'', ship_to_pincode:'', ship_to_gstin:'', ship_to_phone:'',
+    ship_to_name: '',
+    ship_to_address: '',
+    ship_to_city: '',
+    ship_to_state: '',
+    ship_to_pincode: '',
+    ship_to_gstin: '',
+    ship_to_phone: ''
   });
-  const [items, setItems] = useState([{serial_no:1,product_id:products[0]?.id||'',description:products[0]?.name||'',hsn:products[0]?.hsn||'',qty:1,unit:products[0]?.unit||'Piece',rate:products[0]?.rate||0,currency:'INR'}]);
+
+  const [items, setItems] = useState([
+    {
+      serial_no: 1,
+      product_id: products[0]?.id || '',
+      description: products[0]?.name || '',
+      hsn: products[0]?.hsn || '',
+      qty: 1,
+      unit: products[0]?.unit || 'Piece',
+      rate: products[0]?.rate || 0,
+      currency: 'INR'
+    }
+  ]);
+
   const [showShipTo, setShowShipTo] = useState(false);
-  const set = (k,v) => setForm(f => ({...f,[k]:v}));
+
+  const set = (k, v) =>
+    setForm(f => ({
+      ...f,
+      [k]: v
+    }));
 
   const updateItem = (i, key, val) => {
-    setItems(prev => {
-      const u=[...prev]; u[i]={...u[i],[key]:val};
-      if(key==='product_id'){const p=products.find(x=>x.id===val);if(p){u[i].description=p.name;u[i].rate=p.rate;u[i].unit=p.unit;u[i].hsn=p.hsn;}}
-      return u;
-    });
-  };
 
-  const subtotal = items.reduce((s,it) => s+(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0),0);
+    setItems(prev => {
+
+      const u = [...prev];
+
+      u[i] = {
+        ...u[i],
+        [key]: val
+      };
+
+      if (key === 'product_id') {
+
+        const p = products.find(
+          x => x.id === val
+        );
+
+        if (p) {
+
+          u[i].description = p.name;
+          u[i].rate = p.rate;
+          u[i].unit = p.unit;
+          u[i].hsn = p.hsn;
+
+        }
+      }
+
+      return u;
+
+    });
+
+  };  const subtotal = items.reduce((s,it) => s+(parseFloat(it.qty)||0)*(parseFloat(it.rate)||0),0);
   const gstAmt = subtotal*0.18;
   const showPO = type==='purchase_order'||type==='sales_order'||type==='invoice';
   const showSO = type==='sales_order'||type==='invoice';
