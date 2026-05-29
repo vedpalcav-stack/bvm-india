@@ -873,7 +873,8 @@ function Inventory() {
 
     </div>
   );
-} //  ── DOC FORM ──────────────────────────────────────────────────────────────────
+}
+//  ── DOC FORM ──────────────────────────────────────────────────────────────────
 function DocForm({ type, clients, products, onClose, onSaved }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
