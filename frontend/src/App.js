@@ -870,12 +870,11 @@ function Inventory() {
                 load();
               }}
             >
-              Update Stock
-          <div className="modal-footer">
+             <div className="modal-footer">
 
   <button
     className="btn"
-    onClick={() => setModal(null)}
+    onClick={() => setModal(false)}
   >
     Cancel
   </button>
@@ -887,29 +886,37 @@ function Inventory() {
 
       try {
 
-        await save();
+        await api.updateStock({
+          product_id: form.product_id,
+          qty: Number(form.qty),
+          type: form.type,
+          unit_rate: Number(form.unit_rate || 0),
+          total_amount:
+            Number(form.qty || 0) *
+            Number(form.unit_rate || 0),
+          description: form.description || ''
+        });
 
-        alert('Product Saved Successfully');
+        setModal(false);
+
+        await load();
+
+        alert('Stock Updated Successfully');
 
       } catch (err) {
 
         console.error(err);
 
-        alert(
-          err?.message ||
-          'Failed to Save Product'
-        );
+        alert('Stock Update Failed');
 
       }
 
     }}
   >
-    Save Product
+    Update Stock
   </button>
 
-</div>
-  );
-}// ── DOC FORM ──────────────────────────────────────────────────────────────────
+</div>// ── DOC FORM ──────────────────────────────────────────────────────────────────
 function DocForm({ type, clients, products, onClose, onSaved }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
