@@ -1,5 +1,0 @@
-{
-  "watch": ["server.js", "db.js", "pdfgen.js"],
-  "ext": "js",
-  "ignore": ["erp.db.json"]
-}
