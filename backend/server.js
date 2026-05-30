@@ -187,13 +187,13 @@ app.post('/api/inventory/update', wrap(async (req, res) => {
     };
   }
 
+  const currentStock = Number(inv.stock || 0);
+  const qtyValue = Number(qty || 0);
+
   const newStock =
     type === 'add'
-      ? Number(inv.stock) + Number(qty || 0)
-      : Math.max(
-          0,
-          Number(inv.stock) - Number(qty || 0)
-        );
+      ? currentStock + qtyValue
+      : Math.max(0, currentStock - qtyValue);
 
   await db.prepare(`
     UPDATE inventory
@@ -211,100 +211,24 @@ app.post('/api/inventory/update', wrap(async (req, res) => {
     product_id
   );
 
-  res.json({
-    success: true,
-    stock: newStock
-  });
+  if (
+    reorder !== undefined &&
+    reorder !== null &&
+    reorder !== ''
+  ) {
+    await db.prepare(`
+      UPDATE inventory
+      SET reorder = $1
+      WHERE product_id = $2
+    `).run(
+      Number(reorder),
+      product_id
+    );
+  }
 
-}));
-let inv = await db.prepare(
-'SELECT * FROM inventory WHERE product_id = $1'
-).get(product_id);
-
-if (!inv) {
-
-```
-await db.prepare(`
-  INSERT INTO inventory
-  (
-    product_id,
-    stock,
-    reorder,
-    warehouse,
-    unit_rate,
-    total_amount,
-    description
-  )
-  VALUES
-  (
-    $1,
-    0,
-    10,
-    'Main Godown',
-    0,
-    0,
-    ''
-  )
-`).run(product_id);
-
-inv = {
-  stock: 0,
-  reorder: 10
-};
-```
-
-}
-
-const currentStock =
-Number(inv.stock || 0);
-
-const qtyValue =
-Number(qty || 0);
-
-const newStock =
-type === 'add'
-? currentStock + qtyValue
-: Math.max(
-0,
-currentStock - qtyValue
-);
-
-await db.prepare(`     UPDATE inventory
-    SET
-      stock = $1,
-      unit_rate = $2,
-      total_amount = $3,
-      description = $4
-    WHERE product_id = $5
-  `).run(
-newStock,
-Number(unit_rate || 0),
-Number(total_amount || 0),
-description || '',
-product_id
-);
-
-if (
-reorder !== undefined &&
-reorder !== null &&
-reorder !== ''
-) {
-
-```
-await db.prepare(`
-  UPDATE inventory
-  SET reorder = $1
-  WHERE product_id = $2
-`).run(
-  Number(reorder),
-  product_id
-);
-```
-
-}
-
-const updatedInventory =
-await db.prepare(`       SELECT
+  const updatedInventory =
+    await db.prepare(`
+      SELECT
         i.*,
         p.name AS product_name,
         p.model_no,
@@ -316,11 +240,11 @@ await db.prepare(`       SELECT
       WHERE i.product_id = $1
     `).get(product_id);
 
-res.json({
-success: true,
-message: 'Stock Updated Successfully',
-inventory: updatedInventory
-});
+  res.json({
+    success: true,
+    message: 'Stock Updated Successfully',
+    inventory: updatedInventory
+  });
 
 }));
 // ── DOCUMENTS ─────────────────────────────────────────────────────────────────
