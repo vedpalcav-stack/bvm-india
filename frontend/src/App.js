@@ -404,8 +404,7 @@ function Products({ onDataChange, brand }) {
             </div>
             {modal==='add' && <div className="form-row"><label>Opening Stock</label><input type="number" value={form.opening_stock||''} onChange={e => set('opening_stock',e.target.value)}/></div>}
             <div className="form-row col-span2"><label>Product Description</label><textarea rows={2} value={form.description||''} onChange={e => set('description',e.target.value)} placeholder="Detailed product description, specs, notes..."/></div>
-          </div>
-          <div className="modal-footer"><button className="btn" onClick={() => setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={save}>Save Product</button></div>
+          </div><div className="modal-footer"><button className="btn" onClick={() => setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={async()=>{try{await save();alert("Product saved successfully");}catch(e){alert("Save Failed: "+(e?.message||"Unknown Error"));}}}>Save Product</button></div>
         </Modal>
       )}
     </div>
