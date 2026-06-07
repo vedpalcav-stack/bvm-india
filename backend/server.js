@@ -511,6 +511,20 @@ initDb().then(db => {
   });
 
   const PORT = process.env.PORT || 3001;
-  app.listen(PORT, () => console.log(`\n✅ BVM ERP running → http://localhost:${PORT}\n`));
+ {
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "server.js"
+    }
+  ]
+} () => console.log(`\n✅ BVM ERP running → http://localhost:${PORT}\n`));
 
 }).catch(err => { console.error('❌ Failed to start:', err); process.exit(1); });
