@@ -46,6 +46,103 @@ const BRAND_CONFIG = {
   }
 };
 
+
+// ── DEPARTMENT ACCESS CONTROL ─────────────────────────────────────────────────
+const DEPARTMENTS = {
+  admin: {
+    label: 'Admin',
+    password: 'admin@bvm2024',
+    icon: '🔑',
+    access: ['dashboard','clients','products','inventory','quotations','proforma','purchase_orders','sales_orders','invoices','payments','reminders'],
+  },
+  sales: {
+    label: 'Sales',
+    password: 'sales@bvm2024',
+    icon: '🛒',
+    access: ['dashboard','clients','quotations','proforma','purchase_orders','sales_orders'],
+  },
+  accounts: {
+    label: 'Accounts',
+    password: 'accounts@bvm2024',
+    icon: '💰',
+    access: ['dashboard','invoices','payments','reminders','clients'],
+  },
+  inventory: {
+    label: 'Inventory',
+    password: 'inventory@bvm2024',
+    icon: '📦',
+    access: ['dashboard','products','inventory'],
+  },
+};
+
+// ── DEPARTMENT LOGIN SCREEN ───────────────────────────────────────────────────
+function DepartmentLogin({ brand, onLogin, onBack }) {
+  const cfg = BRAND_CONFIG[brand];
+  const [dept, setDept] = useState('admin');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleLogin = () => {
+    const d = DEPARTMENTS[dept];
+    if (password === d.password) {
+      setError('');
+      onLogin(dept);
+    } else {
+      setError('Incorrect password. Please try again.');
+    }
+  };
+
+  return (
+    <div style={{ minHeight:'100vh', background:'#0c1220', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24 }}>
+      <div style={{ background:'rgba(255,255,255,0.04)', border:`1px solid ${brand==='india'?'rgba(74,222,128,0.3)':'rgba(96,165,250,0.3)'}`, borderRadius:16, padding:'36px 40px', width:'100%', maxWidth:420 }}>
+        {/* Brand logo */}
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:28 }}>
+          <div style={{ width:64, height:64, background:'#fff', borderRadius:14, padding:8, marginBottom:12 }}>
+            <img src={cfg.logo} alt={cfg.name} style={{ width:48, height:48, objectFit:'contain' }} />
+          </div>
+          <div style={{ fontSize:20, fontWeight:800, color: brand==='india'?'#4ade80':'#60a5fa' }}>{cfg.name}</div>
+          <div style={{ fontSize:12, color:'#64748b', marginTop:4 }}>Department Login</div>
+        </div>
+
+        {/* Department dropdown */}
+        <label style={{ fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.05em' }}>Select Department</label>
+        <select value={dept} onChange={e => { setDept(e.target.value); setError(''); }}
+          style={{ width:'100%', padding:'11px 14px', marginTop:6, marginBottom:18, borderRadius:9, border:'1px solid #334155', background:'#1e293b', color:'#fff', fontSize:14, fontFamily:'inherit', cursor:'pointer' }}>
+          {Object.keys(DEPARTMENTS).map(k => (
+            <option key={k} value={k}>{DEPARTMENTS[k].icon} {DEPARTMENTS[k].label}</option>
+          ))}
+        </select>
+
+        {/* Password */}
+        <label style={{ fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.05em' }}>Password</label>
+        <input type="password" value={password}
+          onChange={e => { setPassword(e.target.value); setError(''); }}
+          onKeyDown={e => e.key === 'Enter' && handleLogin()}
+          placeholder="Enter department password"
+          style={{ width:'100%', padding:'11px 14px', marginTop:6, borderRadius:9, border:`1px solid ${error?'#dc2626':'#334155'}`, background:'#1e293b', color:'#fff', fontSize:14, fontFamily:'inherit' }} />
+
+        {error && <div style={{ color:'#f87171', fontSize:12, marginTop:8 }}>⚠ {error}</div>}
+
+        {/* Login button */}
+        <button onClick={handleLogin}
+          style={{ width:'100%', marginTop:20, padding:'12px 0', borderRadius:9, border:'none', background: brand==='india'?'#166534':'#1e3a5f', color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+          Login →
+        </button>
+
+        {/* Back button */}
+        <button onClick={onBack}
+          style={{ width:'100%', marginTop:10, padding:'10px 0', borderRadius:9, border:'1px solid rgba(255,255,255,0.12)', background:'transparent', color:'#94a3b8', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+          ⇄ Back to Brand Selection
+        </button>
+      </div>
+
+      <div style={{ marginTop:24, fontSize:11, color:'#334155', textAlign:'center', maxWidth:420 }}>
+        Each department has access only to its own areas. Contact your administrator for password help.
+      </div>
+    </div>
+  );
+}
+
 function fmtAmt(n, currency = 'INR') {
   const sym = api.CURRENCY_SYMBOLS[currency] || currency + ' ';
   return sym + Math.abs(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -404,7 +501,8 @@ function Products({ onDataChange, brand }) {
             </div>
             {modal==='add' && <div className="form-row"><label>Opening Stock</label><input type="number" value={form.opening_stock||''} onChange={e => set('opening_stock',e.target.value)}/></div>}
             <div className="form-row col-span2"><label>Product Description</label><textarea rows={2} value={form.description||''} onChange={e => set('description',e.target.value)} placeholder="Detailed product description, specs, notes..."/></div>
-          </div><div className="modal-footer"><button className="btn" onClick={() => setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={async()=>{try{await save();alert("Product saved successfully");}catch(e){alert("Save Failed: "+(e?.message||"Unknown Error"));}}}>Save Product</button></div>
+          </div>
+          <div className="modal-footer"><button className="btn" onClick={() => setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={save}>Save Product</button></div>
         </Modal>
       )}
     </div>
@@ -416,304 +514,52 @@ function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
   const [products, setProducts] = useState([]);
   const [modal, setModal] = useState(false);
-
-  const [form, setForm] = useState({
-    product_id: '',
-    type: 'add',
-    qty: '',
-    rate: '',
-    hold_qty: ''
-  });
-
-  const load = useCallback(() => {
-    return Promise.all([
-      api.getInventory(),
-      api.getProducts(brand)
-    ]).then(([inv, prods]) => {
-      setInventory(inv);
-      setProducts(prods);
-    });
-  }, [brand]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
+  const [form, setForm] = useState({type:'add',qty:''});
+  const load = useCallback(() => Promise.all([api.getInventory(),api.getProducts(brand)]).then(([inv,prods]) => {setInventory(inv);setProducts(prods);}), [brand]);
+  useEffect(() => { load(); }, [load]);
   return (
     <div>
-
-      <div className="topbar-actions">
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            setForm({
-              product_id: products[0]?.id || '',
-              type: 'add',
-              qty: '',
-              rate: '',
-              hold_qty: ''
-            });
-            setModal(true);
-          }}
-        >
-          Update Stock
-        </button>
-      </div>
-
+      <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({product_id:products[0]?.id,type:'add',qty:''});setModal(true);}}>Update Stock</button></div>
       <div className="card">
-        <table>
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>SKU</th>
-              <th>Warehouse</th>
-              <th>Unit</th>
-              <th>Rate</th>
-              <th>Stock</th>
-              <th>Hold Qty</th>
-              <th>Available Qty</th>
-              <th>Total Amount</th>
-              <th>Reorder</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {inventory
-              .filter(inv =>
-                products.some(p => p.id === inv.product_id)
-              )
-              .map(inv => {
-                const stock = Number(inv.stock || 0);
-                const holdQty = Number(inv.hold_qty || 0);
-                const rate = Number(inv.rate || 0);
-
-                const availableQty = stock - holdQty;
-                const totalAmount = availableQty * rate;
-
-                const low = stock <= inv.reorder;
-
-                return (
-                  <tr key={inv.id}>
-                    <td>
-                      <strong>{inv.product_name}</strong>
-                    </td>
-
-                    <td>
-                      <code>{inv.sku}</code>
-                    </td>
-
-                    <td>{inv.warehouse}</td>
-
-                    <td>{inv.unit}</td>
-
-                    <td>
-                      ₹{rate.toLocaleString()}
-                    </td>
-
-                    <td
-                      className={`bold ${
-                        low ? 'danger' : 'success'
-                      }`}
-                    >
-                      {stock}
-                    </td>
-
-                    <td>{holdQty}</td>
-
-                    <td>
-                      <strong>{availableQty}</strong>
-                    </td>
-
-                    <td>
-                      ₹{totalAmount.toLocaleString()}
-                    </td>
-
-                    <td className="muted">
-                      {inv.reorder}
-                    </td>
-
-                    <td>
-                      <span
-                        className={`badge ${
-                          low
-                            ? 'badge-danger'
-                            : 'badge-success'
-                        }`}
-                      >
-                        {low
-                          ? 'Low Stock'
-                          : 'In Stock'}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
+        <table><thead><tr><th>Product</th><th>SKU</th><th>Warehouse</th><th>Unit</th><th>Stock</th><th>Reorder</th><th>Status</th></tr></thead>
+        <tbody>{inventory.filter(inv => products.some(p => p.id === inv.product_id)).map(inv => {
+          const low = inv.stock <= inv.reorder;
+          return (<tr key={inv.id}><td><strong>{inv.product_name}</strong></td><td><code>{inv.sku}</code></td><td>{inv.warehouse}</td><td>{inv.unit}</td><td className={`bold ${low?'danger':'success'}`}>{inv.stock}</td><td className="muted">{inv.reorder}</td><td><span className={`badge ${low?'badge-danger':'badge-success'}`}>{low?'Low Stock':'In Stock'}</span></td></tr>);
+        })}</tbody></table>
       </div>
-
       {modal && (
-        <Modal
-          title="Update Stock"
-          onClose={() => setModal(false)}
-        >
+        <Modal title="Update Stock" onClose={() => setModal(false)}>
           <div className="form-grid2">
-
-            <div className="form-row col-span2">
-              <label>Product</label>
-
-              <select
-                value={form.product_id}
-                onChange={e =>
-                  setForm(f => ({
-                    ...f,
-                    product_id: e.target.value
-                  }))
-                }
-              >
-                {products.map(p => (
-                  <option
-                    key={p.id}
-                    value={p.id}
-                  >
-                    {p.name} ({p.sku})
-                  </option>
-                ))}
+            <div className="form-row col-span2"><label>Product</label>
+              <select value={form.product_id} onChange={e => setForm(f => ({...f,product_id:e.target.value}))}>
+                {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
               </select>
             </div>
-
-            <div className="form-row">
-              <label>Transaction Type</label>
-
-              <select
-                value={form.type}
-                onChange={e =>
-                  setForm(f => ({
-                    ...f,
-                    type: e.target.value
-                  }))
-                }
-              >
-                <option value="add">
-                  Add Stock
-                </option>
-
-                <option value="sub">
-                  Remove Stock
-                </option>
+            <div className="form-row"><label>Type</label>
+              <select value={form.type} onChange={e => setForm(f => ({...f,type:e.target.value}))}>
+                <option value="add">Add (Purchase / Received)</option>
+                <option value="sub">Subtract (Sale / Damage)</option>
               </select>
             </div>
-
-            <div className="form-row">
-              <label>Quantity</label>
-
-              <input
-                type="number"
-                value={form.qty}
-                onChange={e =>
-                  setForm(f => ({
-                    ...f,
-                    qty: e.target.value
-                  }))
-                }
-              />
-            </div>
-
-            <div className="form-row">
-              <label>Rate</label>
-
-              <input
-                type="number"
-                value={form.rate}
-                onChange={e =>
-                  setForm(f => ({
-                    ...f,
-                    rate: e.target.value
-                  }))
-                }
-              />
-            </div>
-
-            <div className="form-row">
-              <label>Hold Qty</label>
-
-              <input
-                type="number"
-                value={form.hold_qty}
-                onChange={e =>
-                  setForm(f => ({
-                    ...f,
-                    hold_qty: e.target.value
-                  }))
-                }
-              />
-            </div>
-
+            <div className="form-row"><label>Quantity</label><input type="number" value={form.qty} onChange={e => setForm(f => ({...f,qty:e.target.value}))}/></div>
           </div>
-
-          <div className="modal-footer">
-            <button
-              className="btn"
-              onClick={() => setModal(false)}
-            >
-              Cancel
-            </button>
-
-            <button
-              className="btn btn-primary"
-              onClick={async () => {
-                try {
-                  const qtyNum = parseFloat(form.qty);
-
-                  if (
-                    !qtyNum ||
-                    qtyNum <= 0
-                  ) {
-                    alert(
-                      'Please enter a valid quantity'
-                    );
-                    return;
-                  }
-
-                  if (!form.product_id) {
-                    alert(
-                      'Please select a product'
-                    );
-                    return;
-                  }
-
-                  await api.updateStock({
-                    product_id:
-                      form.product_id,
-                    qty: qtyNum,
-                    type: form.type,
-                    rate: Number(
-                      form.rate || 0
-                    ),
-                    hold_qty: Number(
-                      form.hold_qty || 0
-                    )
-                  });
-
-                  setModal(false);
-                  load();
-                } catch (e) {
-                  alert(
-                    'Update failed: ' +
-                      e.message
-                  );
-                }
-              }}
-            >
-              Update Stock
-            </button>
+          <div className="modal-footer"><button className="btn" onClick={() => setModal(false)}>Cancel</button>
+            <button className="btn btn-primary" onClick={async () => {
+              try {
+                const qtyNum = parseFloat(form.qty);
+                if (!qtyNum || qtyNum <= 0) { alert('Please enter a valid quantity greater than 0'); return; }
+                if (!form.product_id) { alert('Please select a product'); return; }
+                await api.updateStock({product_id:form.product_id,qty:qtyNum,type:form.type});
+                setModal(false); load();
+              } catch(e) { alert('Update failed: ' + e.message); }
+            }}>Update Stock</button>
           </div>
         </Modal>
       )}
     </div>
   );
 }
+
 // ── DOC FORM ──────────────────────────────────────────────────────────────────
 function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   const label = api.FLOW_LABELS[type]||type;
@@ -1571,7 +1417,13 @@ const PAGE_TITLES = {dashboard:'Dashboard',clients:'Clients',products:'Products'
 const PAGE_DOC_TYPE = {quotations:'quotation',proforma:'proforma',purchase_orders:'purchase_order',sales_orders:'sales_order',invoices:'invoice'};
 
 export default function App() {
-  const [brand, setBrand] = useState(null); // null = selection screen
+  // Restore session from localStorage (remember me)
+  const [brand, setBrand] = useState(() => {
+    try { return localStorage.getItem('bvm_brand') || null; } catch(e) { return null; }
+  });
+  const [department, setDepartment] = useState(() => {
+    try { return localStorage.getItem('bvm_dept') || null; } catch(e) { return null; }
+  });
   const [page, setPage] = useState('dashboard');
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
@@ -1585,14 +1437,43 @@ export default function App() {
   useEffect(() => { loadMasters(); }, [loadMasters]);
   useEffect(() => { if(brand && (page==='clients'||page==='products')) loadMasters(); }, [page, brand, loadMasters]);
 
-  // Show brand selection screen
+  // Logout / switch helpers
+  const switchBrand = () => {
+    try { localStorage.removeItem('bvm_brand'); localStorage.removeItem('bvm_dept'); } catch(e) {}
+    setBrand(null); setDepartment(null); setPage('dashboard'); setClients([]); setProducts([]);
+  };
+  const logout = () => {
+    try { localStorage.removeItem('bvm_dept'); } catch(e) {}
+    setDepartment(null); setPage('dashboard');
+  };
+
+  // Step 1: Brand selection screen
   if (!brand) {
-    return <BrandSelect onSelect={(b) => { setBrand(b); setPage('dashboard'); }} />;
+    return <BrandSelect onSelect={(b) => {
+      setBrand(b);
+      try { localStorage.setItem('bvm_brand', b); } catch(e) {}
+      setPage('dashboard');
+    }} />;
+  }
+
+  // Step 2: Department login screen
+  if (!department) {
+    return <DepartmentLogin brand={brand}
+      onLogin={(d) => {
+        setDepartment(d);
+        try { localStorage.setItem('bvm_dept', d); } catch(e) {}
+        setPage('dashboard');
+      }}
+      onBack={switchBrand} />;
   }
 
   const cfg = BRAND_CONFIG[brand];
-  const navTo = (p) => setPage(p);
-  const docType = PAGE_DOC_TYPE[page];
+  const dept = DEPARTMENTS[department];
+  const allowedPages = dept.access;
+  const navTo = (p) => { if(allowedPages.includes(p)) setPage(p); };
+  // If current page not allowed, go to dashboard
+  const safePage = allowedPages.includes(page) ? page : 'dashboard';
+  const docType = PAGE_DOC_TYPE[safePage];
 
   return (
     <div className="erp">
@@ -1605,24 +1486,34 @@ export default function App() {
           <div style={{fontSize:9,color:'#475569',marginTop:4,fontFamily:'monospace',lineHeight:1.5}}>
             {cfg.gstin}
           </div>
-          {/* Switch brand button */}
-          <button onClick={() => { setBrand(null); setPage('dashboard'); setClients([]); setProducts([]); }}
-            style={{marginTop:10,width:'100%',padding:'6px 0',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:6,color:'#94a3b8',fontSize:11,cursor:'pointer',fontFamily:'inherit',transition:'all 0.15s'}}
-            onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.15)'}
-            onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.08)'}>
+          {/* Department badge */}
+          <div style={{marginTop:8,padding:'5px 10px',background:'rgba(255,255,255,0.06)',borderRadius:6,fontSize:11,color:'#cbd5e1',display:'flex',alignItems:'center',gap:6}}>
+            <span>{dept.icon}</span><strong>{dept.label}</strong><span style={{color:'#475569'}}>Dept</span>
+          </div>
+          {/* Logout + Switch brand buttons */}
+          <button onClick={logout}
+            style={{marginTop:8,width:'100%',padding:'6px 0',background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.25)',borderRadius:6,color:'#f87171',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+            🔒 Logout Department
+          </button>
+          <button onClick={switchBrand}
+            style={{marginTop:6,width:'100%',padding:'6px 0',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:6,color:'#94a3b8',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
             ⇄ Switch Brand
           </button>
         </div>
-        {NAV.map(sec => (
-          <div key={sec.section}>
-            <div className="nav-section">{sec.section}</div>
-            {sec.items.map(item => (
-              <div key={item.key} className={`nav-item ${page===item.key?'active':''}`} onClick={() => navTo(item.key)}>
-                <span className="nav-icon">{item.icon}</span>{item.label}
-              </div>
-            ))}
-          </div>
-        ))}
+        {NAV.map(sec => {
+          const visibleItems = sec.items.filter(item => allowedPages.includes(item.key));
+          if (visibleItems.length === 0) return null;
+          return (
+            <div key={sec.section}>
+              <div className="nav-section">{sec.section}</div>
+              {visibleItems.map(item => (
+                <div key={item.key} className={`nav-item ${safePage===item.key?'active':''}`} onClick={() => navTo(item.key)}>
+                  <span className="nav-icon">{item.icon}</span>{item.label}
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </aside>
       <div className="main">
         <div className="topbar">
@@ -1631,7 +1522,7 @@ export default function App() {
               <img src={cfg.logo} alt={cfg.name} style={{width:20,height:20,objectFit:'contain'}}/>
               {cfg.name}
             </div>
-            <div className="topbar-title">{PAGE_TITLES[page]||page}</div>
+            <div className="topbar-title">{PAGE_TITLES[safePage]||safePage}</div>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:14}}>
             <GlobalSearch onNav={navTo} brand={brand}/>
@@ -1641,13 +1532,13 @@ export default function App() {
           </div>
         </div>
         <div className="content">
-          {page==='dashboard'&&<Dashboard onNav={navTo} brand={brand}/>}
-          {page==='clients'&&<Clients onDataChange={loadMasters} brand={brand}/>}
-          {page==='products'&&<Products onDataChange={loadMasters} brand={brand}/>}
-          {page==='inventory'&&<Inventory brand={brand}/>}
-          {docType&&<DocList key={page+brand} type={docType} clients={clients} products={products} brand={brand} showNew={false} onClearNew={()=>{}}/>}
-          {page==='payments'&&<Payments clients={clients}/>}
-          {page==='reminders'&&<Reminders clients={clients} brand={brand}/>}
+          {safePage==='dashboard'&&<Dashboard onNav={navTo} brand={brand}/>}
+          {safePage==='clients'&&<Clients onDataChange={loadMasters} brand={brand}/>}
+          {safePage==='products'&&<Products onDataChange={loadMasters} brand={brand}/>}
+          {safePage==='inventory'&&<Inventory brand={brand}/>}
+          {docType&&<DocList key={safePage+brand} type={docType} clients={clients} products={products} brand={brand} showNew={false} onClearNew={()=>{}}/>}
+          {safePage==='payments'&&<Payments clients={clients}/>}
+          {safePage==='reminders'&&<Reminders clients={clients} brand={brand}/>}
         </div>
       </div>
     </div>
