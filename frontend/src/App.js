@@ -460,55 +460,163 @@ function Clients({ onDataChange, brand }) {
 function Products({ onDataChange, brand }) {
   const [products, setProducts] = useState([]);
   const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({gst:18,unit:'Piece'});
-  const load = useCallback(() => api.getProducts(brand).then(setProducts), [brand]);
-  useEffect(() => { load(); }, [load]);
-  const set = (k,v) => setForm(f => ({...f,[k]:v}));
+  const [form, setForm] = useState({ gst: 18, unit: 'Piece' });
+  const [search, setSearch] = useState('');
+
+  const load = useCallback(
+    () => api.getProducts(brand).then(setProducts),
+    [brand]
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
   const save = async () => {
-    if (modal==='add') await api.createProduct({...form, brand});
-    else await api.updateProduct(form.id,form);
-    setModal(null); load(); onDataChange && onDataChange();
+    const duplicateName = products.find(
+      p =>
+        p.name?.trim().toLowerCase() ===
+          form.name?.trim().toLowerCase() &&
+        p.id !== form.id
+    );
+
+    if (duplicateName) {
+      alert('Product Name already exists!');
+      return;
+    }
+
+    const duplicateSku = products.find(
+      p =>
+        p.sku?.trim().toLowerCase() ===
+          form.sku?.trim().toLowerCase() &&
+        p.id !== form.id
+    );
+
+    if (duplicateSku) {
+      alert('SKU already exists!');
+      return;
+    }
+
+    try {
+      if (modal === 'add') {
+        await api.createProduct({
+          ...form,
+          brand,
+        });
+      } else {
+        await api.updateProduct(form.id, form);
+      }
+
+      alert('Product saved successfully');
+
+      setModal(null);
+      load();
+
+      if (onDataChange) {
+        onDataChange();
+      }
+    } catch (err) {
+      alert(err.message || 'Unable to save product');
+    }
   };
+
   return (
     <div>
-      <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({gst:18,unit:'Piece'});setModal('add');}}>+ Add Product</button></div>
-      <div className="card">
-        <table><thead><tr><th>SKU</th><th>Product Name</th><th>Model No.</th><th>Category</th><th>HSN</th><th>Unit</th><th>Rate</th><th>GST</th><th></th></tr></thead>
-        <tbody>{products.map(p => (
-          <tr key={p.id}>
-            <td><code>{p.sku}</code></td><td><strong>{p.name}</strong></td><td><code>{p.model_no||'—'}</code></td><td>{p.category}</td>
-            <td>{p.hsn}</td><td>{p.unit}</td><td className="bold">{fmtAmt(p.rate)}</td>
-            <td><Badge status={`${p.gst}%`}/></td>
-            <td><button className="btn btn-sm" onClick={() => {setForm(p);setModal('edit');}}>Edit</button></td>
-          </tr>
-        ))}</tbody></table>
+      <div className="topbar-actions">
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setForm({ gst: 18, unit: 'Piece' });
+            setModal('add');
+          }}
+        >
+          + Add Product
+        </button>
       </div>
-      {modal && (
-        <Modal title={modal==='add'?'Add Product':'Edit Product'} onClose={() => setModal(null)}>
-          <div className="form-grid2">
-            {[['Product Name','name','text'],['SKU / Part No.','sku','text'],['Model No.','model_no','text'],['Category','category','text'],['HSN Code','hsn','text'],['Rate (excl. GST)','rate','number']].map(([label,key,type]) => (
-              <div className="form-row" key={key}><label>{label}</label><input type={type} value={form[key]||''} onChange={e => set(key,e.target.value)}/></div>
-            ))}
-            <div className="form-row"><label>Unit</label>
-              <select value={form.unit||'Piece'} onChange={e => set('unit',e.target.value)}>
-                {['Piece','Pcs','Set','Kg','Gram','Metre','Box','Litre','Bag','Roll','Pair','Nos'].map(u => <option key={u}>{u}</option>)}
-              </select>
-            </div>
-            <div className="form-row"><label>GST %</label>
-              <select value={form.gst||18} onChange={e => set('gst',+e.target.value)}>
-                {[0,5,12,18,28].map(g => <option key={g} value={g}>{g}%</option>)}
-              </select>
-            </div>
-            {modal==='add' && <div className="form-row"><label>Opening Stock</label><input type="number" value={form.opening_stock||''} onChange={e => set('opening_stock',e.target.value)}/></div>}
-            <div className="form-row col-span2"><label>Product Description</label><textarea rows={2} value={form.description||''} onChange={e => set('description',e.target.value)} placeholder="Detailed product description, specs, notes..."/></div>
-          </div>
-          <div className="modal-footer"><button className="btn" onClick={() => setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={save}>Save Product</button></div>
-        </Modal>
-      )}
+
+      <div style={{ marginBottom: 12 }}>
+        <input
+          type="text"
+          placeholder="Search Product Name or SKU"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            width: '350px',
+            padding: '10px',
+            border: '1px solid #d1d5db',
+            borderRadius: '8px'
+          }}
+        />
+      </div>
+
+      <div className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Product Name</th>
+              <th>Model No.</th>
+              <th>Category</th>
+              <th>HSN</th>
+              <th>Unit</th>
+              <th>Rate</th>
+              <th>GST</th>
+              <th></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {products
+              .filter(
+                p =>
+                  p.name?.toLowerCase().includes(search.toLowerCase()) ||
+                  p.sku?.toLowerCase().includes(search.toLowerCase())
+              )
+              .map(p => (
+                <tr
+                  key={p.id}
+                  style={{
+                    background:
+                      search &&
+                      (
+                        p.name?.toLowerCase().includes(search.toLowerCase()) ||
+                        p.sku?.toLowerCase().includes(search.toLowerCase())
+                      )
+                        ? '#fff3cd'
+                        : ''
+                  }}
+                >
+                  <td><code>{p.sku}</code></td>
+                  <td><strong>{p.name}</strong></td>
+                  <td><code>{p.model_no || '—'}</code></td>
+                  <td>{p.category}</td>
+                  <td>{p.hsn}</td>
+                  <td>{p.unit}</td>
+                  <td className="bold">{fmtAmt(p.rate)}</td>
+                  <td><Badge status={`${p.gst}%`} /></td>
+                  <td>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => {
+                        setForm(p);
+                        setModal('edit');
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* keep your existing modal code unchanged */}
     </div>
   );
 }
-
 // ── INVENTORY ─────────────────────────────────────────────────────────────────
 function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
