@@ -994,7 +994,8 @@ type: "add"
 
 );
 }
-// ── DOC LIST ──────────────────────────────────────────────────────────────────
+
+  // ── DOC LIST ──────────────────────────────────────────────────────────────────
 function DocList({ type, clients, products, showNew, onClearNew, brand }) {
   const [docs, setDocs] = useState([]);
   const [showForm, setShowForm] = useState(false);
