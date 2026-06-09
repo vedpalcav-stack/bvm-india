@@ -456,7 +456,7 @@ function Clients({ onDataChange, brand }) {
   );
 }
 
-// ── PRODUCTS ──────────────────────────────────────────────────────────────────
+
 // ── PRODUCTS ──────────────────────────────────────────────────────────────────
 function Products({ onDataChange, brand }) {
 
@@ -477,6 +477,21 @@ function Products({ onDataChange, brand }) {
   const set = (k,v) => setForm(f => ({ ...f, [k]: v }));
 
   const save = async () => {
+
+    const duplicate = products.find(
+      p =>
+        (
+          p.name?.trim().toLowerCase() === form.name?.trim().toLowerCase() ||
+          p.sku?.trim().toLowerCase() === form.sku?.trim().toLowerCase()
+        ) &&
+        p.id !== form.id
+    );
+
+    if (duplicate) {
+      alert("Product already exists!");
+      return;
+    }
+
     try {
       if (modal === 'add') {
         await api.createProduct({
@@ -486,6 +501,8 @@ function Products({ onDataChange, brand }) {
       } else {
         await api.updateProduct(form.id, form);
       }
+
+      alert("Product saved successfully");
 
       setModal(null);
       load();
@@ -518,9 +535,15 @@ function Products({ onDataChange, brand }) {
       <div style={{ marginBottom:12 }}>
         <input
           type="text"
-          placeholder="Search Product"
+          placeholder="Search Product Name or SKU"
           value={search}
           onChange={(e)=>setSearch(e.target.value)}
+          style={{
+            width:'350px',
+            padding:'10px',
+            border:'1px solid #d1d5db',
+            borderRadius:'8px'
+          }}
         />
       </div>
 
@@ -537,16 +560,37 @@ function Products({ onDataChange, brand }) {
 
           <tbody>
             {products
-              .filter(p =>
-                (p.name || '')
-                  .toLowerCase()
-                  .includes(search.toLowerCase())
+              .filter(
+                p =>
+                  (p.name || '')
+                    .toLowerCase()
+                    .includes(search.toLowerCase()) ||
+                  (p.sku || '')
+                    .toLowerCase()
+                    .includes(search.toLowerCase())
               )
               .map(p => (
-                <tr key={p.id}>
+                <tr
+                  key={p.id}
+                  style={{
+                    backgroundColor:
+                      search &&
+                      (
+                        (p.name || '')
+                          .toLowerCase()
+                          .includes(search.toLowerCase()) ||
+                        (p.sku || '')
+                          .toLowerCase()
+                          .includes(search.toLowerCase())
+                      )
+                        ? '#fff3cd'
+                        : ''
+                  }}
+                >
                   <td>{p.sku}</td>
                   <td>{p.name}</td>
                   <td>{fmtAmt(p.rate)}</td>
+
                   <td>
                     <button
                       className="btn btn-sm"
@@ -623,8 +667,7 @@ function Products({ onDataChange, brand }) {
 
     </div>
   );
-}
-// ── INVENTORY ─────────────────────────────────────────────────────────────────
+}// ── INVENTORY ─────────────────────────────────────────────────────────────────
 function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
   const [products, setProducts] = useState([]);
