@@ -686,22 +686,26 @@ function Inventory({ brand }) {
 
   const [form, setForm] = useState({
     product_id: "",
-    type: "add",
+    warehouse: "",
+    unit: "Piece",
+    rate: "",
     qty: "",
-    warehouse: ""
+    type: "add"
   });
 
-  const load = useCallback(
-    () =>
-      Promise.all([
+  const load = useCallback(async () => {
+    try {
+      const [inv, prods] = await Promise.all([
         api.getInventory(),
         api.getProducts(brand)
-      ]).then(([inv, prods]) => {
-        setInventory(inv || []);
-        setProducts(prods || []);
-      }),
-    [brand]
-  );
+      ]);
+
+      setInventory(inv || []);
+      setProducts(prods || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [brand]);
 
   useEffect(() => {
     load();
@@ -715,10 +719,13 @@ function Inventory({ brand }) {
           onClick={() => {
             setForm({
               product_id: products[0]?.id || "",
-              type: "add",
+              warehouse: "",
+              unit: "Piece",
+              rate: "",
               qty: "",
-              warehouse: ""
+              type: "add"
             });
+
             setModal(true);
           }}
         >
@@ -734,67 +741,65 @@ function Inventory({ brand }) {
               <th>Model</th>
               <th>Warehouse</th>
               <th>Unit</th>
+              <th>Rate</th>
               <th>Stock</th>
+              <th>Total Amount</th>
               <th>Status</th>
             </tr>
           </thead>
 
           <tbody>
-            {inventory
-              .filter(inv =>
-                products.some(
-                  p => String(p.id) === String(inv.product_id)
-                )
-              )
-              .map(inv => {
-                const low = Number(inv.stock) <= 0;
+            {inventory.map(inv => {
+              const stock = Number(inv.stock || 0);
+              const rate = Number(inv.rate || 0);
+              const total = stock * rate;
 
-                return (
-                  <tr key={inv.id}>
-                    <td>
-                      <code>
-                        {inv.model_no || inv.sku || "-"}
-                      </code>
-                    </td>
+              return (
+                <tr key={inv.id}>
+                  <td>
+                    {inv.model_no || inv.sku || "-"}
+                  </td>
 
-                    <td>
-                      <strong>
-                        {inv.product_name || "-"}
-                      </strong>
-                    </td>
+                  <td>
+                    {inv.product_name || "-"}
+                  </td>
 
-                    <td>
-                      {inv.warehouse || "-"}
-                    </td>
+                  <td>
+                    {inv.warehouse || "-"}
+                  </td>
 
-                    <td>
-                      {inv.unit || "-"}
-                    </td>
+                  <td>
+                    {inv.unit || "-"}
+                  </td>
 
-                    <td
-                      className={`bold ${
-                        low ? "danger" : "success"
+                  <td>
+                    ₹{rate.toFixed(2)}
+                  </td>
+
+                  <td>
+                    {stock}
+                  </td>
+
+                  <td>
+                    ₹{total.toFixed(2)}
+                  </td>
+
+                  <td>
+                    <span
+                      className={`badge ${
+                        stock <= 0
+                          ? "badge-danger"
+                          : "badge-success"
                       }`}
                     >
-                      {inv.stock || 0}
-                    </td>
-
-                    <td>
-                      <span
-                        className={`badge ${
-                          low
-                            ? "badge-danger"
-                            : "badge-success"
-                        }`}
-                      >
-                        {low
-                          ? "Out of Stock"
-                          : "In Stock"}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
+                      {stock <= 0
+                        ? "Out of Stock"
+                        : "In Stock"}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -835,14 +840,49 @@ function Inventory({ brand }) {
               <label>Warehouse</label>
 
               <input
-                value={form.warehouse || ""}
+                value={form.warehouse}
                 onChange={e =>
                   setForm(f => ({
                     ...f,
                     warehouse: e.target.value
                   }))
                 }
-                placeholder="Enter Warehouse Name"
+              />
+            </div>
+
+            <div className="form-row">
+              <label>Unit</label>
+
+              <select
+                value={form.unit}
+                onChange={e =>
+                  setForm(f => ({
+                    ...f,
+                    unit: e.target.value
+                  }))
+                }
+              >
+                <option>Piece</option>
+                <option>Nos</option>
+                <option>Box</option>
+                <option>Set</option>
+                <option>Kg</option>
+                <option>Litre</option>
+              </select>
+            </div>
+
+            <div className="form-row">
+              <label>Rate</label>
+
+              <input
+                type="number"
+                value={form.rate}
+                onChange={e =>
+                  setForm(f => ({
+                    ...f,
+                    rate: e.target.value
+                  }))
+                }
               />
             </div>
 
@@ -900,16 +940,7 @@ function Inventory({ brand }) {
                   const qtyNum = Number(form.qty);
 
                   if (!qtyNum || qtyNum <= 0) {
-                    alert(
-                      "Please enter a valid quantity"
-                    );
-                    return;
-                  }
-
-                  if (!form.product_id) {
-                    alert(
-                      "Please select a product"
-                    );
+                    alert("Enter valid quantity");
                     return;
                   }
 
@@ -917,22 +948,16 @@ function Inventory({ brand }) {
                     product_id: form.product_id,
                     qty: qtyNum,
                     type: form.type,
-                    warehouse: form.warehouse || ""
+                    warehouse: form.warehouse,
+                    unit: form.unit,
+                    rate: Number(form.rate || 0)
                   });
 
                   setModal(false);
-
                   await load();
 
-                  alert(
-                    "Stock updated successfully"
-                  );
-
-                } catch (e) {
-                  alert(
-                    "Update failed: " +
-                    (e.message || e)
-                  );
+                } catch (err) {
+                  alert(err.message);
                 }
               }}
             >
@@ -943,7 +968,9 @@ function Inventory({ brand }) {
       )}
     </div>
   );
-}// ── DOC LIST ──────────────────────────────────────────────────────────────────
+}
+
+// ── DOC LIST ──────────────────────────────────────────────────────────────────
 function DocList({ type, clients, products, showNew, onClearNew, brand }) {
   const [docs, setDocs] = useState([]);
   const [showForm, setShowForm] = useState(false);
