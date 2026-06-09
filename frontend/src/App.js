@@ -459,11 +459,13 @@ function Clients({ onDataChange, brand }) {
 
 // ── PRODUCTS ──────────────────────────────────────────────────────────────────
 function Products({ onDataChange, brand }) {
-
   const [products, setProducts] = useState([]);
   const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({ gst:18, unit:'Piece' });
-  const [search, setSearch] = useState('');
+  const [form, setForm] = useState({
+    gst: 18,
+    unit: "Piece"
+  });
+  const [search, setSearch] = useState("");
 
   const load = useCallback(
     () => api.getProducts(brand).then(setProducts),
@@ -474,30 +476,33 @@ function Products({ onDataChange, brand }) {
     load();
   }, [load]);
 
-  const set = (k,v) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k, v) =>
+    setForm(f => ({
+      ...f,
+      [k]: v
+    }));
 
   const save = async () => {
-
     const duplicate = products.find(
       p =>
+        p.id !== form.id &&
         (
           p.name?.trim().toLowerCase() ===
-          form.name?.trim().toLowerCase()
-          ||
+            form.name?.trim().toLowerCase() ||
           p.model_no?.trim().toLowerCase() ===
-          form.model_no?.trim().toLowerCase()
-        ) &&
-        p.id !== form.id
+            form.model_no?.trim().toLowerCase()
+        )
     );
 
     if (duplicate) {
-      alert("Model already exists!");
+      alert(
+        "Duplicate Entry!\n\nModel Name or Model No. already exists."
+      );
       return;
     }
 
     try {
-
-      if (modal === 'add') {
+      if (modal === "add") {
         await api.createProduct({
           ...form,
           brand
@@ -506,13 +511,15 @@ function Products({ onDataChange, brand }) {
         await api.updateProduct(form.id, form);
       }
 
-      alert("Saved Successfully");
+      await load();
 
       setModal(null);
-      load();
 
-      if (onDataChange) onDataChange();
+      if (onDataChange) {
+        onDataChange();
+      }
 
+      alert("Model saved successfully.");
     } catch (e) {
       alert(e.message);
     }
@@ -520,34 +527,27 @@ function Products({ onDataChange, brand }) {
 
   return (
     <div>
-
       <div className="topbar-actions">
         <button
           className="btn btn-primary"
           onClick={() => {
             setForm({
-              gst:18,
-              unit:'Piece'
+              gst: 18,
+              unit: "Piece"
             });
-            setModal('add');
+            setModal("add");
           }}
         >
           + Add Model
         </button>
       </div>
 
-      <div style={{ marginBottom:12 }}>
+      <div style={{ marginBottom: 12 }}>
         <input
           type="text"
           placeholder="Search Model Name or Model No."
           value={search}
-          onChange={(e)=>setSearch(e.target.value)}
-          style={{
-            width:'350px',
-            padding:'10px',
-            border:'1px solid #d1d5db',
-            borderRadius:'8px'
-          }}
+          onChange={e => setSearch(e.target.value)}
         />
       </div>
 
@@ -566,11 +566,10 @@ function Products({ onDataChange, brand }) {
             {products
               .filter(
                 p =>
-                  (p.name || '')
+                  (p.name || "")
                     .toLowerCase()
-                    .includes(search.toLowerCase())
-                  ||
-                  (p.model_no || '')
+                    .includes(search.toLowerCase()) ||
+                  (p.model_no || "")
                     .toLowerCase()
                     .includes(search.toLowerCase())
               )
@@ -581,16 +580,15 @@ function Products({ onDataChange, brand }) {
                     backgroundColor:
                       search &&
                       (
-                        (p.name || '')
+                        (p.name || "")
                           .toLowerCase()
-                          .includes(search.toLowerCase())
-                        ||
-                        (p.model_no || '')
+                          .includes(search.toLowerCase()) ||
+                        (p.model_no || "")
                           .toLowerCase()
                           .includes(search.toLowerCase())
                       )
-                        ? '#fff3cd'
-                        : ''
+                        ? "#fff3cd"
+                        : ""
                   }}
                 >
                   <td>{p.model_no}</td>
@@ -602,7 +600,7 @@ function Products({ onDataChange, brand }) {
                       className="btn btn-sm"
                       onClick={() => {
                         setForm(p);
-                        setModal('edit');
+                        setModal("edit");
                       }}
                     >
                       Edit
@@ -617,27 +615,30 @@ function Products({ onDataChange, brand }) {
       {modal && (
         <Modal
           title={
-            modal === 'add'
-              ? 'Add Model'
-              : 'Edit Model'
+            modal === "add"
+              ? "Add Model"
+              : "Edit Model"
           }
           onClose={() => setModal(null)}
         >
           <div className="form-grid2">
-
             <div className="form-row">
               <label>Model Name</label>
               <input
-                value={form.name || ''}
-                onChange={(e)=>set('name',e.target.value)}
+                value={form.name || ""}
+                onChange={e =>
+                  set("name", e.target.value)
+                }
               />
             </div>
 
             <div className="form-row">
               <label>Model No.</label>
               <input
-                value={form.model_no || ''}
-                onChange={(e)=>set('model_no',e.target.value)}
+                value={form.model_no || ""}
+                onChange={e =>
+                  set("model_no", e.target.value)
+                }
               />
             </div>
 
@@ -645,11 +646,12 @@ function Products({ onDataChange, brand }) {
               <label>Rate</label>
               <input
                 type="number"
-                value={form.rate || ''}
-                onChange={(e)=>set('rate',e.target.value)}
+                value={form.rate || ""}
+                onChange={e =>
+                  set("rate", e.target.value)
+                }
               />
             </div>
-
           </div>
 
           <div className="modal-footer">
@@ -667,13 +669,11 @@ function Products({ onDataChange, brand }) {
               Save Model
             </button>
           </div>
-
         </Modal>
       )}
-
     </div>
   );
-}}
+}
 // ── INVENTORY ─────────────────────────────────────────────────────────────────
 function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
