@@ -495,9 +495,7 @@ function Products({ onDataChange, brand }) {
     );
 
     if (duplicate) {
-      alert(
-        "Duplicate Entry!\n\nModel Name or Model No. already exists."
-      );
+      alert("Duplicate Entry! Make or Model already exists.");
       return;
     }
 
@@ -519,7 +517,7 @@ function Products({ onDataChange, brand }) {
         onDataChange();
       }
 
-      alert("Model saved successfully.");
+      alert("Saved Successfully");
     } catch (e) {
       alert(e.message);
     }
@@ -538,16 +536,22 @@ function Products({ onDataChange, brand }) {
             setModal("add");
           }}
         >
-          + Add Model
+          + Add Make / Model
         </button>
       </div>
 
       <div style={{ marginBottom: 12 }}>
         <input
           type="text"
-          placeholder="Search Model Name or Model No."
+          placeholder="Search Make or Model"
           value={search}
           onChange={e => setSearch(e.target.value)}
+          style={{
+            width: "350px",
+            padding: "10px",
+            border: "1px solid #d1d5db",
+            borderRadius: "8px"
+          }}
         />
       </div>
 
@@ -555,8 +559,8 @@ function Products({ onDataChange, brand }) {
         <table>
           <thead>
             <tr>
-              <th>Model No.</th>
-              <th>Model Name</th>
+              <th>Make</th>
+              <th>Model</th>
               <th>Rate</th>
               <th></th>
             </tr>
@@ -616,28 +620,28 @@ function Products({ onDataChange, brand }) {
         <Modal
           title={
             modal === "add"
-              ? "Add Model"
-              : "Edit Model"
+              ? "Add Make / Model"
+              : "Edit Make / Model"
           }
           onClose={() => setModal(null)}
         >
           <div className="form-grid2">
             <div className="form-row">
-              <label>Model Name</label>
+              <label>Make</label>
               <input
-                value={form.name || ""}
+                value={form.model_no || ""}
                 onChange={e =>
-                  set("name", e.target.value)
+                  set("model_no", e.target.value)
                 }
               />
             </div>
 
             <div className="form-row">
-              <label>Model No.</label>
+              <label>Model</label>
               <input
-                value={form.model_no || ""}
+                value={form.name || ""}
                 onChange={e =>
-                  set("model_no", e.target.value)
+                  set("name", e.target.value)
                 }
               />
             </div>
@@ -666,7 +670,7 @@ function Products({ onDataChange, brand }) {
               className="btn btn-primary"
               onClick={save}
             >
-              Save Model
+              Save
             </button>
           </div>
         </Modal>
