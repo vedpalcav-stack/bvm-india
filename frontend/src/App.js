@@ -732,8 +732,8 @@ function Inventory({ brand }) {
         <table>
           <thead>
             <tr>
-              <th>Model</th>
               <th>Make</th>
+              <th>Model</th>
               <th>Warehouse</th>
               <th>Unit</th>
               <th>Stock</th>
@@ -749,11 +749,16 @@ function Inventory({ brand }) {
                 )
               )
               .map(inv => {
-
                 const low = inv.stock <= 0;
 
                 return (
                   <tr key={inv.id}>
+
+                    <td>
+                      <code>
+                        {inv.model_no || inv.sku}
+                      </code>
+                    </td>
 
                     <td>
                       <strong>
@@ -762,14 +767,12 @@ function Inventory({ brand }) {
                     </td>
 
                     <td>
-                      <code>
-                        {inv.model_no || inv.sku}
-                      </code>
+                      {inv.warehouse || "-"}
                     </td>
 
-                    <td>{inv.warehouse}</td>
-
-                    <td>{inv.unit}</td>
+                    <td>
+                      {inv.unit}
+                    </td>
 
                     <td
                       className={`bold ${
@@ -810,7 +813,7 @@ function Inventory({ brand }) {
           <div className="form-grid2">
 
             <div className="form-row col-span2">
-              <label>Model</label>
+              <label>Make / Model</label>
 
               <select
                 value={form.product_id}
@@ -826,7 +829,7 @@ function Inventory({ brand }) {
                     key={p.id}
                     value={p.id}
                   >
-                    {p.name} ({p.model_no})
+                    {p.model_no} - {p.name}
                   </option>
                 ))}
               </select>
@@ -840,7 +843,8 @@ function Inventory({ brand }) {
                 onChange={e =>
                   setForm(f => ({
                     ...f,
-                    warehouse: e.target.value
+                    warehouse:
+                      e.target.value
                   }))
                 }
                 placeholder="Enter Warehouse Name"
@@ -848,14 +852,15 @@ function Inventory({ brand }) {
             </div>
 
             <div className="form-row">
-              <label>Type</label>
+              <label>Transaction</label>
 
               <select
                 value={form.type}
                 onChange={e =>
                   setForm(f => ({
                     ...f,
-                    type: e.target.value
+                    type:
+                      e.target.value
                   }))
                 }
               >
@@ -878,7 +883,8 @@ function Inventory({ brand }) {
                 onChange={e =>
                   setForm(f => ({
                     ...f,
-                    qty: e.target.value
+                    qty:
+                      e.target.value
                   }))
                 }
               />
@@ -890,7 +896,9 @@ function Inventory({ brand }) {
 
             <button
               className="btn"
-              onClick={() => setModal(false)}
+              onClick={() =>
+                setModal(false)
+              }
             >
               Cancel
             </button>
@@ -908,14 +916,14 @@ function Inventory({ brand }) {
                     qtyNum <= 0
                   ) {
                     alert(
-                      "Please enter a valid quantity."
+                      "Please enter a valid quantity"
                     );
                     return;
                   }
 
                   if (!form.product_id) {
                     alert(
-                      "Please select a model."
+                      "Please select a model"
                     );
                     return;
                   }
@@ -933,6 +941,10 @@ function Inventory({ brand }) {
 
                   await load();
 
+                  alert(
+                    "Stock updated successfully"
+                  );
+
                 } catch (e) {
                   alert(
                     "Update failed: " +
@@ -947,9 +959,11 @@ function Inventory({ brand }) {
           </div>
         </Modal>
       )}
+
     </div>
   );
-}// ── DOC FORM ──────────────────────────────────────────────────────────────────
+}}
+// ── DOC FORM ──────────────────────────────────────────────────────────────────
 function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
