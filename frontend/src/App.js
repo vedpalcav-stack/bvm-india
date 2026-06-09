@@ -457,125 +457,173 @@ function Clients({ onDataChange, brand }) {
 }
 
 // ── PRODUCTS ──────────────────────────────────────────────────────────────────
-{modal && (
-  <Modal
-    title={modal === 'add' ? 'Add Product' : 'Edit Product'}
-    onClose={() => setModal(null)}
-  >
-    <div className="form-grid2">
+// ── PRODUCTS ──────────────────────────────────────────────────────────────────
+function Products({ onDataChange, brand }) {
 
-      <div className="form-row">
-        <label>Product Name</label>
-        <input
-          value={form.name || ''}
-          onChange={(e) => set('name', e.target.value)}
-        />
-      </div>
+  const [products, setProducts] = useState([]);
+  const [modal, setModal] = useState(null);
+  const [form, setForm] = useState({ gst:18, unit:'Piece' });
+  const [search, setSearch] = useState('');
 
-      <div className="form-row">
-        <label>SKU / Part No.</label>
-        <input
-          value={form.sku || ''}
-          onChange={(e) => set('sku', e.target.value)}
-        />
-      </div>
+  const load = useCallback(
+    () => api.getProducts(brand).then(setProducts),
+    [brand]
+  );
 
-      <div className="form-row">
-        <label>Model No.</label>
-        <input
-          value={form.model_no || ''}
-          onChange={(e) => set('model_no', e.target.value)}
-        />
-      </div>
+  useEffect(() => {
+    load();
+  }, [load]);
 
-      <div className="form-row">
-        <label>Category</label>
-        <input
-          value={form.category || ''}
-          onChange={(e) => set('category', e.target.value)}
-        />
-      </div>
+  const set = (k,v) => setForm(f => ({ ...f, [k]: v }));
 
-      <div className="form-row">
-        <label>HSN Code</label>
-        <input
-          value={form.hsn || ''}
-          onChange={(e) => set('hsn', e.target.value)}
-        />
-      </div>
+  const save = async () => {
+    try {
+      if (modal === 'add') {
+        await api.createProduct({
+          ...form,
+          brand
+        });
+      } else {
+        await api.updateProduct(form.id, form);
+      }
 
-      <div className="form-row">
-        <label>Rate</label>
-        <input
-          type="number"
-          value={form.rate || ''}
-          onChange={(e) => set('rate', e.target.value)}
-        />
-      </div>
+      setModal(null);
+      load();
 
-      <div className="form-row">
-        <label>Unit</label>
-        <select
-          value={form.unit || 'Piece'}
-          onChange={(e) => set('unit', e.target.value)}
+      if (onDataChange) onDataChange();
+
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  return (
+    <div>
+
+      <div className="topbar-actions">
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setForm({
+              gst:18,
+              unit:'Piece'
+            });
+            setModal('add');
+          }}
         >
-          <option>Piece</option>
-          <option>Pcs</option>
-          <option>Set</option>
-          <option>Kg</option>
-          <option>Gram</option>
-          <option>Metre</option>
-          <option>Box</option>
-          <option>Litre</option>
-          <option>Bag</option>
-          <option>Roll</option>
-          <option>Pair</option>
-          <option>Nos</option>
-        </select>
+          + Add Product
+        </button>
       </div>
 
-      <div className="form-row">
-        <label>GST %</label>
-        <select
-          value={form.gst || 18}
-          onChange={(e) => set('gst', Number(e.target.value))}
-        >
-          <option value={0}>0%</option>
-          <option value={5}>5%</option>
-          <option value={12}>12%</option>
-          <option value={18}>18%</option>
-          <option value={28}>28%</option>
-        </select>
-      </div>
-
-      <div className="form-row col-span2">
-        <label>Product Description</label>
-        <textarea
-          rows={3}
-          value={form.description || ''}
-          onChange={(e) => set('description', e.target.value)}
+      <div style={{ marginBottom:12 }}>
+        <input
+          type="text"
+          placeholder="Search Product"
+          value={search}
+          onChange={(e)=>setSearch(e.target.value)}
         />
       </div>
+
+      <div className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Product</th>
+              <th>Rate</th>
+              <th></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {products
+              .filter(p =>
+                (p.name || '')
+                  .toLowerCase()
+                  .includes(search.toLowerCase())
+              )
+              .map(p => (
+                <tr key={p.id}>
+                  <td>{p.sku}</td>
+                  <td>{p.name}</td>
+                  <td>{fmtAmt(p.rate)}</td>
+                  <td>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => {
+                        setForm(p);
+                        setModal('edit');
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+
+      {modal && (
+        <Modal
+          title={
+            modal === 'add'
+              ? 'Add Product'
+              : 'Edit Product'
+          }
+          onClose={() => setModal(null)}
+        >
+          <div className="form-grid2">
+
+            <div className="form-row">
+              <label>Product Name</label>
+              <input
+                value={form.name || ''}
+                onChange={(e)=>set('name',e.target.value)}
+              />
+            </div>
+
+            <div className="form-row">
+              <label>SKU</label>
+              <input
+                value={form.sku || ''}
+                onChange={(e)=>set('sku',e.target.value)}
+              />
+            </div>
+
+            <div className="form-row">
+              <label>Rate</label>
+              <input
+                type="number"
+                value={form.rate || ''}
+                onChange={(e)=>set('rate',e.target.value)}
+              />
+            </div>
+
+          </div>
+
+          <div className="modal-footer">
+            <button
+              className="btn"
+              onClick={() => setModal(null)}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="btn btn-primary"
+              onClick={save}
+            >
+              Save Product
+            </button>
+          </div>
+
+        </Modal>
+      )}
 
     </div>
-
-    <div className="modal-footer">
-      <button
-        className="btn"
-        onClick={() => setModal(null)}
-      >
-        Cancel
-      </button>
-
-      <button
-        className="btn btn-primary"
-        onClick={save}
-      >
-        Save Product
-      </button>
-    </div>
-  </Modal>
-)}
+  );
+}
 // ── INVENTORY ─────────────────────────────────────────────────────────────────
 function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
