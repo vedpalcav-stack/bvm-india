@@ -521,11 +521,16 @@ function Clients({ onDataChange, brand }) {
         >
           <option>Piece</option>
           <option>Pcs</option>
+          <option>Set</option>
           <option>Kg</option>
+          <option>Gram</option>
           <option>Metre</option>
           <option>Box</option>
-          <option>Set</option>
           <option>Litre</option>
+          <option>Bag</option>
+          <option>Roll</option>
+          <option>Pair</option>
+          <option>Nos</option>
         </select>
       </div>
 
@@ -535,18 +540,18 @@ function Clients({ onDataChange, brand }) {
           value={form.gst || 18}
           onChange={(e) => set('gst', Number(e.target.value))}
         >
-          <option value="0">0%</option>
-          <option value="5">5%</option>
-          <option value="12">12%</option>
-          <option value="18">18%</option>
-          <option value="28">28%</option>
+          <option value={0}>0%</option>
+          <option value={5}>5%</option>
+          <option value={12}>12%</option>
+          <option value={18}>18%</option>
+          <option value={28}>28%</option>
         </select>
       </div>
 
       <div className="form-row col-span2">
         <label>Product Description</label>
         <textarea
-          rows="3"
+          rows={3}
           value={form.description || ''}
           onChange={(e) => set('description', e.target.value)}
         />
@@ -571,7 +576,6 @@ function Clients({ onDataChange, brand }) {
     </div>
   </Modal>
 )}
-
 // ── INVENTORY ─────────────────────────────────────────────────────────────────
 function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
