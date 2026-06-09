@@ -683,53 +683,273 @@ function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
   const [products, setProducts] = useState([]);
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({type:'add',qty:''});
-  const load = useCallback(() => Promise.all([api.getInventory(),api.getProducts(brand)]).then(([inv,prods]) => {setInventory(inv);setProducts(prods);}), [brand]);
-  useEffect(() => { load(); }, [load]);
+
+  const [form, setForm] = useState({
+    product_id: "",
+    type: "add",
+    qty: "",
+    warehouse: ""
+  });
+
+  const load = useCallback(
+    () =>
+      Promise.all([
+        api.getInventory(),
+        api.getProducts(brand)
+      ]).then(([inv, prods]) => {
+        setInventory(inv);
+        setProducts(prods);
+      }),
+    [brand]
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
   return (
     <div>
-      <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({product_id:products[0]?.id,type:'add',qty:''});setModal(true);}}>Update Stock</button></div>
-      <div className="card">
-        <table><thead><tr><th>Product</th><th>SKU</th><th>Warehouse</th><th>Unit</th><th>Stock</th><th>Reorder</th><th>Status</th></tr></thead>
-        <tbody>{inventory.filter(inv => products.some(p => p.id === inv.product_id)).map(inv => {
-          const low = inv.stock <= inv.reorder;
-          return (<tr key={inv.id}><td><strong>{inv.product_name}</strong></td><td><code>{inv.sku}</code></td><td>{inv.warehouse}</td><td>{inv.unit}</td><td className={`bold ${low?'danger':'success'}`}>{inv.stock}</td><td className="muted">{inv.reorder}</td><td><span className={`badge ${low?'badge-danger':'badge-success'}`}>{low?'Low Stock':'In Stock'}</span></td></tr>);
-        })}</tbody></table>
+
+      <div className="topbar-actions">
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setForm({
+              product_id: products[0]?.id || "",
+              type: "add",
+              qty: "",
+              warehouse: ""
+            });
+
+            setModal(true);
+          }}
+        >
+          Update Stock
+        </button>
       </div>
+
+      <div className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Make</th>
+              <th>Warehouse</th>
+              <th>Unit</th>
+              <th>Stock</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {inventory
+              .filter(inv =>
+                products.some(
+                  p => p.id === inv.product_id
+                )
+              )
+              .map(inv => {
+
+                const low = inv.stock <= 0;
+
+                return (
+                  <tr key={inv.id}>
+
+                    <td>
+                      <strong>
+                        {inv.product_name}
+                      </strong>
+                    </td>
+
+                    <td>
+                      <code>
+                        {inv.model_no || inv.sku}
+                      </code>
+                    </td>
+
+                    <td>{inv.warehouse}</td>
+
+                    <td>{inv.unit}</td>
+
+                    <td
+                      className={`bold ${
+                        low
+                          ? "danger"
+                          : "success"
+                      }`}
+                    >
+                      {inv.stock}
+                    </td>
+
+                    <td>
+                      <span
+                        className={`badge ${
+                          low
+                            ? "badge-danger"
+                            : "badge-success"
+                        }`}
+                      >
+                        {low
+                          ? "Out of Stock"
+                          : "In Stock"}
+                      </span>
+                    </td>
+
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+      </div>
+
       {modal && (
-        <Modal title="Update Stock" onClose={() => setModal(false)}>
+        <Modal
+          title="Update Stock"
+          onClose={() => setModal(false)}
+        >
           <div className="form-grid2">
-            <div className="form-row col-span2"><label>Product</label>
-              <select value={form.product_id} onChange={e => setForm(f => ({...f,product_id:e.target.value}))}>
-                {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
+
+            <div className="form-row col-span2">
+              <label>Model</label>
+
+              <select
+                value={form.product_id}
+                onChange={e =>
+                  setForm(f => ({
+                    ...f,
+                    product_id: e.target.value
+                  }))
+                }
+              >
+                {products.map(p => (
+                  <option
+                    key={p.id}
+                    value={p.id}
+                  >
+                    {p.name} ({p.model_no})
+                  </option>
+                ))}
               </select>
             </div>
-            <div className="form-row"><label>Type</label>
-              <select value={form.type} onChange={e => setForm(f => ({...f,type:e.target.value}))}>
-                <option value="add">Add (Purchase / Received)</option>
-                <option value="sub">Subtract (Sale / Damage)</option>
+
+            <div className="form-row col-span2">
+              <label>Warehouse</label>
+
+              <input
+                value={form.warehouse}
+                onChange={e =>
+                  setForm(f => ({
+                    ...f,
+                    warehouse: e.target.value
+                  }))
+                }
+                placeholder="Enter Warehouse Name"
+              />
+            </div>
+
+            <div className="form-row">
+              <label>Type</label>
+
+              <select
+                value={form.type}
+                onChange={e =>
+                  setForm(f => ({
+                    ...f,
+                    type: e.target.value
+                  }))
+                }
+              >
+                <option value="add">
+                  Add Stock
+                </option>
+
+                <option value="sub">
+                  Remove Stock
+                </option>
               </select>
             </div>
-            <div className="form-row"><label>Quantity</label><input type="number" value={form.qty} onChange={e => setForm(f => ({...f,qty:e.target.value}))}/></div>
+
+            <div className="form-row">
+              <label>Quantity</label>
+
+              <input
+                type="number"
+                value={form.qty}
+                onChange={e =>
+                  setForm(f => ({
+                    ...f,
+                    qty: e.target.value
+                  }))
+                }
+              />
+            </div>
+
           </div>
-          <div className="modal-footer"><button className="btn" onClick={() => setModal(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={async () => {
-              try {
-                const qtyNum = parseFloat(form.qty);
-                if (!qtyNum || qtyNum <= 0) { alert('Please enter a valid quantity greater than 0'); return; }
-                if (!form.product_id) { alert('Please select a product'); return; }
-                await api.updateStock({product_id:form.product_id,qty:qtyNum,type:form.type});
-                setModal(false); load();
-              } catch(e) { alert('Update failed: ' + e.message); }
-            }}>Update Stock</button>
+
+          <div className="modal-footer">
+
+            <button
+              className="btn"
+              onClick={() => setModal(false)}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="btn btn-primary"
+              onClick={async () => {
+                try {
+
+                  const qtyNum =
+                    parseFloat(form.qty);
+
+                  if (
+                    !qtyNum ||
+                    qtyNum <= 0
+                  ) {
+                    alert(
+                      "Please enter a valid quantity."
+                    );
+                    return;
+                  }
+
+                  if (!form.product_id) {
+                    alert(
+                      "Please select a model."
+                    );
+                    return;
+                  }
+
+                  await api.updateStock({
+                    product_id:
+                      form.product_id,
+                    qty: qtyNum,
+                    type: form.type,
+                    warehouse:
+                      form.warehouse
+                  });
+
+                  setModal(false);
+
+                  await load();
+
+                } catch (e) {
+                  alert(
+                    "Update failed: " +
+                      e.message
+                  );
+                }
+              }}
+            >
+              Update Stock
+            </button>
+
           </div>
         </Modal>
       )}
     </div>
   );
-}
-
-// ── DOC FORM ──────────────────────────────────────────────────────────────────
+}// ── DOC FORM ──────────────────────────────────────────────────────────────────
 function DocForm({ type, clients, products, onClose, onSaved, brand }) {
   const label = api.FLOW_LABELS[type]||type;
   const isSO = type === 'sales_order';
