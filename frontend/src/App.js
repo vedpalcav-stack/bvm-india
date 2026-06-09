@@ -481,18 +481,22 @@ function Products({ onDataChange, brand }) {
     const duplicate = products.find(
       p =>
         (
-          p.name?.trim().toLowerCase() === form.name?.trim().toLowerCase() ||
-          p.sku?.trim().toLowerCase() === form.sku?.trim().toLowerCase()
+          p.name?.trim().toLowerCase() ===
+          form.name?.trim().toLowerCase()
+          ||
+          p.model_no?.trim().toLowerCase() ===
+          form.model_no?.trim().toLowerCase()
         ) &&
         p.id !== form.id
     );
 
     if (duplicate) {
-      alert("Product already exists!");
+      alert("Model already exists!");
       return;
     }
 
     try {
+
       if (modal === 'add') {
         await api.createProduct({
           ...form,
@@ -502,7 +506,7 @@ function Products({ onDataChange, brand }) {
         await api.updateProduct(form.id, form);
       }
 
-      alert("Product saved successfully");
+      alert("Saved Successfully");
 
       setModal(null);
       load();
@@ -528,14 +532,14 @@ function Products({ onDataChange, brand }) {
             setModal('add');
           }}
         >
-          + Add Product
+          + Add Model
         </button>
       </div>
 
       <div style={{ marginBottom:12 }}>
         <input
           type="text"
-          placeholder="Search Product Name or SKU"
+          placeholder="Search Model Name or Model No."
           value={search}
           onChange={(e)=>setSearch(e.target.value)}
           style={{
@@ -551,8 +555,8 @@ function Products({ onDataChange, brand }) {
         <table>
           <thead>
             <tr>
-              <th>SKU</th>
-              <th>Product</th>
+              <th>Model No.</th>
+              <th>Model Name</th>
               <th>Rate</th>
               <th></th>
             </tr>
@@ -564,8 +568,9 @@ function Products({ onDataChange, brand }) {
                 p =>
                   (p.name || '')
                     .toLowerCase()
-                    .includes(search.toLowerCase()) ||
-                  (p.sku || '')
+                    .includes(search.toLowerCase())
+                  ||
+                  (p.model_no || '')
                     .toLowerCase()
                     .includes(search.toLowerCase())
               )
@@ -578,8 +583,9 @@ function Products({ onDataChange, brand }) {
                       (
                         (p.name || '')
                           .toLowerCase()
-                          .includes(search.toLowerCase()) ||
-                        (p.sku || '')
+                          .includes(search.toLowerCase())
+                        ||
+                        (p.model_no || '')
                           .toLowerCase()
                           .includes(search.toLowerCase())
                       )
@@ -587,7 +593,7 @@ function Products({ onDataChange, brand }) {
                         : ''
                   }}
                 >
-                  <td>{p.sku}</td>
+                  <td>{p.model_no}</td>
                   <td>{p.name}</td>
                   <td>{fmtAmt(p.rate)}</td>
 
@@ -612,15 +618,15 @@ function Products({ onDataChange, brand }) {
         <Modal
           title={
             modal === 'add'
-              ? 'Add Product'
-              : 'Edit Product'
+              ? 'Add Model'
+              : 'Edit Model'
           }
           onClose={() => setModal(null)}
         >
           <div className="form-grid2">
 
             <div className="form-row">
-              <label>Product Name</label>
+              <label>Model Name</label>
               <input
                 value={form.name || ''}
                 onChange={(e)=>set('name',e.target.value)}
@@ -628,10 +634,10 @@ function Products({ onDataChange, brand }) {
             </div>
 
             <div className="form-row">
-              <label>SKU</label>
+              <label>Model No.</label>
               <input
-                value={form.sku || ''}
-                onChange={(e)=>set('sku',e.target.value)}
+                value={form.model_no || ''}
+                onChange={(e)=>set('model_no',e.target.value)}
               />
             </div>
 
@@ -658,7 +664,7 @@ function Products({ onDataChange, brand }) {
               className="btn btn-primary"
               onClick={save}
             >
-              Save Product
+              Save Model
             </button>
           </div>
 
@@ -667,7 +673,8 @@ function Products({ onDataChange, brand }) {
 
     </div>
   );
-}// ── INVENTORY ─────────────────────────────────────────────────────────────────
+}}
+// ── INVENTORY ─────────────────────────────────────────────────────────────────
 function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
   const [products, setProducts] = useState([]);
