@@ -861,19 +861,25 @@ function Inventory({ brand }) {
               </select>
             </div>
 
-            <div className="form-row col-span2">
-              <label>Warehouse</label>
+         <div className="form-row col-span2">
+  <label>Warehouse</label>
 
-              <input
-                value={form.warehouse}
-                onChange={e =>
-                  setForm(f => ({
-                    ...f,
-                    warehouse: e.target.value
-                  }))
-                }
-              />
-            </div>
+  <select
+    value={form.warehouse}
+    onChange={e =>
+      setForm(f => ({
+        ...f,
+        warehouse: e.target.value
+      }))
+    }
+  >
+    <option value="">Select Warehouse</option>
+    <option>Main Godown</option>
+    <option>Delhi Warehouse</option>
+    <option>Mumbai Warehouse</option>
+    <option>Chennai Warehouse</option>
+  </select>
+</div>
 
             <div className="form-row">
               <label>Unit</label>
