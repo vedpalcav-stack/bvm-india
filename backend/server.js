@@ -136,71 +136,47 @@ res.json(rows);
 // ADD PRODUCT
 ```js
 // ADD PRODUCT
-app.post('/api/products', wrap(async (req, res) => {
-
-  const {
-    make,
-    model,
-    rate,
-    opening_stock
-  } = req.body;
-
-  const id = await nextProductId();
-
-  const productName =
-    `${make || ''} ${model || ''}`.trim();
-
-  await db.prepare(`
-    INSERT INTO products
-    (
-      id,
-      name,
+app.post("/products", async (req, res) => {
+  try {
+    const {
       make,
       model,
-      rate
-    )
-    VALUES
-    (
-      $1,$2,$3,$4,$5
-    )
-  `).run(
-    id,
-    productName,
-    make || '',
-    model || '',
-    Number(rate) || 0
-  );
+      sku,
+      category,
+      hsn,
+      unit,
+      rate,
+      gst,
+      brand
+    } = req.body;
 
-  await db.prepare(`
-    INSERT INTO inventory
-    (
-      product_id,
-      stock,
-      reorder,
-      warehouse
-    )
-    VALUES
-    (
-      $1,
-      $2,
-      10,
-      'Main Godown'
-    )
-  `).run(
-    id,
-    Number(opening_stock) || 0
-  );
+    const name = `${make || ""} ${model || ""}`.trim();
 
-  res.json(
-    await db.prepare(`
-      SELECT *
-      FROM products
-      WHERE id = $1
-    `).get(id)
-  );
+    const { data, error } = await supabase
+      .from("products")
+      .insert([
+        {
+          name,
+          make,
+          model,
+          sku,
+          category,
+          hsn,
+          unit,
+          rate,
+          gst,
+          brand
+        }
+      ])
+      .select();
 
-}));
+    if (error) return res.status(400).json(error);
 
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 // DELETE PRODUCT
 app.delete('/api/products/:id', wrap(async (req, res) => {
 
