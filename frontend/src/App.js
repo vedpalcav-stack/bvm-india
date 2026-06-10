@@ -760,39 +760,55 @@ function Inventory({ brand }) {
 
       <div className="card">
         <table>
-          <thead>
-            <tr>
-              <th>Make</th>
-              <th>Model</th>
-              <th>Warehouse</th>
-              <th>Unit</th>
-              <th>Rate</th>
-              <th>Stock</th>
-              <th>Total Amount</th>
-              <th>Status</th>
-            </tr>
-          </thead>
+         <thead>
+  <tr>
+    <th>Sr. No.</th>
+    <th>Make</th>
+    <th>Model</th>
+    <th>Warehouse</th>
+    <th>Unit</th>
+    <th>Rate</th>
+    <th>Stock</th>
+    <th>Total Amount</th>
+    <th>Status</th>
+  </tr>
+</thead>
 
           <tbody>
-            {inventory.map(inv => {
+            {inventory.map((inv, index) => {
               const stock = Number(inv.stock || 0);
               const rate = Number(inv.rate || 0);
               const total = stock * rate;
 
               return (
                 <tr key={inv.id}>
-                  <td>
-                    {inv.model_no || inv.sku || "-"}
-                  </td>
+                 <td>{inv.model_no || "-"}</td>
+<td>{inv.product_name || "-"}</td>
+                <td>
+  <input
+    value={inv.warehouse || ""}
+    onChange={async (e) => {
+      const warehouse = e.target.value;
 
-                  <td>
-                    {inv.product_name || "-"}
-                  </td>
+      setInventory(prev =>
+        prev.map(row =>
+          row.id === inv.id
+            ? { ...row, warehouse }
+            : row
+        )
+      );
 
-                  <td>
-                    {inv.warehouse || "-"}
-                  </td>
-
+      await api.updateInventoryWarehouse(
+        inv.id,
+        warehouse
+      );
+    }}
+    style={{
+      width: "150px",
+      padding: "4px"
+    }}
+  />
+</td>
                   <td>
                     {inv.unit || "-"}
                   </td>
