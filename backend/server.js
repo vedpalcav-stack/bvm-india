@@ -138,6 +138,18 @@ initDb().then(db => {
   }));
   app.post('/api/inventory/update', wrap(async (req, res) => {
     const { product_id, qty, type, reorder } = req.body;
+    app.put('/api/inventory/:id/warehouse', wrap(async (req, res) => {
+  const { warehouse } = req.body;
+
+  await db.prepare(
+    'UPDATE inventory SET warehouse=$1 WHERE id=$2'
+  ).run(warehouse, req.params.id);
+
+  res.json({
+    success: true,
+    warehouse
+  });
+}));
     console.log('Inventory update:', { product_id, qty, type });
     if (!product_id) return res.status(400).json({ error: 'product_id required' });
     let inv = await db.prepare('SELECT * FROM inventory WHERE product_id = $1').get(product_id);
