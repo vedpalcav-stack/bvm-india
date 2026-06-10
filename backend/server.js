@@ -134,41 +134,29 @@ res.json(rows);
 }));
 
 // ADD PRODUCT
-app.post('/api/products', wrap(async (req, res) => {
+const productName =
+  `${make || ''} ${model || ''}`.trim();
 
-  const {
+await db.prepare(`
+  INSERT INTO products
+  (
+    id,
+    name,
     make,
     model,
-    rate,
-    opening_stock
-  } = req.body;
-
-  const id = await nextProductId();
-
-  const productName =
-    `${make || ''} ${model || ''}`.trim();
-
-  await db.prepare(`
-    INSERT INTO products
-    (
-      id,
-      name,
-      make,
-      model,
-      rate
-    )
-    VALUES
-    (
-      $1,$2,$3,$4,$5
-    )
-  `).run(
-    id,
-    productName,
-    make || '',
-    model || '',
-    Number(rate) || 0
-  );
-
+    rate
+  )
+  VALUES
+  (
+    $1,$2,$3,$4,$5
+  )
+`).run(
+  id,
+  productName,
+  make || '',
+  model || '',
+  Number(rate) || 0
+);
   await db.prepare(`
     INSERT INTO inventory
     (
