@@ -119,10 +119,25 @@ initDb().then(db => {
   app.post('/api/products', wrap(async (req, res) => {
     const { name, sku, category, hsn, unit, rate, gst, opening_stock, brand, model_no, description } = req.body;
     const id = await nextProductId(brand);
-    await db.prepare(`INSERT INTO products (id,name,sku,category,hsn,unit,rate,gst,brand,model_no,description) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`)
-      .run(id, name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate)||0, parseInt(gst)||18, brand||'india', model_no||'', description||'');
-    await db.prepare(`INSERT INTO  (product_id,stock,reorder,warehouse) VALUES ($1,$2,10,'Main Godown')`)
-      .run(id, parseFloat(opening_stock)||0);
+   await db.prepare(`
+  INSERT INTO inventory
+  (
+    product_id,
+    stock,
+    reorder,
+    warehouse
+  )
+  VALUES
+  (
+    $1,
+    $2,
+    10,
+    'Main Godown'
+  )
+`).run(
+  id,
+  parseFloat(opening_stock) || 0
+);
     res.json(await db.prepare('SELECT * FROM products WHERE id = $1').get(id));
   }));
   app.put('/api/products/:id', wrap(async (req, res) => {
