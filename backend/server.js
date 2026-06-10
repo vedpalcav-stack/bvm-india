@@ -22,27 +22,42 @@ const wrap = fn => (req, res, next) =>
 initDb().then(db => {
 
   // ── HELPERS ──────────────────────────────────────────────────────────────────
-  async function nextId(type, brand) {
-    const prefix = DOC_PREFIXES[type] || 'BVM-DOC';
-    const brandPrefix = brand === 'world' ? 'W' : 'I';
-    const fullPrefix = prefix + '-' + brandPrefix;
-    // Try sequential first, fallback to timestamp to avoid duplicates
-    const rows = await db.prepare("SELECT id FROM documents WHERE id LIKE $1 ORDER BY created_at DESC").all(fullPrefix + '%');
-    let maxN = 0;
-    rows.forEach(r => {
-      const suffix = r.id.slice(fullPrefix.length);
-      const num = parseInt(suffix) || 0;
-      if (num > maxN) maxN = num;
-    });
-    const candidate = fullPrefix + String(maxN + 1).padStart(4, '0');
-    // Verify candidate doesn't exist
-    const exists = await db.prepare("SELECT id FROM documents WHERE id = $1").get(candidate);
-    if (exists) {
-      // Fallback: use timestamp-based ID
-      return fullPrefix + String(Date.now()).slice(-6);
+async function nextProductId(brand) {
+  const prefix = brand === 'world' ? 'WP' : 'P';
+
+  const rows = await db.prepare(
+    "SELECT id FROM products WHERE id LIKE $1"
+  ).all(prefix + '%');
+
+  let maxN = 0;
+
+  rows.forEach(r => {
+    const num = parseInt(
+      r.id.replace(prefix, '')
+    ) || 0;
+
+    if (num > maxN) {
+      maxN = num;
     }
-    return candidate;
+  });
+
+  const candidate =
+    prefix +
+    String(maxN + 1).padStart(3, '0');
+
+  const exists = await db.prepare(
+    "SELECT id FROM products WHERE id = $1"
+  ).get(candidate);
+
+  if (exists) {
+    return (
+      prefix +
+      String(Date.now()).slice(-5)
+    );
   }
+
+  return candidate;
+}
   async function nextClientId(brand) {
     const prefix = brand === 'world' ? 'W' : 'C';
     const rows = await db.prepare("SELECT id FROM clients WHERE id LIKE $1").all(prefix + '%');
