@@ -137,14 +137,32 @@ initDb().then(db => {
     res.json(await db.prepare(`SELECT i.*, p.name as product_name, p.sku, p.unit, p.rate, p.gst FROM inventory i JOIN products p ON i.product_id = p.id ORDER BY p.name`).all());
   }));
   app.post('/api/inventory/update', wrap(async (req, res) => {
-    const { product_id, qty, type, reorder } = req.body;
+    const {
+  product_id,
+  qty,
+  type,
+  reorder,
+  warehouse,
+  unit,
+  rate
+} = req.body;
     app.put('/api/inventory/:id/warehouse', wrap(async (req, res) => {
   const { warehouse } = req.body;
 
-  await db.prepare(
-    'UPDATE inventory SET warehouse=$1 WHERE id=$2'
-  ).run(warehouse, req.params.id);
-
+ await db.prepare(`
+  UPDATE inventory
+  SET stock=$1,
+      warehouse=$2,
+      unit=$3,
+      rate=$4
+  WHERE product_id=$5
+`).run(
+  newStock,
+  warehouse || 'Main Godown',
+  unit || 'Piece',
+  parseFloat(rate) || 0,
+  product_id
+);
   res.json({
     success: true,
     warehouse
