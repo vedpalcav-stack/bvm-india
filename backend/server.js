@@ -123,9 +123,38 @@ async function nextProductId(brand) {
   }));
 
   // ── PRODUCTS ─────────────────────────────────────────────────────────────────
-  app.post('/api/products', wrap(async (req, res) => {
+  // GET PRODUCTS
+app.get('/api/products', wrap(async (req, res) => {
+
+  const brand = req.query.brand;
+
+  let rows;
+
+  if (brand) {
+    rows = await db.prepare(`
+      SELECT *
+      FROM products
+      WHERE brand = $1
+      ORDER BY name
+    `).all(brand);
+  } else {
+    rows = await db.prepare(`
+      SELECT *
+      FROM products
+      ORDER BY name
+    `).all();
+  }
+
+  res.json(rows);
+
+}));
+
+// ADD PRODUCT
+app.post('/api/products', wrap(async (req, res) => {
+
   const {
-    name,
+    make,
+    model,
     sku,
     category,
     hsn,
@@ -134,7 +163,6 @@ async function nextProductId(brand) {
     gst,
     opening_stock,
     brand,
-    model_no,
     description
   } = req.body;
 
@@ -144,7 +172,8 @@ async function nextProductId(brand) {
     INSERT INTO products
     (
       id,
-      name,
+      make,
+      model,
       sku,
       category,
       hsn,
@@ -152,7 +181,6 @@ async function nextProductId(brand) {
       rate,
       gst,
       brand,
-      model_no,
       description
     )
     VALUES
@@ -161,15 +189,15 @@ async function nextProductId(brand) {
     )
   `).run(
     id,
-    name,
+    make || '',
+    model || '',
     sku || '',
     category || '',
     hsn || '',
     unit || 'Piece',
-    parseFloat(rate) || 0,
-    parseInt(gst) || 18,
+    Number(rate) || 0,
+    Number(gst) || 18,
     brand || 'india',
-    model_no || '',
     description || ''
   );
 
@@ -190,56 +218,69 @@ async function nextProductId(brand) {
     )
   `).run(
     id,
-    parseFloat(opening_stock) || 0
+    Number(opening_stock) || 0
   );
 
   res.json(
-    await db.prepare(
-      'SELECT * FROM products WHERE id = $1'
-    ).get(id)
+    await db.prepare(`
+      SELECT *
+      FROM products
+      WHERE id = $1
+    `).get(id)
   );
-}));
-  // ── INVENTORY ─────────────────────────────────────────────────────────────────
-// Get Inventory
-app.get('/api/inventory', wrap(async (req, res) => {
-  const rows = await db.prepare(`
-    SELECT
-      i.*,
-      p.name AS product_name,
-      p.model_no,
-      p.sku,
-      p.unit,
-      p.rate,
-      p.gst
-    FROM inventory i
-    JOIN products p
-      ON i.product_id = p.id
-    ORDER BY p.name
-  `).all();
 
-  res.json(rows);
 }));
 
-// Update Warehouse
-app.put('/api/inventory/:id/warehouse', wrap(async (req, res) => {
-  const { warehouse } = req.body;
+// UPDATE PRODUCT
+app.put('/api/products/:id', wrap(async (req, res) => {
+
+  const {
+    make,
+    model,
+    rate,
+    description
+  } = req.body;
 
   await db.prepare(`
-    UPDATE inventory
-    SET warehouse = $1
-    WHERE id = $2
+    UPDATE products
+    SET
+      make = $1,
+      model = $2,
+      rate = $3,
+      description = $4
+    WHERE id = $5
   `).run(
-    warehouse || 'Main Godown',
+    make,
+    model,
+    Number(rate) || 0,
+    description || '',
     req.params.id
   );
 
   res.json({
-    success: true,
-    warehouse
+    success: true
   });
+
 }));
 
-// Update Stock
+// DELETE PRODUCT
+app.delete('/api/products/:id', wrap(async (req, res) => {
+
+  await db.prepare(`
+    DELETE FROM inventory
+    WHERE product_id = $1
+  `).run(req.params.id);
+
+  await db.prepare(`
+    DELETE FROM products
+    WHERE id = $1
+  `).run(req.params.id);
+
+  res.json({
+    success: true
+  });
+
+}));// Update Stock
 app.post('/api/inventory/update', wrap(async (req, res) => {
 
   const {
