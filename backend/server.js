@@ -134,29 +134,43 @@ res.json(rows);
 }));
 
 // ADD PRODUCT
-const productName =
-  `${make || ''} ${model || ''}`.trim();
+```js
+// ADD PRODUCT
+app.post('/api/products', wrap(async (req, res) => {
 
-await db.prepare(`
-  INSERT INTO products
-  (
-    id,
-    name,
+  const {
     make,
     model,
-    rate
-  )
-  VALUES
-  (
-    $1,$2,$3,$4,$5
-  )
-`).run(
-  id,
-  productName,
-  make || '',
-  model || '',
-  Number(rate) || 0
-);
+    rate,
+    opening_stock
+  } = req.body;
+
+  const id = await nextProductId();
+
+  const productName =
+    `${make || ''} ${model || ''}`.trim();
+
+  await db.prepare(`
+    INSERT INTO products
+    (
+      id,
+      name,
+      make,
+      model,
+      rate
+    )
+    VALUES
+    (
+      $1,$2,$3,$4,$5
+    )
+  `).run(
+    id,
+    productName,
+    make || '',
+    model || '',
+    Number(rate) || 0
+  );
+
   await db.prepare(`
     INSERT INTO inventory
     (
@@ -186,16 +200,24 @@ await db.prepare(`
   );
 
 }));
+
 // DELETE PRODUCT
-app.delete('/api/products/', wrap(async (req, res) => {
+app.delete('/api/products/:id', wrap(async (req, res) => {
 
-await db.prepare( DELETE FROM inventory WHERE product_id = $1 ).run(req.params.id);
+  await db.prepare(`
+    DELETE FROM inventory
+    WHERE product_id = $1
+  `).run(req.params.id);
 
-await db.prepare( DELETE FROM products WHERE id = $1 ).run(req.params.id);
+  await db.prepare(`
+    DELETE FROM products
+    WHERE id = $1
+  `).run(req.params.id);
 
-res.json({ success: true });
+  res.json({ success: true });
 
 }));
+```
 // ── DOCUMENTS ─────────────────────────────────────────────────────────────────
   app.get('/api/documents', wrap(async (req, res) => {
     const { type, brand } = req.query;
