@@ -969,6 +969,17 @@ function Inventory({ brand }) {
               onClick={async () => {
                 try {
                   const qtyNum = Number(form.qty);
+                  const duplicate = inventory.find(
+  i =>
+    i.product_id === form.product_id &&
+    i.warehouse?.toLowerCase() ===
+    form.warehouse?.toLowerCase()
+);
+
+if (duplicate && form.type === "add") {
+  alert("Warehouse already exists for this product");
+  return;
+}
 
                   if (!qtyNum || qtyNum <= 0) {
                     alert("Enter valid quantity");
