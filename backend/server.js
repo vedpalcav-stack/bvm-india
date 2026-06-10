@@ -136,53 +136,68 @@ res.json(rows);
 // ADD PRODUCT
 app.post('/api/products', wrap(async (req, res) => {
 
-const {
-make,
-model,
-rate,
-opening_stock
-} = req.body;
+  const {
+    make,
+    model,
+    rate,
+    opening_stock
+  } = req.body;
 
-const id = await nextProductId();
+  const id = await nextProductId();
 
-await db.prepare( INSERT INTO products ( id, make, model, rate ) VALUES ( $1,$2,$3,$4 ) ).run(
-id,
-make || '',
-model || '',
-Number(rate) || 0
-);
+  const productName =
+    `${make || ''} ${model || ''}`.trim();
 
-await db.prepare( INSERT INTO inventory ( product_id, stock, reorder, warehouse ) VALUES ( $1, $2, 10, 'Main Godown' ) ).run(
-id,
-Number(opening_stock) || 0
-);
+  await db.prepare(`
+    INSERT INTO products
+    (
+      id,
+      name,
+      make,
+      model,
+      rate
+    )
+    VALUES
+    (
+      $1,$2,$3,$4,$5
+    )
+  `).run(
+    id,
+    productName,
+    make || '',
+    model || '',
+    Number(rate) || 0
+  );
 
-res.json(
-await db.prepare( SELECT * FROM products WHERE id = $1 ).get(id)
-);
+  await db.prepare(`
+    INSERT INTO inventory
+    (
+      product_id,
+      stock,
+      reorder,
+      warehouse
+    )
+    VALUES
+    (
+      $1,
+      $2,
+      10,
+      'Main Godown'
+    )
+  `).run(
+    id,
+    Number(opening_stock) || 0
+  );
+
+  res.json(
+    await db.prepare(`
+      SELECT *
+      FROM products
+      WHERE id = $1
+    `).get(id)
+  );
 
 }));
-
-// UPDATE PRODUCT
-app.put('/api/products/', wrap(async (req, res) => {
-
-const {
-make,
-model,
-rate
-} = req.body;
-
-await db.prepare( UPDATE products SET make = $1, model = $2, rate = $3 WHERE id = $4 ).run(
-make,
-model,
-Number(rate) || 0,
-req.params.id
-);
-
-res.json({ success: true });
-
-}));
-
 // DELETE PRODUCT
 app.delete('/api/products/', wrap(async (req, res) => {
 
