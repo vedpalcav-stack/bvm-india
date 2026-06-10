@@ -134,11 +134,29 @@ res.json(rows);
 }));
 
 // ADD PRODUCT
-```js
-// ADD PRODUCT
-app.post("/products", async (req, res) => {
-  try {
-    const {
+app.post('/api/products', wrap(async (req, res) => {
+
+  const {
+    make,
+    model,
+    sku,
+    category,
+    hsn,
+    unit,
+    rate,
+    gst,
+    brand
+  } = req.body;
+
+  const id = await nextProductId(brand || 'india');
+
+  const name = `${make || ''} ${model || ''}`.trim();
+
+  await db.prepare(`
+    INSERT INTO products
+    (
+      id,
+      name,
       make,
       model,
       sku,
@@ -148,36 +166,30 @@ app.post("/products", async (req, res) => {
       rate,
       gst,
       brand
-    } = req.body;
+    )
+    VALUES
+    ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+  `).run(
+    id,
+    name,
+    make || '',
+    model || '',
+    sku || '',
+    category || '',
+    hsn || '',
+    unit || 'Piece',
+    parseFloat(rate) || 0,
+    parseFloat(gst) || 0,
+    brand || 'india'
+  );
 
-    const name = `${make || ""} ${model || ""}`.trim();
+  res.json(
+    await db.prepare(
+      'SELECT * FROM products WHERE id=$1'
+    ).get(id)
+  );
 
-    const { data, error } = await supabase
-      .from("products")
-      .insert([
-        {
-          name,
-          make,
-          model,
-          sku,
-          category,
-          hsn,
-          unit,
-          rate,
-          gst,
-          brand
-        }
-      ])
-      .select();
-
-    if (error) return res.status(400).json(error);
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-// DELETE PRODUCT
+}));// DELETE PRODUCT
 app.delete('/api/products/:id', wrap(async (req, res) => {
 
   await db.prepare(`
