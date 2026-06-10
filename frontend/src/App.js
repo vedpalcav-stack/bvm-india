@@ -781,34 +781,59 @@ function Inventory({ brand }) {
               const total = stock * rate;
 
               return (
-                <tr key={inv.id}>
-                 <td>{inv.model_no || "-"}</td>
-<td>{inv.product_name || "-"}</td>
-                <td>
-  <input
-    value={inv.warehouse || ""}
-    onChange={async (e) => {
-      const warehouse = e.target.value;
+              <tr key={inv.id}>
+  <td>{index + 1}</td>
+  <td>{inv.model_no || "-"}</td>
+  <td>{inv.product_name || "-"}</td>
 
-      setInventory(prev =>
-        prev.map(row =>
-          row.id === inv.id
-            ? { ...row, warehouse }
-            : row
-        )
-      );
+  <td>
+    <input
+      value={inv.warehouse || ""}
+      onChange={async (e) => {
+        const warehouse = e.target.value;
 
-      await api.updateInventoryWarehouse(
-        inv.id,
-        warehouse
-      );
-    }}
-    style={{
-      width: "150px",
-      padding: "4px"
-    }}
-  />
-</td>
+        setInventory(prev =>
+          prev.map(row =>
+            row.id === inv.id
+              ? { ...row, warehouse }
+              : row
+          )
+        );
+
+        await api.updateInventoryWarehouse(
+          inv.id,
+          warehouse
+        );
+      }}
+      style={{
+        width: "150px",
+        padding: "4px"
+      }}
+    />
+  </td>
+
+  <td>{inv.unit || "-"}</td>
+
+  <td>₹{rate.toFixed(2)}</td>
+
+  <td>{stock}</td>
+
+  <td>₹{total.toFixed(2)}</td>
+
+  <td>
+    <span
+      className={`badge ${
+        stock <= 0
+          ? "badge-danger"
+          : "badge-success"
+      }`}
+    >
+      {stock <= 0
+        ? "Out of Stock"
+        : "In Stock"}
+    </span>
+  </td>
+</tr>
                   <td>
                     {inv.unit || "-"}
                   </td>
