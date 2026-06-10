@@ -108,17 +108,55 @@ initDb().then(db => {
   }));
 
   // ── PRODUCTS ─────────────────────────────────────────────────────────────────
-  app.get('/api/products', wrap(async (req, res) => {
-    const brand = req.query.brand || null;
-    if (brand) {
-      res.json(await db.prepare('SELECT * FROM products WHERE brand=$1 ORDER BY name').all(brand));
-    } else {
-      res.json(await db.prepare('SELECT * FROM products ORDER BY name').all());
-    }
-  }));
- app.post('/api/products', wrap(async (req, res) => {
-  const { ... } = req.body;
+  app.post('/api/products', wrap(async (req, res) => {
+  const {
+    name,
+    sku,
+    category,
+    hsn,
+    unit,
+    rate,
+    gst,
+    opening_stock,
+    brand,
+    model_no,
+    description
+  } = req.body;
+
   const id = await nextProductId(brand);
+
+  await db.prepare(`
+    INSERT INTO products
+    (
+      id,
+      name,
+      sku,
+      category,
+      hsn,
+      unit,
+      rate,
+      gst,
+      brand,
+      model_no,
+      description
+    )
+    VALUES
+    (
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
+    )
+  `).run(
+    id,
+    name,
+    sku || '',
+    category || '',
+    hsn || '',
+    unit || 'Piece',
+    parseFloat(rate) || 0,
+    parseInt(gst) || 18,
+    brand || 'india',
+    model_no || '',
+    description || ''
+  );
 
   await db.prepare(`
     INSERT INTO inventory
@@ -140,16 +178,12 @@ initDb().then(db => {
     parseFloat(opening_stock) || 0
   );
 
-  res.json(await db.prepare(
-    'SELECT * FROM products WHERE id = $1'
-  ).get(id));
-}));  app.put('/api/products/:id', wrap(async (req, res) => {
-    const { name, sku, category, hsn, unit, rate, gst, model_no, description } = req.body;
-    await db.prepare(`UPDATE products SET name=$1,sku=$2,category=$3,hsn=$4,unit=$5,rate=$6,gst=$7,model_no=$8,description=$9 WHERE id=$10`)
-      .run(name, sku||'', category||'', hsn||'', unit||'Piece', parseFloat(rate), parseInt(gst), model_no||'', description||'', req.params.id);
-    res.json(await db.prepare('SELECT * FROM products WHERE id = $1').get(req.params.id));
-  }));
-
+  res.json(
+    await db.prepare(
+      'SELECT * FROM products WHERE id = $1'
+    ).get(id)
+  );
+}));
   // ── INVENTORY ─────────────────────────────────────────────────────────────────
 // Get Inventory
 app.get('/api/inventory', wrap(async (req, res) => {
