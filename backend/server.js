@@ -122,255 +122,78 @@ async function nextProductId(brand) {
     res.json(await db.prepare('SELECT * FROM clients WHERE id = $1').get(req.params.id));
   }));
 
-  // ── PRODUCTS ─────────────────────────────────────────────────────────────────
-  // GET PRODUCTS
+// ───────────────── PRODUCTS ─────────────────
+
+// GET PRODUCTS
 app.get('/api/products', wrap(async (req, res) => {
 
-  const brand = req.query.brand;
+const rows = await db.prepare( SELECT * FROM products ORDER BY make, model ).all();
 
-  let rows;
-
-  if (brand) {
-    rows = await db.prepare(`
-      SELECT *
-      FROM products
-      WHERE brand = $1
-      ORDER BY name
-    `).all(brand);
-  } else {
-    rows = await db.prepare(`
-      SELECT *
-      FROM products
-      ORDER BY name
-    `).all();
-  }
-
-  res.json(rows);
+res.json(rows);
 
 }));
 
 // ADD PRODUCT
 app.post('/api/products', wrap(async (req, res) => {
 
-  const {
-    make,
-    model,
-    sku,
-    category,
-    hsn,
-    unit,
-    rate,
-    gst,
-    opening_stock,
-    brand,
-    description
-  } = req.body;
+const {
+make,
+model,
+rate,
+opening_stock
+} = req.body;
 
-  const id = await nextProductId(brand);
+const id = await nextProductId();
 
-  await db.prepare(`
-    INSERT INTO products
-    (
-      id,
-      make,
-      model,
-      sku,
-      category,
-      hsn,
-      unit,
-      rate,
-      gst,
-      brand,
-      description
-    )
-    VALUES
-    (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
-    )
-  `).run(
-    id,
-    make || '',
-    model || '',
-    sku || '',
-    category || '',
-    hsn || '',
-    unit || 'Piece',
-    Number(rate) || 0,
-    Number(gst) || 18,
-    brand || 'india',
-    description || ''
-  );
+await db.prepare( INSERT INTO products ( id, make, model, rate ) VALUES ( $1,$2,$3,$4 ) ).run(
+id,
+make || '',
+model || '',
+Number(rate) || 0
+);
 
-  await db.prepare(`
-    INSERT INTO inventory
-    (
-      product_id,
-      stock,
-      reorder,
-      warehouse
-    )
-    VALUES
-    (
-      $1,
-      $2,
-      10,
-      'Main Godown'
-    )
-  `).run(
-    id,
-    Number(opening_stock) || 0
-  );
+await db.prepare( INSERT INTO inventory ( product_id, stock, reorder, warehouse ) VALUES ( $1, $2, 10, 'Main Godown' ) ).run(
+id,
+Number(opening_stock) || 0
+);
 
-  res.json(
-    await db.prepare(`
-      SELECT *
-      FROM products
-      WHERE id = $1
-    `).get(id)
-  );
+res.json(
+await db.prepare( SELECT * FROM products WHERE id = $1 ).get(id)
+);
 
 }));
 
 // UPDATE PRODUCT
-app.put('/api/products/:id', wrap(async (req, res) => {
+app.put('/api/products/', wrap(async (req, res) => {
 
-  const {
-    make,
-    model,
-    rate,
-    description
-  } = req.body;
+const {
+make,
+model,
+rate
+} = req.body;
 
-  await db.prepare(`
-    UPDATE products
-    SET
-      make = $1,
-      model = $2,
-      rate = $3,
-      description = $4
-    WHERE id = $5
-  `).run(
-    make,
-    model,
-    Number(rate) || 0,
-    description || '',
-    req.params.id
-  );
+await db.prepare( UPDATE products SET make = $1, model = $2, rate = $3 WHERE id = $4 ).run(
+make,
+model,
+Number(rate) || 0,
+req.params.id
+);
 
-  res.json({
-    success: true
-  });
+res.json({ success: true });
 
 }));
 
 // DELETE PRODUCT
-app.delete('/api/products/:id', wrap(async (req, res) => {
+app.delete('/api/products/', wrap(async (req, res) => {
 
-  await db.prepare(`
-    DELETE FROM inventory
-    WHERE product_id = $1
-  `).run(req.params.id);
+await db.prepare( DELETE FROM inventory WHERE product_id = $1 ).run(req.params.id);
 
-  await db.prepare(`
-    DELETE FROM products
-    WHERE id = $1
-  `).run(req.params.id);
+await db.prepare( DELETE FROM products WHERE id = $1 ).run(req.params.id);
 
-  res.json({
-    success: true
-  });
+res.json({ success: true });
 
-}));// Update Stock
-app.post('/api/inventory/update', wrap(async (req, res) => {
-
-  const {
-    product_id,
-    qty,
-    type,
-    reorder,
-    warehouse,
-    unit,
-    rate
-  } = req.body;
-
-  if (!product_id) {
-    return res.status(400).json({
-      error: 'product_id required'
-    });
-  }
-
-  let inv = await db.prepare(`
-    SELECT *
-    FROM inventory
-    WHERE product_id = $1
-  `).get(product_id);
-
-  if (!inv) {
-
-    await db.prepare(`
-      INSERT INTO inventory
-      (
-        product_id,
-        stock,
-        reorder,
-        warehouse
-      )
-      VALUES
-      (
-        $1,
-        0,
-        10,
-        'Main Godown'
-      )
-    `).run(product_id);
-
-    inv = {
-      stock: 0,
-      reorder: 10,
-      warehouse: 'Main Godown'
-    };
-  }
-
-  const quantity = Number(qty || 0);
-
-  const newStock =
-    type === 'add'
-      ? Number(inv.stock) + quantity
-      : Math.max(
-          0,
-          Number(inv.stock) - quantity
-        );
-
-  await db.prepare(`
-    UPDATE inventory
-    SET
-      stock = $1,
-      warehouse = $2
-    WHERE product_id = $3
-  `).run(
-    newStock,
-    warehouse || inv.warehouse || 'Main Godown',
-    product_id
-  );
-
-  if (reorder) {
-    await db.prepare(`
-      UPDATE inventory
-      SET reorder = $1
-      WHERE product_id = $2
-    `).run(
-      Number(reorder),
-      product_id
-    );
-  }
-
-  res.json({
-    success: true,
-    product_id,
-    stock: newStock
-  });
 }));
-  // ── DOCUMENTS ─────────────────────────────────────────────────────────────────
+// ── DOCUMENTS ─────────────────────────────────────────────────────────────────
   app.get('/api/documents', wrap(async (req, res) => {
     const { type, brand } = req.query;
     let docs;
