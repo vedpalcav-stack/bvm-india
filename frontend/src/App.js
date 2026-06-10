@@ -413,10 +413,35 @@ function Clients({ onDataChange, brand }) {
   useEffect(() => { load(); }, [load]);
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
   const save = async () => {
-    if (modal==='add') await api.createClient({...form, brand});
-    else await api.updateClient(form.id, form);
-    setModal(null); load(); onDataChange && onDataChange();
-  };
+
+  const duplicate = clients.find(
+    c =>
+      c.id !== form.id &&
+      c.name?.trim().toLowerCase() ===
+      form.name?.trim().toLowerCase()
+  );
+
+  if (duplicate) {
+    alert("Client already exists!");
+    return;
+  }
+
+  if (modal === 'add') {
+    await api.createClient({
+      ...form,
+      brand
+    });
+  } else {
+    await api.updateClient(form.id, form);
+  }
+
+  setModal(null);
+  load();
+
+  if (onDataChange) {
+    onDataChange();
+  }
+};
   return (
     <div>
       <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({});setModal('add');}}>+ Add Client</button></div>
