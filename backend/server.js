@@ -22,41 +22,38 @@ const wrap = fn => (req, res, next) =>
 initDb().then(db => {
 
   // ── HELPERS ──────────────────────────────────────────────────────────────────
-async function nextProductId(brand) {
-  const prefix = brand === 'world' ? 'WP' : 'P';
+async function nextId(type, brand) {
+
+  const prefix =
+    DOC_PREFIXES[type] || 'DOC';
 
   const rows = await db.prepare(
-    "SELECT id FROM products WHERE id LIKE $1"
-  ).all(prefix + '%');
+    "SELECT id FROM documents"
+  ).all();
 
   let maxN = 0;
 
   rows.forEach(r => {
-    const num = parseInt(
-      r.id.replace(prefix, '')
-    ) || 0;
 
-    if (num > maxN) {
-      maxN = num;
+    const match =
+      String(r.id).match(/(\d+)$/);
+
+    if (match) {
+      const num = parseInt(match[1]);
+
+      if (num > maxN) {
+        maxN = num;
+      }
     }
+
   });
 
-  const candidate =
+  return (
     prefix +
-    String(maxN + 1).padStart(3, '0');
+    "-" +
+    String(maxN + 1).padStart(4, "0")
+  );
 
-  const exists = await db.prepare(
-    "SELECT id FROM products WHERE id = $1"
-  ).get(candidate);
-
-  if (exists) {
-    return (
-      prefix +
-      String(Date.now()).slice(-5)
-    );
-  }
-
-  return candidate;
 }
   async function nextClientId(brand) {
     const prefix = brand === 'world' ? 'W' : 'C';
