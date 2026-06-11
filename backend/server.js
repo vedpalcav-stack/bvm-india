@@ -195,16 +195,20 @@ async function nextProductId(brand) {
 
 }));
 
-// ───────────────── PRODUCTS ─────────────────
+
+  // ───────────────── PRODUCTS ─────────────────
 
 // GET PRODUCTS
 app.get('/api/products', wrap(async (req, res) => {
 
-const rows = await db.prepare( SELECT * FROM products ORDER BY make, model ).all();
+  const rows = await db.prepare(
+    "SELECT * FROM products ORDER BY make, model"
+  ).all();
 
-res.json(rows);
+  res.json(rows);
 
 }));
+
 
 // ADD PRODUCT
 app.post('/api/products', wrap(async (req, res) => {
@@ -221,9 +225,12 @@ app.post('/api/products', wrap(async (req, res) => {
     brand
   } = req.body;
 
-  const id = await nextProductId(brand || 'india');
+  const id = await nextProductId(
+    brand || 'india'
+  );
 
-  const name = `${make || ''} ${model || ''}`.trim();
+  const name =
+    `${make || ''} ${model || ''}`.trim();
 
   await db.prepare(`
     INSERT INTO products
@@ -241,7 +248,10 @@ app.post('/api/products', wrap(async (req, res) => {
       brand
     )
     VALUES
-    ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+    (
+      $1,$2,$3,$4,$5,$6,
+      $7,$8,$9,$10,$11
+    )
   `).run(
     id,
     name,
@@ -262,7 +272,10 @@ app.post('/api/products', wrap(async (req, res) => {
     ).get(id)
   );
 
-}));// DELETE PRODUCT
+}));
+
+
+// DELETE PRODUCT
 app.delete('/api/products/:id', wrap(async (req, res) => {
 
   await db.prepare(`
@@ -275,11 +288,14 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     WHERE id = $1
   `).run(req.params.id);
 
-  res.json({ success: true });
+  res.json({
+    success: true
+  });
 
 }));
-```
-// ── DOCUMENTS ─────────────────────────────────────────────────────────────────
+
+
+// ── DOCUMENTS ─────────────────────────────────────────────────────────────
   app.get('/api/documents', wrap(async (req, res) => {
     const { type, brand } = req.query;
     let docs;
