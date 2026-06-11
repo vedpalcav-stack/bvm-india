@@ -705,326 +705,306 @@ function Products({ onDataChange, brand }) {
 }
 // ── INVENTORY ─────────────────────────────────────────────────────────────────
 function Inventory({ brand }) {
-const [inventory, setInventory] = useState([]);
-const [products, setProducts] = useState([]);
-const [modal, setModal] = useState(false);
+  const [inventory, setInventory] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [modal, setModal] = useState(false);
 
-const [form, setForm] = useState({
-product_id: "",
-warehouse: "",
-unit: "Piece",
-rate: "",
-qty: "",
-type: "add"
-});
+  const [form, setForm] = useState({
+    product_id: "",
+    warehouse: "",
+    unit: "Piece",
+    rate: "",
+    qty: "",
+    type: "add"
+  });
 
-const load = useCallback(async () => {
-try {
-const [inv, prods] = await Promise.all([
-api.getInventory(),
-api.getProducts(brand)
-]);
+  const load = useCallback(async () => {
+    try {
+      const [inv, prods] = await Promise.all([
+        api.getInventory(),
+        api.getProducts(brand)
+      ]);
 
-```
-  setInventory(inv || []);
-  setProducts(prods || []);
-} catch (err) {
-  console.error(err);
-}
-```
+      setInventory(inv || []);
+      setProducts(prods || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [brand]);
 
-}, [brand]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-useEffect(() => {
-load();
-}, [load]);
-
-return ( <div> <div className="topbar-actions">
-<button
-className="btn btn-primary"
-onClick={() => {
-setForm({
-product_id: products[0]?.id || "",
-warehouse: "",
-unit: "Piece",
-rate: "",
-qty: "",
-type: "add"
-});
-
-```
-        setModal(true);
-      }}
-    >
-      Update Stock
-    </button>
-  </div>
-
-  <div className="card">
-    <table>
-      <thead>
-        <tr>
-          <th>Sr. No.</th>
-          <th>Make</th>
-          <th>Model</th>
-          <th>Warehouse</th>
-          <th>Unit</th>
-          <th>Rate</th>
-          <th>Stock</th>
-          <th>Total Amount</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {inventory.map((inv, index) => {
-          const stock = Number(inv.stock || 0);
-          const rate = Number(inv.rate || 0);
-          const total = stock * rate;
-
-          return (
-            <tr key={inv.id}>
-              <td>{index + 1}</td>
-
-              <td>{inv.model_no || "-"}</td>
-
-              <td>{inv.product_name || "-"}</td>
-
-              <td>
-                <input
-                  value={inv.warehouse || ""}
-                  onChange={async (e) => {
-                    const warehouse = e.target.value;
-
-                    setInventory(prev =>
-                      prev.map(row =>
-                        row.id === inv.id
-                          ? { ...row, warehouse }
-                          : row
-                      )
-                    );
-
-                    try {
-                      await api.updateInventoryWarehouse(
-                        inv.id,
-                        warehouse
-                      );
-                    } catch (err) {
-                      console.error(err);
-                    }
-                  }}
-                  style={{
-                    width: "150px",
-                    padding: "4px"
-                  }}
-                />
-              </td>
-
-              <td>{inv.unit || "-"}</td>
-
-              <td>₹{rate.toFixed(2)}</td>
-
-              <td>{stock}</td>
-
-              <td>₹{total.toFixed(2)}</td>
-
-              <td>
-                <span
-                  className={`badge ${
-                    stock <= 0
-                      ? "badge-danger"
-                      : "badge-success"
-                  }`}
-                >
-                  {stock <= 0
-                    ? "Out of Stock"
-                    : "In Stock"}
-                </span>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  </div>
-
-  {modal && (
-    <Modal
-      title="Update Stock"
-      onClose={() => setModal(false)}
-    >
-      <div className="form-grid2">
-        <div className="form-row col-span2">
-          <label>Make / Model</label>
-
-          <select
-            value={form.product_id}
-            onChange={e =>
-              setForm(f => ({
-                ...f,
-                product_id: e.target.value
-              }))
-            }
-          >
-            {products.map(p => (
-              <option key={p.id} value={p.id}>
-                {(p.model_no || p.sku || "")}
-                {" - "}
-                {(p.name || "")}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-row col-span2">
-          <label>Warehouse</label>
-
-          <select
-            value={form.warehouse}
-            onChange={e =>
-              setForm(f => ({
-                ...f,
-                warehouse: e.target.value
-              }))
-            }
-          >
-            <option value="">Select Warehouse</option>
-            <option>Main Godown</option>
-            <option>Delhi Warehouse</option>
-            <option>Mumbai Warehouse</option>
-            <option>Chennai Warehouse</option>
-          </select>
-        </div>
-
-        <div className="form-row">
-          <label>Unit</label>
-
-          <select
-            value={form.unit}
-            onChange={e =>
-              setForm(f => ({
-                ...f,
-                unit: e.target.value
-              }))
-            }
-          >
-            <option>Piece</option>
-            <option>Nos</option>
-            <option>Box</option>
-            <option>Set</option>
-            <option>Kg</option>
-            <option>Litre</option>
-          </select>
-        </div>
-
-        <div className="form-row">
-          <label>Rate</label>
-
-          <input
-            type="number"
-            value={form.rate}
-            onChange={e =>
-              setForm(f => ({
-                ...f,
-                rate: e.target.value
-              }))
-            }
-          />
-        </div>
-
-        <div className="form-row">
-          <label>Transaction</label>
-
-          <select
-            value={form.type}
-            onChange={e =>
-              setForm(f => ({
-                ...f,
-                type: e.target.value
-              }))
-            }
-          >
-            <option value="add">Add Stock</option>
-            <option value="sub">Remove Stock</option>
-          </select>
-        </div>
-
-        <div className="form-row">
-          <label>Quantity</label>
-
-          <input
-            type="number"
-            value={form.qty}
-            onChange={e =>
-              setForm(f => ({
-                ...f,
-                qty: e.target.value
-              }))
-            }
-          />
-        </div>
-      </div>
-
-      <div className="modal-footer">
-        <button
-          className="btn"
-          onClick={() => setModal(false)}
-        >
-          Cancel
-        </button>
-
+  return (
+    <div>
+      <div className="topbar-actions">
         <button
           className="btn btn-primary"
-          onClick={async () => {
-            try {
-              const qtyNum = Number(form.qty);
+          onClick={() => {
+            setForm({
+              product_id: products[0]?.id || "",
+              warehouse: "",
+              unit: "Piece",
+              rate: "",
+              qty: "",
+              type: "add"
+            });
 
-              const duplicate = inventory.find(
-                i =>
-                  i.product_id === form.product_id &&
-                  i.warehouse?.toLowerCase() ===
-                    form.warehouse?.toLowerCase()
-              );
-
-              if (duplicate && form.type === "add") {
-                alert(
-                  "Warehouse already exists for this product"
-                );
-                return;
-              }
-
-              if (!qtyNum || qtyNum <= 0) {
-                alert("Enter valid quantity");
-                return;
-              }
-
-              await api.updateStock({
-                product_id: form.product_id,
-                qty: qtyNum,
-                type: form.type,
-                warehouse: form.warehouse,
-                unit: form.unit,
-                rate: Number(form.rate || 0)
-              });
-
-              setModal(false);
-              await load();
-            } catch (err) {
-              alert(err.message);
-            }
+            setModal(true);
           }}
         >
           Update Stock
         </button>
       </div>
-    </Modal>
-  )}
-</div>
-```
 
-);
-}
-// ── DOC LIST ──────────────────────────────────────────────────────────────────
+      <div className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Sr. No.</th>
+              <th>Make</th>
+              <th>Model</th>
+              <th>Warehouse</th>
+              <th>Unit</th>
+              <th>Rate</th>
+              <th>Stock</th>
+              <th>Total Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {inventory.map((inv, index) => {
+              const stock = Number(inv.stock || 0);
+              const rate = Number(inv.rate || 0);
+
+              return (
+                <tr key={inv.id}>
+                  <td>{index + 1}</td>
+
+                  <td>{inv.model_no || "-"}</td>
+
+                  <td>{inv.product_name || "-"}</td>
+
+                  <td>
+                    <input
+                      value={inv.warehouse || ""}
+                      onChange={async e => {
+                        const warehouse = e.target.value;
+
+                        setInventory(prev =>
+                          prev.map(row =>
+                            row.id === inv.id
+                              ? { ...row, warehouse }
+                              : row
+                          )
+                        );
+
+                        try {
+                          await api.updateInventoryWarehouse(
+                            inv.id,
+                            warehouse
+                          );
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }}
+                    />
+                  </td>
+
+                  <td>{inv.unit || "Piece"}</td>
+
+                  <td>₹{rate.toFixed(2)}</td>
+
+                  <td>{stock}</td>
+
+                  <td>₹{(stock * rate).toFixed(2)}</td>
+
+                  <td>
+                    <span
+                      className={
+                        stock <= 0
+                          ? "badge badge-danger"
+                          : "badge badge-success"
+                      }
+                    >
+                      {stock <= 0
+                        ? "Out of Stock"
+                        : "In Stock"}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {modal && (
+        <Modal
+          title="Update Stock"
+          onClose={() => setModal(false)}
+        >
+          <div className="form-grid2">
+
+            <div className="form-row col-span2">
+              <label>Make / Model</label>
+
+              <select
+                value={form.product_id}
+                onChange={e =>
+                  setForm({
+                    ...form,
+                    product_id: e.target.value
+                  })
+                }
+              >
+                {products.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.model_no} - {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-row col-span2">
+              <label>Warehouse</label>
+
+              <input
+                value={form.warehouse}
+                onChange={e =>
+                  setForm({
+                    ...form,
+                    warehouse: e.target.value
+                  })
+                }
+              />
+            </div>
+
+            <div className="form-row">
+              <label>Unit</label>
+
+              <select
+                value={form.unit}
+                onChange={e =>
+                  setForm({
+                    ...form,
+                    unit: e.target.value
+                  })
+                }
+              >
+                <option>Piece</option>
+                <option>Nos</option>
+                <option>Box</option>
+                <option>Set</option>
+                <option>Kg</option>
+                <option>Litre</option>
+              </select>
+            </div>
+
+            <div className="form-row">
+              <label>Rate</label>
+
+              <input
+                type="number"
+                value={form.rate}
+                onChange={e =>
+                  setForm({
+                    ...form,
+                    rate: e.target.value
+                  })
+                }
+              />
+            </div>
+
+            <div className="form-row">
+              <label>Transaction</label>
+
+              <select
+                value={form.type}
+                onChange={e =>
+                  setForm({
+                    ...form,
+                    type: e.target.value
+                  })
+                }
+              >
+                <option value="add">Add Stock</option>
+                <option value="sub">Remove Stock</option>
+              </select>
+            </div>
+
+            <div className="form-row">
+              <label>Quantity</label>
+
+              <input
+                type="number"
+                value={form.qty}
+                onChange={e =>
+                  setForm({
+                    ...form,
+                    qty: e.target.value
+                  })
+                }
+              />
+            </div>
+
+          </div>
+
+          <div className="modal-footer">
+            <button
+              className="btn"
+              onClick={() => setModal(false)}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="btn btn-primary"
+              onClick={async () => {
+                try {
+                  const duplicate = inventory.find(
+                    i =>
+                      i.product_id === form.product_id &&
+                      i.warehouse?.toLowerCase() ===
+                        form.warehouse?.toLowerCase()
+                  );
+
+                  if (
+                    duplicate &&
+                    form.type === "add"
+                  ) {
+                    alert(
+                      "Warehouse already exists for this product"
+                    );
+                    return;
+                  }
+
+                  await api.updateStock({
+                    product_id: form.product_id,
+                    qty: Number(form.qty),
+                    type: form.type,
+                    warehouse: form.warehouse,
+                    unit: form.unit,
+                    rate: Number(form.rate)
+                  });
+
+                  setModal(false);
+                  await load();
+                } catch (err) {
+                  alert(err.message);
+                }
+              }}
+            >
+              Update Stock
+            </button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}// ── DOC LIST ──────────────────────────────────────────────────────────────────
 function DocList({ type, clients, products, showNew, onClearNew, brand }) {
   const [docs, setDocs] = useState([]);
   const [showForm, setShowForm] = useState(false);
