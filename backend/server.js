@@ -22,6 +22,43 @@ const wrap = fn => (req, res, next) =>
 initDb().then(db => {
 
   // ── HELPERS ──────────────────────────────────────────────────────────────────
+```js
+// ── HELPERS ─────────────────────────────────────────────────────
+
+async function nextProductId(brand) {
+  const prefix = brand === 'world' ? 'WP' : 'P';
+
+  const rows = await db.prepare(
+    "SELECT id FROM products WHERE id LIKE $1"
+  ).all(prefix + '%');
+
+  let maxN = 0;
+
+  rows.forEach(r => {
+    const num = parseInt(r.id.replace(prefix, '')) || 0;
+    if (num > maxN) maxN = num;
+  });
+
+  return prefix + String(maxN + 1).padStart(3, '0');
+}
+
+async function nextClientId(brand) {
+  const prefix = brand === 'world' ? 'W' : 'C';
+
+  const rows = await db.prepare(
+    "SELECT id FROM clients WHERE id LIKE $1"
+  ).all(prefix + '%');
+
+  let maxN = 0;
+
+  rows.forEach(r => {
+    const num = parseInt(r.id.slice(prefix.length)) || 0;
+    if (num > maxN) maxN = num;
+  });
+
+  return prefix + String(maxN + 1).padStart(3, '0');
+}
+
 async function nextId(type, brand) {
 
   const prefix =
@@ -53,21 +90,16 @@ async function nextId(type, brand) {
     "-" +
     String(maxN + 1).padStart(4, "0")
   );
-
 }
-  async function nextClientId(brand) {
-    const prefix = brand === 'world' ? 'W' : 'C';
-    const rows = await db.prepare("SELECT id FROM clients WHERE id LIKE $1").all(prefix + '%');
-    let maxN = 0;
-    rows.forEach(r => {
-      const num = parseInt(r.id.slice(prefix.length)) || 0;
-      if (num > maxN) maxN = num;
-    });
-    const candidate = prefix + String(maxN + 1).padStart(3, '0');
-    const exists = await db.prepare("SELECT id FROM clients WHERE id = $1").get(candidate);
-    if (exists) return prefix + String(Date.now()).slice(-5);
-    return candidate;
-  }
+
+async function nextPaymentId() {
+  const row = await db.prepare(
+    "SELECT COUNT(*) as c FROM payments"
+  ).get();
+
+  return `PMT-${String(Number(row.c) + 1).padStart(4, '0')}`;
+}
+```
   async function nextId(brand) {
     const prefix = brand === 'world' ? 'WP' : 'P';
     const rows = await db.prepare("SELECT id FROM s WHERE id LIKE $1").all(prefix + '%');
