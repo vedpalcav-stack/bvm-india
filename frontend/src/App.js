@@ -16,9 +16,11 @@ const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of picku
 4. Taxes: GST extra as applicable.
 5. Validity: This quotation is valid for 30 days from the date of issue.
 6. Freight: Extra at actuals unless otherwise specified.
-7. Installation: Not included unless specifically mentioned.
-8. Force Majeure: Delivery schedules are subject to circumstances beyond our control.`;
+7. Installation & Commissioning: Not included unless specifically mentioned in the quotation.
+8. Force Majeure: Delivery schedules are subject to circumstances beyond our reasonable control.
 
+For BVM INDIA
+Authorized Signatory`;
 const BRAND_CONFIG = {
   india: {
     name: 'BVM INDIA',
