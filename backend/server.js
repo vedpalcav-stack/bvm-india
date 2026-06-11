@@ -234,16 +234,48 @@ initDb().then(db => {
 
   // ── PRODUCTS ─────────────────────────────────────────────────────────────────
 
-  app.get('/api/products', wrap(async (req, res) => {
-    const rows = await db.prepare(
-      "SELECT * FROM products ORDER BY make, model"
-    ).all();
+ app.get('/api/products', wrap(async (req, res) => {
 
-    res.json(rows);
-  }));
-app.post('/api/products', async (req, res) => {
-  try {
-    const {
+const brand = req.query.brand || null;
+
+let rows;
+
+if (brand) {
+rows = await db.prepare(
+"SELECT * FROM products WHERE brand=$1 ORDER BY name"
+).all(brand);
+} else {
+rows = await db.prepare(
+"SELECT * FROM products ORDER BY name"
+).all();
+}
+
+res.json(rows);
+
+}));
+
+app.post('/api/products', wrap(async (req, res) => {
+
+const {
+name,
+sku,
+model_no,
+category,
+hsn,
+rate,
+gst,
+unit,
+description,
+brand
+} = req.body;
+
+const productId = await nextProductId(
+brand || 'india'
+);
+
+await db.prepare(`     INSERT INTO products
+    (
+      id,
       name,
       sku,
       model_no,
@@ -254,72 +286,34 @@ app.post('/api/products', async (req, res) => {
       unit,
       description,
       brand
-    } = req.body;
+    )
+    VALUES
+    (
+      $1,$2,$3,$4,$5,
+      $6,$7,$8,$9,$10,$11
+    )
+  `).run(
+productId,
+name || '',
+sku || '',
+model_no || '',
+category || '',
+hsn || '',
+parseFloat(rate) || 0,
+parseFloat(gst) || 18,
+unit || 'Piece',
+description || '',
+brand || 'india'
+);
 
-    const result = await db.query(
-      `INSERT INTO products
-      (
-        name,
-        sku,
-        model_no,
-        category,
-        hsn,
-        rate,
-        gst,
-        unit,
-        description,
-        brand
-      )
-      VALUES
-      (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
-      )
-      RETURNING *`,
-      [
-        name,
-        sku,
-        model_no,
-        category,
-        hsn,
-        rate,
-        gst,
-        unit,
-        description,
-        brand
-      ]
-    );
+res.json(
+await db.prepare(
+'SELECT * FROM products WHERE id=$1'
+).get(productId)
+);
 
-    const product = result.rows[0];
-
-    // Automatically create inventory record
-    await db.query(
-      `INSERT INTO inventory
-      (
-        product_id,
-        warehouse,
-        stock,
-        reorder
-      )
-      VALUES
-      (
-        $1,
-        'Main Warehouse',
-        0,
-        5
-      )`,
-      [product.id]
-    );
-
-    res.json(product);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      error: err.message
-    });
-  }
-});
-  // ── DOCUMENTS ────────────────────────────────────────────────────────────────
+}));
+ // ── DOCUMENTS ────────────────────────────────────────────────────────────────
 
   app.get('/api/documents', wrap(async (req, res) => {
     const { type, brand } = req.query;
