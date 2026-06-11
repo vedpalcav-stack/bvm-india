@@ -16,8 +16,8 @@ async function api(path, opts = {}) {
 export const getClients       = (brand)    => api('/api/clients' + (brand ? `?brand=${brand}` : ''));
 export const createClient     = (data)     => api('/api/clients', { method: 'POST', body: data });
 export const updateClient     = (id, data) => api(`/api/clients/${id}`, { method: 'PUT', body: data });
-export const getProducts = (brand = '') =>
-  request(`/products${brand ? `?brand=${brand}` : ''}`);
+export const getProducts = (brand) =>
+  api('/api/products' + (brand ? `?brand=${brand}` : ''));
 export const createProduct = (data)     => api('/api/products', { method: 'POST', body: data });
 export const updateProduct = (id, data) => api(`/api/products/${id}`, { method: 'PUT', body: data });
 
