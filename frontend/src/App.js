@@ -11,7 +11,7 @@ const futureDate = (d) => new Date(Date.now() + d * 86400000).toISOString().spli
 const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Pickup.
 1. Payment Terms: As per BVM Conditions.
 2. Delivery: Immediate.
-3. Warranty: Standard as per OEM.`; 
+3. Warranty: Standard as per OEM. ', 
 
 const BRAND_CONFIG = {
   india: {
