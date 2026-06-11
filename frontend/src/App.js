@@ -4,7 +4,7 @@ import * as api from './utils/api';
 import DualDocView from './DualDocView';
 import bvmIndiaLogo from './assets/bvm-india.png';
 import bvmWorldLogo from './assets/bvm-world.jpg';
- 
+
 const today = () => new Date().toISOString().split('T')[0];
 const futureDate = (d) => new Date(Date.now() + d * 86400000).toISOString().split('T')[0];
 
@@ -403,200 +403,60 @@ function Dashboard({ onNav, brand }) {
     </div>
   );
 }
-// ── CLIENTS ─────────────────────────────────────────────────────
 
-// GET CLIENTS
-app.get('/api/clients', wrap(async (req, res) => {
-
-  const brand = req.query.brand || null;
-
-  if (brand) {
-    const rows = await db.prepare(
-      'SELECT * FROM clients WHERE brand=$1 ORDER BY name'
-    ).all(brand);
-
-    return res.json(rows);
-  }
-
-  const rows = await db.prepare(
-    'SELECT * FROM clients ORDER BY name'
-  ).all();
-
-  res.json(rows);
-
-}));
-
-
-// ADD CLIENT
-app.post('/api/clients', wrap(async (req, res) => {
-
-  const {
-    name,
-    contact,
-    phone,
-    email,
-    gstin,
-    address,
-    city,
-    state,
-    pincode,
-    type,
-    brand
-  } = req.body;
-
-  // DUPLICATE CHECK
-  const duplicate = await db.prepare(`
-    SELECT *
-    FROM clients
-    WHERE
-      LOWER(name) = LOWER($1)
-      OR phone = $2
-      OR email = $3
-      OR gstin = $4
-  `).get(
-    name || '',
-    phone || '',
-    email || '',
-    gstin || ''
+// ── CLIENTS ───────────────────────────────────────────────────────────────────
+function Clients({ onDataChange, brand }) {
+  const [clients, setClients] = useState([]);
+  const [modal, setModal] = useState(null);
+  const [form, setForm] = useState({});
+  const load = useCallback(() => api.getClients(brand).then(setClients), [brand]);
+  useEffect(() => { load(); }, [load]);
+  const set = (k,v) => setForm(f => ({...f,[k]:v}));
+  const save = async () => {
+    if (modal==='add') await api.createClient({...form, brand});
+    else await api.updateClient(form.id, form);
+    setModal(null); load(); onDataChange && onDataChange();
+  };
+  return (
+    <div>
+      <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({});setModal('add');}}>+ Add Client</button></div>
+      <div className="card">
+        <table><thead><tr><th>ID</th><th>Company</th><th>GSTIN</th><th>City / State</th><th>Type</th><th>Balance</th><th></th></tr></thead>
+        <tbody>{clients.map(cl => (
+          <tr key={cl.id}>
+            <td><code>{cl.id}</code></td>
+            <td><strong>{cl.name}</strong><br/><small className="muted">{cl.contact} · {cl.phone}</small></td>
+            <td><code className="small">{cl.gstin}</code></td>
+            <td>{cl.city}{cl.state?`, ${cl.state}`:''}{cl.pincode?` - ${cl.pincode}`:''}</td>
+            <td><Badge status={cl.type}/></td>
+            <td className={cl.balance>0?'danger bold':cl.balance<0?'success bold':'muted'}>
+              {cl.balance>0?fmtAmt(cl.balance)+' DR':cl.balance<0?fmtAmt(-cl.balance)+' CR':'Nil'}
+            </td>
+            <td><button className="btn btn-sm" onClick={() => {setForm(cl);setModal('edit');}}>Edit</button></td>
+          </tr>
+        ))}</tbody></table>
+      </div>
+      {modal && (
+        <Modal title={modal==='add'?'Add Client':'Edit Client'} onClose={() => setModal(null)}>
+          <div className="form-grid2">
+            {[['Company Name','name'],['Contact Person','contact'],['Phone','phone'],['Email','email'],['GSTIN','gstin'],['City','city'],['State','state'],['Pincode','pincode']].map(([label,key]) => (
+              <div className="form-row" key={key}><label>{label}</label><input value={form[key]||''} onChange={e => set(key,e.target.value)}/></div>
+            ))}
+            <div className="form-row col-span2"><label>Address</label><input value={form.address||''} onChange={e => set('address',e.target.value)}/></div>
+            <div className="form-row"><label>Type</label>
+              <select value={form.type||'Regular'} onChange={e => set('type',e.target.value)}>
+                {['Regular','Wholesale','Retail','Export'].map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="modal-footer"><button className="btn" onClick={() => setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={save}>Save Client</button></div>
+        </Modal>
+      )}
+    </div>
   );
+}
 
-  if (duplicate) {
-    return res.status(400).json({
-      success: false,
-      error: 'Duplicate Entry'
-    });
-  }
-
-  const id = await nextClientId(
-    brand || 'india'
-  );
-
-  await db.prepare(`
-    INSERT INTO clients
-    (
-      id,
-      name,
-      contact,
-      phone,
-      email,
-      gstin,
-      address,
-      city,
-      state,
-      pincode,
-      type,
-      balance,
-      brand
-    )
-    VALUES
-    (
-      $1,$2,$3,$4,$5,$6,
-      $7,$8,$9,$10,$11,
-      0,$12
-    )
-  `).run(
-    id,
-    name || '',
-    contact || '',
-    phone || '',
-    email || '',
-    gstin || '',
-    address || '',
-    city || '',
-    state || '',
-    pincode || '',
-    type || 'Regular',
-    brand || 'india'
-  );
-
-  const client = await db.prepare(
-    'SELECT * FROM clients WHERE id=$1'
-  ).get(id);
-
-  res.json(client);
-
-}));
-
-
-// UPDATE CLIENT
-app.put('/api/clients/:id', wrap(async (req, res) => {
-
-  const {
-    name,
-    contact,
-    phone,
-    email,
-    gstin,
-    address,
-    city,
-    state,
-    pincode,
-    type
-  } = req.body;
-
-  // DUPLICATE CHECK EXCLUDING CURRENT CLIENT
-  const duplicate = await db.prepare(`
-    SELECT *
-    FROM clients
-    WHERE
-      id <> $1
-      AND
-      (
-        LOWER(name) = LOWER($2)
-        OR phone = $3
-        OR email = $4
-        OR gstin = $5
-      )
-  `).get(
-    req.params.id,
-    name || '',
-    phone || '',
-    email || '',
-    gstin || ''
-  );
-
-  if (duplicate) {
-    return res.status(400).json({
-      success: false,
-      error: 'Duplicate Entry'
-    });
-  }
-
-  await db.prepare(`
-    UPDATE clients
-    SET
-      name=$1,
-      contact=$2,
-      phone=$3,
-      email=$4,
-      gstin=$5,
-      address=$6,
-      city=$7,
-      state=$8,
-      pincode=$9,
-      type=$10
-    WHERE id=$11
-  `).run(
-    name || '',
-    contact || '',
-    phone || '',
-    email || '',
-    gstin || '',
-    address || '',
-    city || '',
-    state || '',
-    pincode || '',
-    type || 'Regular',
-    req.params.id
-  );
-
-  const client = await db.prepare(
-    'SELECT * FROM clients WHERE id=$1'
-  ).get(req.params.id);
-
-  res.json(client);
-
-}));// ── PRODUCTS ──────────────────────────────────────────────────────────────────
+// ── PRODUCTS ──────────────────────────────────────────────────────────────────
 function Products({ onDataChange, brand }) {
   const [products, setProducts] = useState([]);
   const [modal, setModal] = useState(null);
