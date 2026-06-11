@@ -8,10 +8,16 @@ import bvmWorldLogo from './assets/bvm-world.jpg';
 const today = () => new Date().toISOString().split('T')[0];
 const futureDate = (d) => new Date(Date.now() + d * 86400000).toISOString().split('T')[0];
 
-const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of Pickup.
-1. Payment Terms: As per BVM Conditions.
-2. Delivery: Immediate.
-3. Warranty: Standard as per OEM. ', 
+const DEFAULT_TERMS = `Freight Forwarder: Will be confirmed at the time of pickup.
+
+1. Payment Terms: As per BVM terms and conditions.
+2. Delivery: Immediate, subject to stock availability.
+3. Warranty: Standard warranty as provided by the OEM.
+4. Taxes: GST extra as applicable.
+5. Validity: This quotation is valid for 30 days from the date of issue.
+6. Freight: Extra at actuals unless otherwise specified.
+7. Installation: Not included unless specifically mentioned.
+8. Force Majeure: Delivery schedules are subject to circumstances beyond our control.`;
 
 const BRAND_CONFIG = {
   india: {
