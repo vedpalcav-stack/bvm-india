@@ -241,81 +241,84 @@ initDb().then(db => {
 
     res.json(rows);
   }));
-
-  app.post('/api/products', wrap(async (req, res) => {
+app.post('/api/products', async (req, res) => {
+  try {
     const {
-      make,
-      model,
+      name,
       sku,
+      model_no,
       category,
       hsn,
-      unit,
       rate,
       gst,
+      unit,
+      description,
       brand
     } = req.body;
 
-    const id = await nextProductId(brand || 'india');
-
-    const name = `${make || ''} ${model || ''}`.trim();
-
-    await db.prepare(`
-      INSERT INTO products
+    const result = await db.query(
+      `INSERT INTO products
       (
-        id,
         name,
-        make,
-        model,
         sku,
+        model_no,
         category,
         hsn,
-        unit,
         rate,
         gst,
+        unit,
+        description,
         brand
       )
       VALUES
       (
-        $1,$2,$3,$4,$5,$6,
-        $7,$8,$9,$10,$11
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
       )
-    `).run(
-      id,
-      name,
-      make || '',
-      model || '',
-      sku || '',
-      category || '',
-      hsn || '',
-      unit || 'Piece',
-      parseFloat(rate) || 0,
-      parseFloat(gst) || 0,
-      brand || 'india'
+      RETURNING *`,
+      [
+        name,
+        sku,
+        model_no,
+        category,
+        hsn,
+        rate,
+        gst,
+        unit,
+        description,
+        brand
+      ]
     );
 
-    res.json(
-      await db.prepare(
-        'SELECT * FROM products WHERE id=$1'
-      ).get(id)
+    const product = result.rows[0];
+
+    // Automatically create inventory record
+    await db.query(
+      `INSERT INTO inventory
+      (
+        product_id,
+        warehouse,
+        stock,
+        reorder
+      )
+      VALUES
+      (
+        $1,
+        'Main Warehouse',
+        0,
+        5
+      )`,
+      [product.id]
     );
-  }));
 
-  app.delete('/api/products/:id', wrap(async (req, res) => {
-    await db.prepare(`
-      DELETE FROM inventory
-      WHERE product_id = $1
-    `).run(req.params.id);
+    res.json(product);
 
-    await db.prepare(`
-      DELETE FROM products
-      WHERE id = $1
-    `).run(req.params.id);
-
-    res.json({
-      success: true
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: err.message
     });
-  }));
-
+  }
+});
   // ── DOCUMENTS ────────────────────────────────────────────────────────────────
 
   app.get('/api/documents', wrap(async (req, res) => {
