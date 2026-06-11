@@ -21,114 +21,92 @@ const wrap = fn => (req, res, next) =>
 
 initDb().then(db => {
 
-  // ── HELPERS ──────────────────────────────────────────────────────────────────
-```js
-// ── HELPERS ─────────────────────────────────────────────────────
+  // ── HELPERS ────────────────────────────────────────────────────────────────
 
-async function nextProductId(brand) {
-  const prefix = brand === 'world' ? 'WP' : 'P';
-
-  const rows = await db.prepare(
-    "SELECT id FROM products WHERE id LIKE $1"
-  ).all(prefix + '%');
-
-  let maxN = 0;
-
-  rows.forEach(r => {
-    const num = parseInt(r.id.replace(prefix, '')) || 0;
-    if (num > maxN) maxN = num;
-  });
-
-  return prefix + String(maxN + 1).padStart(3, '0');
-}
-
-async function nextClientId(brand) {
-  const prefix = brand === 'world' ? 'W' : 'C';
-
-  const rows = await db.prepare(
-    "SELECT id FROM clients WHERE id LIKE $1"
-  ).all(prefix + '%');
-
-  let maxN = 0;
-
-  rows.forEach(r => {
-    const num = parseInt(r.id.slice(prefix.length)) || 0;
-    if (num > maxN) maxN = num;
-  });
-
-  return prefix + String(maxN + 1).padStart(3, '0');
-}
-
-async function nextId(type, brand) {
-
-  const prefix =
-    DOC_PREFIXES[type] || 'DOC';
-
-  const rows = await db.prepare(
-    "SELECT id FROM documents"
-  ).all();
-
-  let maxN = 0;
-
-  rows.forEach(r => {
-
-    const match =
-      String(r.id).match(/(\d+)$/);
-
-    if (match) {
-      const num = parseInt(match[1]);
-
-      if (num > maxN) {
-        maxN = num;
-      }
-    }
-
-  });
-
-  return (
-    prefix +
-    "-" +
-    String(maxN + 1).padStart(4, "0")
-  );
-}
-
-async function nextPaymentId() {
-  const row = await db.prepare(
-    "SELECT COUNT(*) as c FROM payments"
-  ).get();
-
-  return `PMT-${String(Number(row.c) + 1).padStart(4, '0')}`;
-}
-```
-  async function nextId(brand) {
+  async function nextProductId(brand) {
     const prefix = brand === 'world' ? 'WP' : 'P';
-    const rows = await db.prepare("SELECT id FROM s WHERE id LIKE $1").all(prefix + '%');
+
+    const rows = await db.prepare(
+      "SELECT id FROM products WHERE id LIKE $1"
+    ).all(prefix + '%');
+
     let maxN = 0;
+
+    rows.forEach(r => {
+      const num = parseInt(r.id.replace(prefix, '')) || 0;
+      if (num > maxN) maxN = num;
+    });
+
+    return prefix + String(maxN + 1).padStart(3, '0');
+  }
+
+  async function nextClientId(brand) {
+    const prefix = brand === 'world' ? 'W' : 'C';
+
+    const rows = await db.prepare(
+      "SELECT id FROM clients WHERE id LIKE $1"
+    ).all(prefix + '%');
+
+    let maxN = 0;
+
     rows.forEach(r => {
       const num = parseInt(r.id.slice(prefix.length)) || 0;
       if (num > maxN) maxN = num;
     });
-    const candidate = prefix + String(maxN + 1).padStart(3, '0');
-    const exists = await db.prepare("SELECT id FROM s WHERE id = $1").get(candidate);
-    if (exists) return prefix + String(Date.now()).slice(-5);
-    return candidate;
+
+    return prefix + String(maxN + 1).padStart(3, '0');
   }
+
+  async function nextId(type, brand) {
+    const prefix = DOC_PREFIXES[type] || 'DOC';
+
+    const rows = await db.prepare(
+      "SELECT id FROM documents"
+    ).all();
+
+    let maxN = 0;
+
+    rows.forEach(r => {
+      const match = String(r.id).match(/(\d+)$/);
+
+      if (match) {
+        const num = parseInt(match[1]);
+
+        if (num > maxN) {
+          maxN = num;
+        }
+      }
+    });
+
+    return (
+      prefix +
+      "-" +
+      String(maxN + 1).padStart(4, "0")
+    );
+  }
+
   async function nextPaymentId() {
-    const row = await db.prepare(`SELECT COUNT(*) as c FROM payments`).get();
+    const row = await db.prepare(
+      "SELECT COUNT(*) as c FROM payments"
+    ).get();
+
     return `PMT-${String(Number(row.c) + 1).padStart(4, '0')}`;
   }
+
   async function getDocWithItems(id) {
     const doc = await db.prepare('SELECT * FROM documents WHERE id = $1').get(id);
     if (!doc) return null;
     doc.items = await db.prepare('SELECT * FROM document_items WHERE document_id = $1 ORDER BY serial_no, id').all(id);
     return doc;
   }
+
   function calcDocTotal(items) {
     const sub = items.reduce((s, it) => s + Number(it.qty||0) * Number(it.rate||0), 0);
     return { subtotal: sub, gst: sub * 0.18, total: sub * 1.18 };
   }
 
-  // ── CLIENTS ──────────────────────────────────────────────────────────────────
+  // ── CLIENTS ────────────────────────────────────────────────────────────────
+
   app.get('/api/clients', wrap(async (req, res) => {
     const brand = req.query.brand || null;
     if (brand) {
@@ -137,51 +115,9 @@ async function nextPaymentId() {
       res.json(await db.prepare('SELECT * FROM clients ORDER BY name').all());
     }
   }));
+
   app.post('/api/clients', wrap(async (req, res) => {
-
-  const {
-    name,
-    contact,
-    phone,
-    email,
-    gstin,
-    address,
-    city,
-    state,
-    pincode,
-    type,
-    brand
-  } = req.body;
-
-  // CHECK DUPLICATE CLIENT
-  const duplicate = await db.prepare(`
-    SELECT *
-    FROM clients
-    WHERE
-      LOWER(name) = LOWER($1)
-      OR phone = $2
-      OR gstin = $3
-  `).get(
-    name || '',
-    phone || '',
-    gstin || ''
-  );
-
-  if (duplicate) {
-    return res.status(400).json({
-      success: false,
-      error: 'Duplicate Entry'
-    });
-  }
-
-  const id = await nextClientId(
-    brand || 'india'
-  );
-
-  await db.prepare(`
-    INSERT INTO clients
-    (
-      id,
+    const {
       name,
       contact,
       phone,
@@ -192,80 +128,122 @@ async function nextPaymentId() {
       state,
       pincode,
       type,
-      balance,
       brand
-    )
-    VALUES
-    (
-      $1,$2,$3,$4,$5,$6,
-      $7,$8,$9,$10,$11,
-      0,$12
-    )
-  `).run(
-    id,
-    name || '',
-    contact || '',
-    phone || '',
-    email || '',
-    gstin || '',
-    address || '',
-    city || '',
-    state || '',
-    pincode || '',
-    type || 'Regular',
-    brand || 'india'
-  );
+    } = req.body;
 
-  res.json(
-    await db.prepare(
-      'SELECT * FROM clients WHERE id = $1'
-    ).get(id)
-  );
+    // CHECK DUPLICATE CLIENT
+    const duplicate = await db.prepare(`
+      SELECT *
+      FROM clients
+      WHERE
+        LOWER(name) = LOWER($1)
+        OR phone = $2
+        OR gstin = $3
+    `).get(
+      name || '',
+      phone || '',
+      gstin || ''
+    );
 
-}));
+    if (duplicate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Duplicate Entry'
+      });
+    }
 
+    const id = await nextClientId(brand || 'india');
 
-  // ───────────────── PRODUCTS ─────────────────
-
-// GET PRODUCTS
-app.get('/api/products', wrap(async (req, res) => {
-
-  const rows = await db.prepare(
-    "SELECT * FROM products ORDER BY make, model"
-  ).all();
-
-  res.json(rows);
-
-}));
-
-
-// ADD PRODUCT
-app.post('/api/products', wrap(async (req, res) => {
-
-  const {
-    make,
-    model,
-    sku,
-    category,
-    hsn,
-    unit,
-    rate,
-    gst,
-    brand
-  } = req.body;
-
-  const id = await nextProductId(
-    brand || 'india'
-  );
-
-  const name =
-    `${make || ''} ${model || ''}`.trim();
-
-  await db.prepare(`
-    INSERT INTO products
-    (
+    await db.prepare(`
+      INSERT INTO clients
+      (
+        id,
+        name,
+        contact,
+        phone,
+        email,
+        gstin,
+        address,
+        city,
+        state,
+        pincode,
+        type,
+        balance,
+        brand
+      )
+      VALUES
+      (
+        $1,$2,$3,$4,$5,$6,
+        $7,$8,$9,$10,$11,
+        0,$12
+      )
+    `).run(
       id,
-      name,
+      name || '',
+      contact || '',
+      phone || '',
+      email || '',
+      gstin || '',
+      address || '',
+      city || '',
+      state || '',
+      pincode || '',
+      type || 'Regular',
+      brand || 'india'
+    );
+
+    res.json(
+      await db.prepare(
+        'SELECT * FROM clients WHERE id = $1'
+      ).get(id)
+    );
+  }));
+
+  app.put('/api/clients/:id', wrap(async (req, res) => {
+    const { name, contact, phone, email, gstin, address, city, state, pincode, type } = req.body;
+
+    // CHECK DUPLICATE CLIENT (excluding current)
+    const duplicate = await db.prepare(`
+      SELECT *
+      FROM clients
+      WHERE
+        (
+          LOWER(name) = LOWER($1)
+          OR phone = $2
+          OR gstin = $3
+        )
+        AND id != $4
+    `).get(
+      name || '',
+      phone || '',
+      gstin || '',
+      req.params.id
+    );
+
+    if (duplicate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Duplicate Entry'
+      });
+    }
+
+    await db.prepare(`UPDATE clients SET name=$1,contact=$2,phone=$3,email=$4,gstin=$5,address=$6,city=$7,state=$8,pincode=$9,type=$10 WHERE id=$11`)
+      .run(name, contact||'', phone||'', email||'', gstin||'', address||'', city||'', state||'', pincode||'', type||'Regular', req.params.id);
+    res.json(await db.prepare('SELECT * FROM clients WHERE id = $1').get(req.params.id));
+  }));
+
+  // ── PRODUCTS ─────────────────────────────────────────────────────────────────
+
+  app.get('/api/products', wrap(async (req, res) => {
+    const rows = await db.prepare(
+      "SELECT * FROM products ORDER BY make, model"
+    ).all();
+
+    res.json(rows);
+  }));
+
+  app.post('/api/products', wrap(async (req, res) => {
+    const {
       make,
       model,
       sku,
@@ -275,56 +253,71 @@ app.post('/api/products', wrap(async (req, res) => {
       rate,
       gst,
       brand
-    )
-    VALUES
-    (
-      $1,$2,$3,$4,$5,$6,
-      $7,$8,$9,$10,$11
-    )
-  `).run(
-    id,
-    name,
-    make || '',
-    model || '',
-    sku || '',
-    category || '',
-    hsn || '',
-    unit || 'Piece',
-    parseFloat(rate) || 0,
-    parseFloat(gst) || 0,
-    brand || 'india'
-  );
+    } = req.body;
 
-  res.json(
-    await db.prepare(
-      'SELECT * FROM products WHERE id=$1'
-    ).get(id)
-  );
+    const id = await nextProductId(brand || 'india');
 
-}));
+    const name = `${make || ''} ${model || ''}`.trim();
 
+    await db.prepare(`
+      INSERT INTO products
+      (
+        id,
+        name,
+        make,
+        model,
+        sku,
+        category,
+        hsn,
+        unit,
+        rate,
+        gst,
+        brand
+      )
+      VALUES
+      (
+        $1,$2,$3,$4,$5,$6,
+        $7,$8,$9,$10,$11
+      )
+    `).run(
+      id,
+      name,
+      make || '',
+      model || '',
+      sku || '',
+      category || '',
+      hsn || '',
+      unit || 'Piece',
+      parseFloat(rate) || 0,
+      parseFloat(gst) || 0,
+      brand || 'india'
+    );
 
-// DELETE PRODUCT
-app.delete('/api/products/:id', wrap(async (req, res) => {
+    res.json(
+      await db.prepare(
+        'SELECT * FROM products WHERE id=$1'
+      ).get(id)
+    );
+  }));
 
-  await db.prepare(`
-    DELETE FROM inventory
-    WHERE product_id = $1
-  `).run(req.params.id);
+  app.delete('/api/products/:id', wrap(async (req, res) => {
+    await db.prepare(`
+      DELETE FROM inventory
+      WHERE product_id = $1
+    `).run(req.params.id);
 
-  await db.prepare(`
-    DELETE FROM products
-    WHERE id = $1
-  `).run(req.params.id);
+    await db.prepare(`
+      DELETE FROM products
+      WHERE id = $1
+    `).run(req.params.id);
 
-  res.json({
-    success: true
-  });
+    res.json({
+      success: true
+    });
+  }));
 
-}));
+  // ── DOCUMENTS ────────────────────────────────────────────────────────────────
 
-
-// ── DOCUMENTS ─────────────────────────────────────────────────────────────
   app.get('/api/documents', wrap(async (req, res) => {
     const { type, brand } = req.query;
     let docs;
@@ -342,11 +335,13 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     }));
     res.json(docs);
   }));
+
   app.get('/api/documents/:id', wrap(async (req, res) => {
     const doc = await getDocWithItems(req.params.id);
     if (!doc) return res.status(404).json({ error: 'Not found' });
     res.json(doc);
   }));
+
   app.post('/api/documents', wrap(async (req, res) => {
     const {
       type, client_id, date, due_date, validity, notes, items,
@@ -396,7 +391,6 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     res.json(await getDocWithItems(req.params.id));
   }));
 
-  // ── DELETE DOCUMENT ──────────────────────────────────────────────────────
   app.delete('/api/documents/:id', wrap(async (req, res) => {
     const doc = await db.prepare('SELECT * FROM documents WHERE id=$1').get(req.params.id);
     if (!doc) return res.status(404).json({ error: 'Not found' });
@@ -410,15 +404,15 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     const src = await getDocWithItems(req.params.id);
     if (!src) return res.status(404).json({ error: 'Not found' });
     await db.prepare("UPDATE documents SET status='Converted' WHERE id=$1").run(src.id);
-    const newId = await nextId(target_type);
+    const newId = await nextId(target_type, src.brand);
     const due = new Date(Date.now() + 30*86400000).toISOString().split('T')[0];
     await db.prepare(`
-      INSERT INTO documents (id,type,client_id,date,due_date,status,currency,exchange_rate,ref_doc_id,po_number,so_number,notes)
-      VALUES ($1,$2,$3,$4,$5,'Draft',$6,$7,$8,$9,$10,$11)
+      INSERT INTO documents (id,type,client_id,date,due_date,status,currency,exchange_rate,ref_doc_id,po_number,so_number,notes,brand)
+      VALUES ($1,$2,$3,$4,$5,'Draft',$6,$7,$8,$9,$10,$11,$12)
     `).run(newId, target_type, src.client_id,
            new Date().toISOString().split('T')[0], due,
            src.currency, src.exchange_rate, src.id,
-           src.po_number, src.so_number, `Converted from ${src.id}`);
+           src.po_number, src.so_number, `Converted from ${src.id}`, src.brand);
     for (let idx = 0; idx < src.items.length; idx++) {
       const it = src.items[idx];
       await db.prepare(`
@@ -430,7 +424,8 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     res.json(await getDocWithItems(newId));
   }));
 
-  // ── PDF ───────────────────────────────────────────────────────────────────────
+  // ── PDF ────────────────────────────────────────────────────────────────────
+
   app.get('/api/documents/:id/pdf/both', wrap(async (req, res) => {
     const doc = await getDocWithItems(req.params.id);
     if (!doc) return res.status(404).json({ error: 'Not found' });
@@ -438,6 +433,7 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     const products = await db.prepare('SELECT * FROM products').all();
     await generateBothPDFs(doc, client, doc.items, products, res);
   }));
+
   app.get('/api/documents/:id/pdf/:brand', wrap(async (req, res) => {
     const doc = await getDocWithItems(req.params.id);
     if (!doc) return res.status(404).json({ error: 'Not found' });
@@ -447,10 +443,12 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     await generateDocPDF(doc, client, doc.items, products, res, brand);
   }));
 
-  // ── PAYMENTS ─────────────────────────────────────────────────────────────────
+  // ── PAYMENTS ───────────────────────────────────────────────────────────────
+
   app.get('/api/payments', wrap(async (req, res) => {
     res.json(await db.prepare('SELECT * FROM payments ORDER BY date DESC, created_at DESC').all());
   }));
+
   app.post('/api/payments', wrap(async (req, res) => {
     const { invoice_id, client_id, amount, currency, mode, ref, note, date } = req.body;
     const id = await nextPaymentId();
@@ -469,20 +467,25 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     res.json(await db.prepare('SELECT * FROM payments WHERE id=$1').get(id));
   }));
 
-  // ── DASHBOARD ─────────────────────────────────────────────────────────────────
+  app.delete('/api/payments/:id', wrap(async (req, res) => {
+    await db.prepare('DELETE FROM payments WHERE id=$1').run(req.params.id);
+    res.json({ deleted: true });
+  }));
+
+  // ── DASHBOARD ──────────────────────────────────────────────────────────────
+
   app.get('/api/dashboard', wrap(async (req, res) => {
     const brand = req.query.brand || null;
-    const brandFilter = brand ? ` AND brand='${brand}'` : '';
     const [cRow, pRow, invoices, payRow, stockRow, qRow, poRow, soRow, recent] = await Promise.all([
-      db.prepare(`SELECT COUNT(*) as c FROM clients WHERE 1=1${brandFilter}`).get(),
-      db.prepare(`SELECT COUNT(*) as c FROM products WHERE 1=1${brandFilter}`).get(),
-      db.prepare(`SELECT * FROM documents WHERE type='invoice'${brandFilter}`).all(),
+      brand ? db.prepare(`SELECT COUNT(*) as c FROM clients WHERE brand=$1`).get(brand) : db.prepare(`SELECT COUNT(*) as c FROM clients`).get(),
+      brand ? db.prepare(`SELECT COUNT(*) as c FROM products WHERE brand=$1`).get(brand) : db.prepare(`SELECT COUNT(*) as c FROM products`).get(),
+      brand ? db.prepare(`SELECT * FROM documents WHERE type='invoice' AND brand=$1`).all(brand) : db.prepare(`SELECT * FROM documents WHERE type='invoice'`).all(),
       db.prepare('SELECT SUM(amount) as s FROM payments').get(),
       db.prepare('SELECT COUNT(*) as c FROM inventory WHERE stock <= reorder').get(),
-      db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='quotation' AND status NOT IN ('Converted','Rejected')${brandFilter}`).get(),
-      db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='purchase_order' AND status NOT IN ('Converted','Closed')${brandFilter}`).get(),
-      db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='sales_order' AND status NOT IN ('Converted','Closed')${brandFilter}`).get(),
-      db.prepare(`SELECT id,type,client_id,date,status FROM documents WHERE 1=1${brandFilter} ORDER BY created_at DESC LIMIT 8`).all(),
+      brand ? db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='quotation' AND status NOT IN ('Converted','Rejected') AND brand=$1`).get(brand) : db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='quotation' AND status NOT IN ('Converted','Rejected')`).get(),
+      brand ? db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='purchase_order' AND status NOT IN ('Converted','Closed') AND brand=$1`).get(brand) : db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='purchase_order' AND status NOT IN ('Converted','Closed')`).get(),
+      brand ? db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='sales_order' AND status NOT IN ('Converted','Closed') AND brand=$1`).get(brand) : db.prepare(`SELECT COUNT(*) as c FROM documents WHERE type='sales_order' AND status NOT IN ('Converted','Closed')`).get(),
+      brand ? db.prepare(`SELECT id,type,client_id,date,status FROM documents WHERE brand=$1 ORDER BY created_at DESC LIMIT 8`).all(brand) : db.prepare(`SELECT id,type,client_id,date,status FROM documents ORDER BY created_at DESC LIMIT 8`).all(),
     ]);
     await Promise.all(invoices.map(async inv => {
       inv.items = await db.prepare('SELECT * FROM document_items WHERE document_id=$1').all(inv.id);
@@ -498,7 +501,8 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     });
   }));
 
-  // ── SEARCH ─────────────────────────────────────────────────────────────────────
+  // ── SEARCH ────────────────────────────────────────────────────────────────
+
   app.get('/api/search/documents', wrap(async (req, res) => {
     const q = `%${(req.query.q || '').toLowerCase()}%`;
     const type = req.query.type || null;
@@ -526,6 +530,7 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     }));
     res.json(docs);
   }));
+
   app.get('/api/search/clients', wrap(async (req, res) => {
     const q = `%${(req.query.q || '').toLowerCase()}%`;
     res.json(await db.prepare(
@@ -534,13 +539,15 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     ).all(q, q, q, q, q));
   }));
 
-  // ── REMINDERS ─────────────────────────────────────────────────────────────────
+  // ── REMINDERS ──────────────────────────────────────────────────────────────
+
   app.get('/api/reminders', wrap(async (req, res) => {
     res.json(await db.prepare(
       `SELECT r.*, c.name as client_name, c.phone, c.email FROM reminders r
        LEFT JOIN clients c ON r.client_id = c.id ORDER BY r.sent_at DESC`
     ).all());
   }));
+
   app.post('/api/reminders', wrap(async (req, res) => {
     const { client_id, document_id, type, channel, message } = req.body;
     const { rows } = await db.query(
@@ -553,12 +560,14 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
        LEFT JOIN clients c ON r.client_id=c.id WHERE r.id=$1`
     ).get(rows[0].id));
   }));
+
   app.delete('/api/reminders/:id', wrap(async (req, res) => {
     await db.prepare('DELETE FROM reminders WHERE id=$1').run(req.params.id);
     res.json({ deleted: true });
   }));
 
-  // ── CREDIT SETTINGS ─────────────────────────────────────────────────────────────
+  // ── CREDIT SETTINGS ────────────────────────────────────────────────────────
+
   app.get('/api/credit-settings', wrap(async (req, res) => {
     const brand = req.query.brand || 'india';
     let row = await db.prepare('SELECT * FROM credit_settings WHERE brand=$1').get(brand);
@@ -580,7 +589,8 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     res.json({ brand: brand||'india', credit_days: parseInt(credit_days)||30 });
   }));
 
-  // ── DUE DATE REMINDERS ───────────────────────────────────────────────────────────
+  // ── DUE DATE REMINDERS ─────────────────────────────────────────────────────
+
   app.get('/api/due-reminders', wrap(async (req, res) => {
     const brand = req.query.brand || null;
     let rows;
@@ -648,12 +658,8 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     res.json({ deleted: true });
   }));
 
-  app.delete('/api/payments/:id', wrap(async (req, res) => {
-    await db.prepare('DELETE FROM payments WHERE id=$1').run(req.params.id);
-    res.json({ deleted: true });
-  }));
+  // ── LEDGER ─────────────────────────────────────────────────────────────────
 
-  // ── LEDGER ─────────────────────────────────────────────────────────────────────
   app.get('/api/ledger', wrap(async (req, res) => {
     const clients = await db.prepare('SELECT * FROM clients ORDER BY name').all();
     const result = await Promise.all(clients.map(async cl => {
@@ -674,7 +680,8 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
     res.json(result);
   }));
 
-  // ── ERROR HANDLER ──────────────────────────────────────────────────────────────
+  // ── ERROR HANDLER ──────────────────────────────────────────────────────────
+
   app.use((err, req, res, next) => {
     console.error('API Error:', err.message);
     res.status(500).json({ error: err.message || 'Internal server error' });
