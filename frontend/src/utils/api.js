@@ -1,4 +1,7 @@
-const BASE = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// In production (Vercel), use relative URLs. In dev, use localhost:3001
+const BASE = process.env.NODE_ENV === 'production' 
+  ? (process.env.REACT_APP_API_URL || '') 
+  : (process.env.REACT_APP_API_URL || 'http://localhost:3001');
 
 async function api(path, opts = {}) {
   const res = await fetch(`${BASE}${path}`, {
