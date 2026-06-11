@@ -329,24 +329,24 @@ await db.prepare(
 
 }));
   // ── INVENTORY ─────────────────────────────────────────────
+const rows = await db.prepare(`
+  SELECT
+    p.id as product_id,
+    p.name,
+    p.sku,
+    p.unit,
+    p.rate,
+    COALESCE(i.warehouse,'Main Warehouse') as warehouse,
+    COALESCE(i.stock,0) as stock,
+    COALESCE(i.reorder,5) as reorder,
+    (COALESCE(i.stock,0) * COALESCE(p.rate,0)) as total_amount
+  FROM products p
+  LEFT JOIN inventory i
+    ON p.id = i.product_id
+  ORDER BY p.name
+`).all();
 
-app.get('/api/inventory', wrap(async (req, res) => {
-
-  const rows = await db.prepare(`
-    SELECT
-      p.id as product_id,
-      p.name,
-      p.sku,
-      p.unit,
-      COALESCE(i.warehouse,'Main Warehouse') as warehouse,
-      COALESCE(i.stock,0) as stock,
-      COALESCE(i.reorder,5) as reorder
-    FROM products p
-    LEFT JOIN inventory i
-      ON p.id = i.product_id
-    ORDER BY p.name
-  `).all();
-
+res.json(rows);
   res.json(rows);
 
 }));
