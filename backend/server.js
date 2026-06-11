@@ -109,18 +109,91 @@ async function nextProductId(brand) {
     }
   }));
   app.post('/api/clients', wrap(async (req, res) => {
-    const { name, contact, phone, email, gstin, address, city, state, pincode, type, brand } = req.body;
-    const id = await nextClientId(brand);
-    await db.prepare(`INSERT INTO clients (id,name,contact,phone,email,gstin,address,city,state,pincode,type,balance,brand) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,0,$12)`)
-      .run(id, name, contact||'', phone||'', email||'', gstin||'', address||'', city||'', state||'', pincode||'', type||'Regular', brand||'india');
-    res.json(await db.prepare('SELECT * FROM clients WHERE id = $1').get(id));
-  }));
-  app.put('/api/clients/:id', wrap(async (req, res) => {
-    const { name, contact, phone, email, gstin, address, city, state, pincode, type } = req.body;
-    await db.prepare(`UPDATE clients SET name=$1,contact=$2,phone=$3,email=$4,gstin=$5,address=$6,city=$7,state=$8,pincode=$9,type=$10 WHERE id=$11`)
-      .run(name, contact||'', phone||'', email||'', gstin||'', address||'', city||'', state||'', pincode||'', type||'Regular', req.params.id);
-    res.json(await db.prepare('SELECT * FROM clients WHERE id = $1').get(req.params.id));
-  }));
+
+  const {
+    name,
+    contact,
+    phone,
+    email,
+    gstin,
+    address,
+    city,
+    state,
+    pincode,
+    type,
+    brand
+  } = req.body;
+
+  // CHECK DUPLICATE CLIENT
+  const duplicate = await db.prepare(`
+    SELECT *
+    FROM clients
+    WHERE
+      LOWER(name) = LOWER($1)
+      OR phone = $2
+      OR gstin = $3
+  `).get(
+    name || '',
+    phone || '',
+    gstin || ''
+  );
+
+  if (duplicate) {
+    return res.status(400).json({
+      success: false,
+      error: 'Duplicate Entry'
+    });
+  }
+
+  const id = await nextClientId(
+    brand || 'india'
+  );
+
+  await db.prepare(`
+    INSERT INTO clients
+    (
+      id,
+      name,
+      contact,
+      phone,
+      email,
+      gstin,
+      address,
+      city,
+      state,
+      pincode,
+      type,
+      balance,
+      brand
+    )
+    VALUES
+    (
+      $1,$2,$3,$4,$5,$6,
+      $7,$8,$9,$10,$11,
+      0,$12
+    )
+  `).run(
+    id,
+    name || '',
+    contact || '',
+    phone || '',
+    email || '',
+    gstin || '',
+    address || '',
+    city || '',
+    state || '',
+    pincode || '',
+    type || 'Regular',
+    brand || 'india'
+  );
+
+  res.json(
+    await db.prepare(
+      'SELECT * FROM clients WHERE id = $1'
+    ).get(id)
+  );
+
+}));
 
 // ───────────────── PRODUCTS ─────────────────
 
