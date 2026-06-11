@@ -316,10 +316,30 @@ function Clients({ onDataChange, brand }) {
   useEffect(() => { load(); }, [load]);
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
   const save = async () => {
-    if (modal==='add') await api.createClient({...form, brand});
-    else await api.updateClient(form.id, form);
-    setModal(null); load(); onDataChange && onDataChange();
-  };
+  try {
+    console.log("Saving client:", form);
+
+    if (modal === "add") {
+      await api.createClient({
+        ...form,
+        brand
+      });
+    } else {
+      await api.updateClient(form.id, form);
+    }
+
+    alert("Client saved successfully");
+
+    setModal(null);
+    load();
+
+    if (onDataChange) onDataChange();
+
+  } catch (err) {
+    console.error(err);
+    alert("Save failed: " + err.message);
+  }
+};
   return (
     <div>
       <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({});setModal('add');}}>+ Add Client</button></div>
