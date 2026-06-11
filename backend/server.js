@@ -292,7 +292,22 @@ await db.prepare(`     INSERT INTO products
       $1,$2,$3,$4,$5,
       $6,$7,$8,$9,$10,$11
     )
-  `).run(
+  `).run(await db.prepare(`
+  INSERT INTO inventory
+  (
+    product_id,
+    warehouse,
+    stock,
+    reorder
+  )
+  VALUES
+  (
+    $1,
+    'Main Warehouse',
+    0,
+    5
+  )
+`).run(productId);
 productId,
 name || '',
 sku || '',
