@@ -313,6 +313,95 @@ await db.prepare(
 );
 
 }));
+  // ── INVENTORY ─────────────────────────────────────────────
+
+app.get('/api/inventory', wrap(async (req, res) => {
+
+  const rows = await db.prepare(`
+    SELECT
+      p.id as product_id,
+      p.name,
+      p.sku,
+      p.unit,
+      COALESCE(i.warehouse,'Main Warehouse') as warehouse,
+      COALESCE(i.stock,0) as stock,
+      COALESCE(i.reorder,5) as reorder
+    FROM products p
+    LEFT JOIN inventory i
+      ON p.id = i.product_id
+    ORDER BY p.name
+  `).all();
+
+  res.json(rows);
+
+}));
+
+
+app.post('/api/inventory/update', wrap(async (req, res) => {
+
+  const {
+    product_id,
+    qty,
+    quantity,
+    type
+  } = req.body;
+
+  const stockQty = Number(qty || quantity || 0);
+
+  let row = await db.prepare(
+    'SELECT * FROM inventory WHERE product_id=$1'
+  ).get(product_id);
+
+  if (!row) {
+
+    await db.prepare(`
+      INSERT INTO inventory
+      (
+        product_id,
+        warehouse,
+        stock,
+        reorder
+      )
+      VALUES
+      (
+        $1,
+        'Main Warehouse',
+        0,
+        5
+      )
+    `).run(product_id);
+
+    row = await db.prepare(
+      'SELECT * FROM inventory WHERE product_id=$1'
+    ).get(product_id);
+  }
+
+  let newStock = Number(row.stock || 0);
+
+  if (
+    type === 'remove' ||
+    type === 'issue' ||
+    type === 'deduct'
+  ) {
+    newStock -= stockQty;
+  } else {
+    newStock += stockQty;
+  }
+
+  if (newStock < 0) {
+    newStock = 0;
+  }
+
+  await db.prepare(
+    'UPDATE inventory SET stock=$1 WHERE product_id=$2'
+  ).run(newStock, product_id);
+
+  res.json({
+    success: true,
+    stock: newStock
+  });
+
+}));
  // ── DOCUMENTS ────────────────────────────────────────────────────────────────
 
   app.get('/api/documents', wrap(async (req, res) => {
