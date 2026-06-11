@@ -253,27 +253,27 @@ rows = await db.prepare(
 res.json(rows);
 
 }));
-
 app.post('/api/products', wrap(async (req, res) => {
 
-const {
-name,
-sku,
-model_no,
-category,
-hsn,
-rate,
-gst,
-unit,
-description,
-brand
-} = req.body;
+  const {
+    name,
+    sku,
+    model_no,
+    category,
+    hsn,
+    rate,
+    gst,
+    unit,
+    description,
+    brand
+  } = req.body;
 
-const productId = await nextProductId(
-brand || 'india'
-);
+  const productId = await nextProductId(
+    brand || 'india'
+  );
 
-await db.prepare(`     INSERT INTO products
+  await db.prepare(`
+    INSERT INTO products
     (
       id,
       name,
@@ -292,132 +292,45 @@ await db.prepare(`     INSERT INTO products
       $1,$2,$3,$4,$5,
       $6,$7,$8,$9,$10,$11
     )
-  `).run(await db.prepare(`
-  INSERT INTO inventory
-  (
-    product_id,
-    warehouse,
-    stock,
-    reorder
-  )
-  VALUES
-  (
-    $1,
-    'Main Warehouse',
-    0,
-    5
-  )
-`).run(productId);
-productId,
-name || '',
-sku || '',
-model_no || '',
-category || '',
-hsn || '',
-parseFloat(rate) || 0,
-parseFloat(gst) || 18,
-unit || 'Piece',
-description || '',
-brand || 'india'
-);
+  `).run(
+    productId,
+    name || '',
+    sku || '',
+    model_no || '',
+    category || '',
+    hsn || '',
+    parseFloat(rate) || 0,
+    parseFloat(gst) || 18,
+    unit || 'Piece',
+    description || '',
+    brand || 'india'
+  );
 
-res.json(
-await db.prepare(
-'SELECT * FROM products WHERE id=$1'
-).get(productId)
-);
+  await db.prepare(`
+    INSERT INTO inventory
+    (
+      product_id,
+      warehouse,
+      stock,
+      reorder
+    )
+    VALUES
+    (
+      $1,
+      'Main Warehouse',
+      0,
+      5
+    )
+  `).run(productId);
 
-}));
-  // ── INVENTORY ─────────────────────────────────────────────
-const rows = await db.prepare(`
-  SELECT
-    p.id as product_id,
-    p.name,
-    p.sku,
-    p.unit,
-    p.rate,
-    COALESCE(i.warehouse,'Main Warehouse') as warehouse,
-    COALESCE(i.stock,0) as stock,
-    COALESCE(i.reorder,5) as reorder,
-    (COALESCE(i.stock,0) * COALESCE(p.rate,0)) as total_amount
-  FROM products p
-  LEFT JOIN inventory i
-    ON p.id = i.product_id
-  ORDER BY p.name
-`).all();
-
-res.json(rows);
-  res.json(rows);
+  res.json(
+    await db.prepare(
+      'SELECT * FROM products WHERE id=$1'
+    ).get(productId)
+  );
 
 }));
-
-
-app.post('/api/inventory/update', wrap(async (req, res) => {
-
-  const {
-    product_id,
-    qty,
-    quantity,
-    type
-  } = req.body;
-
-  const stockQty = Number(qty || quantity || 0);
-
-  let row = await db.prepare(
-    'SELECT * FROM inventory WHERE product_id=$1'
-  ).get(product_id);
-
-  if (!row) {
-
-    await db.prepare(`
-      INSERT INTO inventory
-      (
-        product_id,
-        warehouse,
-        stock,
-        reorder
-      )
-      VALUES
-      (
-        $1,
-        'Main Warehouse',
-        0,
-        5
-      )
-    `).run(product_id);
-
-    row = await db.prepare(
-      'SELECT * FROM inventory WHERE product_id=$1'
-    ).get(product_id);
-  }
-
-  let newStock = Number(row.stock || 0);
-
-  if (
-    type === 'remove' ||
-    type === 'issue' ||
-    type === 'deduct'
-  ) {
-    newStock -= stockQty;
-  } else {
-    newStock += stockQty;
-  }
-
-  if (newStock < 0) {
-    newStock = 0;
-  }
-
-  await db.prepare(
-    'UPDATE inventory SET stock=$1 WHERE product_id=$2'
-  ).run(newStock, product_id);
-
-  res.json({
-    success: true,
-    stock: newStock
-  });
-
-}));
- // ── DOCUMENTS ────────────────────────────────────────────────────────────────
+  // ── DOCUMENTS ────────────────────────────────────────────────────────────────
 
   app.get('/api/documents', wrap(async (req, res) => {
     const { type, brand } = req.query;
