@@ -1,6 +1,6 @@
 const express = require('express');
 const cors    = require('cors');
-const { initDb }                        = require('./db');
+const { initDb }                        = require('./db'); 
 const { generateDocPDF, generateBothPDFs } = require('./pdfgen');
 
 const app = express();
