@@ -664,7 +664,7 @@ function PayForm({ doc, clients, onClose }) {
   const [form, setForm] = useState({invoice_id:doc?.id||'',client_id:doc?.client_id||clients[0]?.id,amount:balance||'',currency:doc?.currency||'INR',mode:'Wire Transfer',date:today(),ref:'',note:''});
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
   return (
-    <Modal title="Record Payment" onClose={onClose}>
+    <Modal title="Record Payment" onClose={onClose}> 
       <div className="form-grid2">
         <div className="form-row col-span2"><label>Client</label><select value={form.client_id} onChange={e => set('client_id',e.target.value)}>{clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
         <div className="form-row"><label>Amount</label><input type="number" step="0.01" value={form.amount} onChange={e => set('amount',e.target.value)}/></div>
