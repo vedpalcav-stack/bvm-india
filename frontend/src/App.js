@@ -252,7 +252,7 @@ function GlobalSearch({ onNav, brand }) {
 function Dashboard({ onNav, brand }) {
   const [data, setData] = useState(null);
   const cfg = BRAND_CONFIG[brand];
-  useEffect(() => { api.getDashboard(brand).then(setData).catch(()=>{}); }, [brand]);
+  useEffect(() => { api.getDashboard(brand).then(setData).catch(()=>{}); }, [brand]); 
   if (!data) return <div className="loading">Loading…</div>;
   return (
     <div>
