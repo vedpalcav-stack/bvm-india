@@ -233,8 +233,7 @@ initDb().then(db => {
   }));
 
   // ── PRODUCTS ─────────────────────────────────────────────────────────────────
-
- app.get('/api/products', wrap(async (req, res) => {
+app.get('/api/products', wrap(async (req, res) => {
 
 const brand = req.query.brand || null;
 
@@ -253,24 +252,98 @@ rows = await db.prepare(
 res.json(rows);
 
 }));
+
 app.post('/api/products', wrap(async (req, res) => {
 
-app.put('/api/products/:id', wrap(async (req, res) => {
+const {
+name,
+sku,
+model_no,
+category,
+hsn,
+rate,
+gst,
+unit,
+description,
+brand
+} = req.body;
 
-  const {
-    name,
-    sku,
-    model_no,
-    category,
-    hsn,
-    rate,
-    gst,
-    unit,
-    description
-  } = req.body;
+const productId = await nextProductId(
+brand || 'india'
+);
 
-  await db.prepare(`
-    UPDATE products
+await db.prepare(`     INSERT INTO products
+    (
+      id,
+      name,
+      sku,
+      model_no,
+      category,
+      hsn,
+      rate,
+      gst,
+      unit,
+      description,
+      brand
+    )
+    VALUES
+    (
+      $1,$2,$3,$4,$5,
+      $6,$7,$8,$9,$10,$11
+    )
+  `).run(
+productId,
+name || '',
+sku || '',
+model_no || '',
+category || '',
+hsn || '',
+parseFloat(rate) || 0,
+parseFloat(gst) || 18,
+unit || 'Piece',
+description || '',
+brand || 'india'
+);
+
+await db.prepare(`     INSERT INTO inventory
+    (
+      product_id,
+      warehouse,
+      stock,
+      reorder
+    )
+    VALUES
+    (
+      $1,
+      'Main Warehouse',
+      0,
+      5
+    )
+  `).run(productId);
+
+res.json(
+await db.prepare(
+'SELECT * FROM products WHERE id=$1'
+).get(productId)
+);
+
+}));
+
+app.put('/api/products/:id', wrap(async (req,res)=>{
+
+const {
+name,
+sku,
+model_no,
+category,
+hsn,
+rate,
+gst,
+unit,
+description
+} = req.body;
+
+await db.prepare(`     UPDATE products
     SET
       name=$1,
       sku=$2,
@@ -283,83 +356,79 @@ app.put('/api/products/:id', wrap(async (req, res) => {
       description=$9
     WHERE id=$10
   `).run(
-    name || '',
-    sku || '',
-    model_no || '',
-    category || '',
-    hsn || '',
-    parseFloat(rate) || 0,
-    parseFloat(gst) || 18,
-    unit || 'Piece',
-    description || '',
-    req.params.id
-  );
+name || '',
+sku || '',
+model_no || '',
+category || '',
+hsn || '',
+parseFloat(rate) || 0,
+parseFloat(gst) || 18,
+unit || 'Piece',
+description || '',
+req.params.id
+);
 
-  res.json(
-    await db.prepare(
-      "SELECT * FROM products WHERE id=$1"
-    ).get(req.params.id)
-  );
+res.json(
+await db.prepare(
+'SELECT * FROM products WHERE id=$1'
+).get(req.params.id)
+);
 
 }));
-// ── INVENTORY ─────────────────────────────────────────────
 
 app.get('/api/inventory', wrap(async (req,res)=>{
 
-  const rows = await db.prepare(`
-    SELECT *
+const rows = await db.prepare(`     SELECT *
     FROM inventory
     ORDER BY product_id
   `).all();
 
-  res.json(rows);
+res.json(rows);
 
 }));
 
 app.post('/api/inventory/update', wrap(async (req,res)=>{
 
-  const {
-    product_id,
-    qty,
-    type
-  } = req.body;
+const {
+product_id,
+qty,
+type
+} = req.body;
 
-  const row = await db.prepare(`
-    SELECT *
+const row = await db.prepare(`     SELECT *
     FROM inventory
     WHERE product_id=$1
   `).get(product_id);
 
-  if(!row){
-    return res.status(404).json({
-      error:"Inventory not found"
-    });
-  }
+if(!row){
+return res.status(404).json({
+error:"Inventory not found"
+});
+}
 
-  let stock = Number(row.stock);
+let stock = Number(row.stock);
 
-  if(type === "add"){
-    stock += Number(qty);
-  }else{
-    stock -= Number(qty);
-  }
+if(type === "add"){
+stock += Number(qty);
+}else{
+stock -= Number(qty);
+}
 
-  if(stock < 0){
-    stock = 0;
-  }
+if(stock < 0){
+stock = 0;
+}
 
-  await db.prepare(`
-    UPDATE inventory
+await db.prepare(`     UPDATE inventory
     SET stock=$1
     WHERE product_id=$2
   `).run(
-    stock,
-    product_id
-  );
+stock,
+product_id
+);
 
-  res.json({
-    success:true
-  });
+res.json({
+success:true
+});
 
 }));
   
