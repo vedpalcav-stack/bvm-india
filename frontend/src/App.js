@@ -697,7 +697,19 @@ function PayForm({ doc, clients, onClose }) {
 }
 
 // ── DOC LIST ──────────────────────────────────────────────────────────────────
-function DocList({ type, clients, products, showNew, onClearNew, brand }) {
+{showForm&&
+  <DocForm
+    type={type}
+    clients={clients}
+    products={products}
+    brand={brand}
+    onClose={() => setShowForm(false)}
+    onSaved={(savedDoc) => {
+      load();
+      if(savedDoc&&savedDoc.id)setViewDoc(savedDoc);
+    }}
+  />
+}function DocList({ type, clients, products, showNew, onClearNew, brand }) {
   const [docs, setDocs] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [viewDoc, setViewDoc] = useState(null);
