@@ -255,6 +255,8 @@ res.json(rows);
 }));
 app.post('/api/products', wrap(async (req, res) => {
 
+app.put('/api/products/:id', wrap(async (req, res) => {
+
   const {
     name,
     sku,
@@ -264,36 +266,23 @@ app.post('/api/products', wrap(async (req, res) => {
     rate,
     gst,
     unit,
-    description,
-    brand
+    description
   } = req.body;
 
-  const productId = await nextProductId(
-    brand || 'india'
-  );
-
   await db.prepare(`
-    INSERT INTO products
-    (
-      id,
-      name,
-      sku,
-      model_no,
-      category,
-      hsn,
-      rate,
-      gst,
-      unit,
-      description,
-      brand
-    )
-    VALUES
-    (
-      $1,$2,$3,$4,$5,
-      $6,$7,$8,$9,$10,$11
-    )
+    UPDATE products
+    SET
+      name=$1,
+      sku=$2,
+      model_no=$3,
+      category=$4,
+      hsn=$5,
+      rate=$6,
+      gst=$7,
+      unit=$8,
+      description=$9
+    WHERE id=$10
   `).run(
-    productId,
     name || '',
     sku || '',
     model_no || '',
@@ -303,30 +292,13 @@ app.post('/api/products', wrap(async (req, res) => {
     parseFloat(gst) || 18,
     unit || 'Piece',
     description || '',
-    brand || 'india'
+    req.params.id
   );
-
-  await db.prepare(`
-    INSERT INTO inventory
-    (
-      product_id,
-      warehouse,
-      stock,
-      reorder
-    )
-    VALUES
-    (
-      $1,
-      'Main Warehouse',
-      0,
-      5
-    )
-  `).run(productId);
 
   res.json(
     await db.prepare(
-      'SELECT * FROM products WHERE id=$1'
-    ).get(productId)
+      "SELECT * FROM products WHERE id=$1"
+    ).get(req.params.id)
   );
 
 }));
