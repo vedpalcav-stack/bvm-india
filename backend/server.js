@@ -302,6 +302,67 @@ app.put('/api/products/:id', wrap(async (req, res) => {
   );
 
 }));
+// ── INVENTORY ─────────────────────────────────────────────
+
+app.get('/api/inventory', wrap(async (req,res)=>{
+
+  const rows = await db.prepare(`
+    SELECT *
+    FROM inventory
+    ORDER BY product_id
+  `).all();
+
+  res.json(rows);
+
+}));
+
+app.post('/api/inventory/update', wrap(async (req,res)=>{
+
+  const {
+    product_id,
+    qty,
+    type
+  } = req.body;
+
+  const row = await db.prepare(`
+    SELECT *
+    FROM inventory
+    WHERE product_id=$1
+  `).get(product_id);
+
+  if(!row){
+    return res.status(404).json({
+      error:"Inventory not found"
+    });
+  }
+
+  let stock = Number(row.stock);
+
+  if(type === "add"){
+    stock += Number(qty);
+  }else{
+    stock -= Number(qty);
+  }
+
+  if(stock < 0){
+    stock = 0;
+  }
+
+  await db.prepare(`
+    UPDATE inventory
+    SET stock=$1
+    WHERE product_id=$2
+  `).run(
+    stock,
+    product_id
+  );
+
+  res.json({
+    success:true
+  });
+
+}));
+  
   // ── DOCUMENTS ────────────────────────────────────────────────────────────────
 
   app.get('/api/documents', wrap(async (req, res) => {
