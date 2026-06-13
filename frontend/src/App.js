@@ -567,16 +567,25 @@ function Inventory({ brand }) {
             <div className="form-row col-span2">
               <label>Product</label>
 
-              <select
-                value={form.product_id}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    product_id: e.target.value
-                  })
-                }
-              >
-                {products.map((p) => (
+             <select
+  value={form.product_id}
+  onChange={(e) =>
+    setForm({
+      ...form,
+      product_id: e.target.value
+    })
+  }
+>
+  <option value="">
+    Select Product
+  </option>
+
+  {(products || []).map((p) => (
+    <option key={p.id} value={p.id}>
+      {p.name} ({p.sku})
+    </option>
+  ))}
+</select>
                   <option
                     key={p.id}
                     value={p.id}
