@@ -383,55 +383,361 @@ function Clients({ onDataChange, brand }) {
 function Products({ onDataChange, brand }) {
   const [products, setProducts] = useState([]);
   const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({gst:18,unit:'Piece'});
-  const load = useCallback(() => api.getProducts(brand).then(setProducts), [brand]);
-  useEffect(() => { load(); }, [load]);
-  const set = (k,v) => setForm(f => ({...f,[k]:v}));
-  const save = async () => {
-    if (modal==='add') await api.createProduct({...form, brand});
-    else await api.updateProduct(form.id,form);
-    setModal(null); load(); onDataChange && onDataChange();
+
+  const emptyForm = {
+    name: '',
+    sku: '',
+    model_no: '',
+    category: '',
+    hsn: '',
+    unit: 'Piece',
+    rate: '',
+    gst: 18,
+    description: '',
+    opening_stock: ''
   };
+
+  const [form, setForm] = useState(emptyForm);
+
+  const load = useCallback(async () => {
+    try {
+      const rows = await api.getProducts(brand);
+      setProducts(rows || []);
+    } catch (err) {
+      console.error(err);
+      setProducts([]);
+    }
+  }, [brand]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const set = (key, value) => {
+    setForm(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const save = async () => {
+    try {
+      if (!form.name?.trim()) {
+        alert('Product Name is required');
+        return;
+      }
+
+      if (modal === 'add') {
+        await api.createProduct({
+          ...form,
+          brand,
+          opening_stock: Number(form.opening_stock || 0),
+          rate: Number(form.rate || 0),
+          gst: Number(form.gst || 18)
+        });
+      } else {
+        await api.updateProduct(form.id, {
+          ...form,
+          brand,
+          rate: Number(form.rate || 0),
+          gst: Number(form.gst || 18)
+        });
+      }
+
+      await load();
+
+      if (onDataChange) {
+        await onDataChange();
+      }
+
+      setModal(null);
+      setForm(emptyForm);
+
+      alert(
+        modal === 'add'
+          ? 'Product added successfully.'
+          : 'Product updated successfully.'
+      );
+    } catch (err) {
+      console.error(err);
+      alert(
+        'Unable to save product.\n\n' +
+        (err.message || '')
+      );
+    }
+  };
+
   return (
     <div>
-      <div className="topbar-actions"><button className="btn btn-primary" onClick={() => {setForm({gst:18,unit:'Piece'});setModal('add');}}>+ Add Product</button></div>
-      <div className="card">
-        <table><thead><tr><th>SKU</th><th>Product Name</th><th>Model No.</th><th>Category</th><th>HSN</th><th>Unit</th><th>Rate</th><th>GST</th><th></th></tr></thead>
-        <tbody>{products.map(p => (
-          <tr key={p.id}>
-            <td><code>{p.sku}</code></td><td><strong>{p.name}</strong></td><td><code>{p.model_no||'—'}</code></td><td>{p.category}</td>
-            <td>{p.hsn}</td><td>{p.unit}</td><td className="bold">{fmtAmt(p.rate)}</td>
-            <td><Badge status={`${p.gst}%`}/></td>
-            <td><button className="btn btn-sm" onClick={() => {setForm(p);setModal('edit');}}>Edit</button></td>
-          </tr>
-        ))}</tbody></table>
+
+      <div className="topbar-actions">
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setForm(emptyForm);
+            setModal('add');
+          }}
+        >
+          + Add Product
+        </button>
       </div>
-      {modal && (
-        <Modal title={modal==='add'?'Add Product':'Edit Product'} onClose={() => setModal(null)}>
-          <div className="form-grid2">
-            {[['Product Name','name','text'],['SKU / Part No.','sku','text'],['Model No.','model_no','text'],['Category','category','text'],['HSN Code','hsn','text'],['Rate (excl. GST)','rate','number']].map(([label,key,type]) => (
-              <div className="form-row" key={key}><label>{label}</label><input type={type} value={form[key]||''} onChange={e => set(key,e.target.value)}/></div>
+
+      <div className="card">
+
+        <table>
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Product Name</th>
+              <th>Model No.</th>
+              <th>Category</th>
+              <th>HSN</th>
+              <th>Unit</th>
+              <th>Rate</th>
+              <th>GST</th>
+              <th></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {(products || []).map(p => (
+              <tr key={p.id}>
+
+                <td>
+                  <code>{p.sku || '—'}</code>
+                </td>
+
+                <td>
+                  <strong>{p.name}</strong>
+                </td>
+
+                <td>
+                  <code>{p.model_no || '—'}</code>
+                </td>
+
+                <td>{p.category || '—'}</td>
+
+                <td>{p.hsn || '—'}</td>
+
+                <td>{p.unit || 'Piece'}</td>
+
+                <td className="bold">
+                  {fmtAmt(p.rate || 0)}
+                </td>
+
+                <td>
+                  <Badge status={`${p.gst || 18}%`} />
+                </td>
+
+                <td>
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => {
+                      setForm({
+                        ...p,
+                        opening_stock: ''
+                      });
+                      setModal('edit');
+                    }}
+                  >
+                    Edit
+                  </button>
+                </td>
+
+              </tr>
             ))}
-            <div className="form-row"><label>Unit</label>
-              <select value={form.unit||'Piece'} onChange={e => set('unit',e.target.value)}>
-                {['Piece','Pcs','Set','Kg','Gram','Metre','Box','Litre','Bag','Roll','Pair','Nos'].map(u => <option key={u}>{u}</option>)}
+          </tbody>
+        </table>
+
+      </div>
+
+      {modal && (
+        <Modal
+          title={
+            modal === 'add'
+              ? 'Add Product'
+              : 'Edit Product'
+          }
+          onClose={() => {
+            setModal(null);
+            setForm(emptyForm);
+          }}
+        >
+
+          <div className="form-grid2">
+
+            <div className="form-row">
+              <label>Product Name</label>
+              <input
+                value={form.name || ''}
+                onChange={e =>
+                  set('name', e.target.value)
+                }
+              />
+            </div>
+
+            <div className="form-row">
+              <label>SKU / Part No.</label>
+              <input
+                value={form.sku || ''}
+                onChange={e =>
+                  set('sku', e.target.value)
+                }
+              />
+            </div>
+
+            <div className="form-row">
+              <label>Model No.</label>
+              <input
+                value={form.model_no || ''}
+                onChange={e =>
+                  set('model_no', e.target.value)
+                }
+              />
+            </div>
+
+            <div className="form-row">
+              <label>Category</label>
+              <input
+                value={form.category || ''}
+                onChange={e =>
+                  set('category', e.target.value)
+                }
+              />
+            </div>
+
+            <div className="form-row">
+              <label>HSN Code</label>
+              <input
+                value={form.hsn || ''}
+                onChange={e =>
+                  set('hsn', e.target.value)
+                }
+              />
+            </div>
+
+            <div className="form-row">
+              <label>Rate</label>
+              <input
+                type="number"
+                value={form.rate || ''}
+                onChange={e =>
+                  set('rate', e.target.value)
+                }
+              />
+            </div>
+
+            <div className="form-row">
+              <label>Unit</label>
+
+              <select
+                value={form.unit || 'Piece'}
+                onChange={e =>
+                  set('unit', e.target.value)
+                }
+              >
+                {[
+                  'Piece',
+                  'Pcs',
+                  'Set',
+                  'Kg',
+                  'Gram',
+                  'Metre',
+                  'Box',
+                  'Litre',
+                  'Bag',
+                  'Roll',
+                  'Pair',
+                  'Nos'
+                ].map(u => (
+                  <option
+                    key={u}
+                    value={u}
+                  >
+                    {u}
+                  </option>
+                ))}
               </select>
             </div>
-            <div className="form-row"><label>GST %</label>
-              <select value={form.gst||18} onChange={e => set('gst',+e.target.value)}>
-                {[0,5,12,18,28].map(g => <option key={g} value={g}>{g}%</option>)}
+
+            <div className="form-row">
+              <label>GST %</label>
+
+              <select
+                value={form.gst || 18}
+                onChange={e =>
+                  set('gst', e.target.value)
+                }
+              >
+                {[0, 5, 12, 18, 28].map(g => (
+                  <option
+                    key={g}
+                    value={g}
+                  >
+                    {g}%
+                  </option>
+                ))}
               </select>
             </div>
-            {modal==='add' && <div className="form-row"><label>Opening Stock</label><input type="number" value={form.opening_stock||''} onChange={e => set('opening_stock',e.target.value)}/></div>}
-            <div className="form-row col-span2"><label>Product Description</label><textarea rows={2} value={form.description||''} onChange={e => set('description',e.target.value)} placeholder="Detailed product description, specs, notes..."/></div>
+
+            {modal === 'add' && (
+              <div className="form-row">
+                <label>Opening Stock</label>
+                <input
+                  type="number"
+                  value={form.opening_stock || ''}
+                  onChange={e =>
+                    set(
+                      'opening_stock',
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+            )}
+
+            <div className="form-row col-span2">
+              <label>Product Description</label>
+
+              <textarea
+                rows={3}
+                value={form.description || ''}
+                onChange={e =>
+                  set(
+                    'description',
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+
           </div>
-          <div className="modal-footer"><button className="btn" onClick={() => setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={save}>Save Product</button></div>
+
+          <div className="modal-footer">
+            <button
+              className="btn"
+              onClick={() => {
+                setModal(null);
+                setForm(emptyForm);
+              }}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="btn btn-primary"
+              onClick={save}
+            >
+              Save Product
+            </button>
+          </div>
+
         </Modal>
       )}
+
     </div>
   );
 }
-
 // ── INVENTORY ─────────────────────────────────────────────────────────────────
 function Inventory({ brand }) {
   const [inventory, setInventory] = useState([]);
