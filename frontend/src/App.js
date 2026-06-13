@@ -586,15 +586,7 @@ function Inventory({ brand }) {
     </option>
   ))}
 </select>
-                  <option
-                    key={p.id}
-                    value={p.id}
-                  >
-                    {p.name} ({p.sku})
-                  </option>
-                ))}
-              </select>
-            </div>
+               </div>
 
             <div className="form-row">
               <label>Type</label>
