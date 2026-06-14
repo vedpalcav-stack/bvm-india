@@ -1,0 +1,24 @@
+import React from "react";
+import CompanySwitcher from "./CompanySwitcher";
+
+function Header() {
+  return (
+    <div
+      style={{
+        height: "70px",
+        background: "#ffffff",
+        borderBottom: "1px solid #e5e7eb",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "0 20px"
+      }}
+    >
+      <h2>BVM ERP</h2>
+
+      <CompanySwitcher />
+    </div>
+  );
+}
+
+export default Header;
