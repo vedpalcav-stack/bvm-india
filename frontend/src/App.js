@@ -2,9 +2,8 @@ import React, {
   useState
 } from "react";
 
-import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
-
+import Sidebar from "./components/Sidebar";
 function App() {
   const [currentPage,
     setCurrentPage] =
