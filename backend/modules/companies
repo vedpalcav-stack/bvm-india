@@ -1,1 +1,21 @@
+const router = require("express").Router();
+const controller = require("./company.controller");
 
+router.get("/", controller.getCompanies);
+router.get("/:id", controller.getCompany);
+
+module.exports = router;
+exports.getCompanies = async (req, res) => {
+  res.json({
+    success: true,
+    data: []
+  });
+};
+
+exports.getCompany = async (req, res) => {
+  res.json({
+    success: true,
+    data: {}
+  });
+};
+module.exports = {};
