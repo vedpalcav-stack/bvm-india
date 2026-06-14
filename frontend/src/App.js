@@ -1004,125 +1004,266 @@ function PayForm({ doc, clients, onClose }) {
 }
 
 ```javascript
+```javascript
 // ── DOC LIST ──────────────────────────────────────────────────────────────────
-function ({
+function DocList({
   type,
-  clients,
-  products,
-  showNew,
+  clients = [],
+  products = [],
+  showNew = false,
   onClearNew,
   brand
 }) {
-}
-
-function ({ type, clients, products, showNew, onClearNew, brand }) {
-  // your DocList code...
-}
-```
-
-function ({ type, clients, products, showNew, onClearNew, brand }) {
   const [docs, setDocs] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [viewDoc, setViewDoc] = useState(null);
   const [payModal, setPayModal] = useState(null);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [clientFilter, setClientFilter] = useState('All');
-  const load = useCallback(() => api.getDocuments(type, brand).then(setDocs).catch(()=>{}), [type, brand]);
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { if(showNew){setShowForm(true);onClearNew&&onClearNew();} }, [showNew,onClearNew]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [clientFilter, setClientFilter] = useState("All");
 
-  const label = api.FLOW_LABELS[type]||type;
-  const nextType = api.FLOW_NEXT[type];
-  const nextLabel = api.FLOW_NEXT_LABELS[type];
-  const calcTotals = (items=[]) => { const sub=items.reduce((s,it)=>s+(it.qty||0)*(it.rate||0),0); return{total:sub*1.18}; };
+  const load = useCallback(async () => {
+    try {
+      const data = await api.getDocuments(type, brand);
+      setDocs(data || []);
+    } catch (err) {
+      console.error("Failed to load documents:", err);
+      setDocs([]);
+    }
+  }, [type, brand]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (showNew) {
+      setShowForm(true);
+
+      if (onClearNew) {
+        onClearNew();
+      }
+    }
+  }, [showNew, onClearNew]);
+
+  const label = api.FLOW_LABELS?.[type] || type;
+  const nextType = api.FLOW_NEXT?.[type];
+  const nextLabel = api.FLOW_NEXT_LABELS?.[type];
+
+  const calcTotals = (items = []) => {
+    const sub = items.reduce(
+      (sum, item) =>
+        sum + (item.qty || 0) * (item.rate || 0),
+      0
+    );
+
+    return {
+      subtotal: sub,
+      gst: sub * 0.18,
+      total: sub * 1.18
+    };
+  };
 
   const q = search.toLowerCase().trim();
-  const filtered = docs.filter(doc => {
-    const cl = clients.find(c => c.id === doc.client_id);
-    const matchSearch = !q || doc.id.toLowerCase().includes(q) || (cl?.name||'').toLowerCase().includes(q) || (doc.po_number||'').toLowerCase().includes(q) || (doc.so_number||'').toLowerCase().includes(q) || (doc.date||'').includes(q);
-    const matchStatus = statusFilter==='All' || doc.status===statusFilter;
-    const matchClient = clientFilter==='All' || doc.client_id===clientFilter;
-    return matchSearch && matchStatus && matchClient;
+
+  const filtered = docs.filter((doc) => {
+    const client = clients.find(
+      (c) => c.id === doc.client_id
+    );
+
+    const matchSearch =
+      !q ||
+      doc.id?.toLowerCase().includes(q) ||
+      client?.name?.toLowerCase().includes(q) ||
+      doc.po_number?.toLowerCase().includes(q) ||
+      doc.so_number?.toLowerCase().includes(q) ||
+      doc.date?.includes(q);
+
+    const matchStatus =
+      statusFilter === "All" ||
+      doc.status === statusFilter;
+
+    const matchClient =
+      clientFilter === "All" ||
+      doc.client_id === clientFilter;
+
+    return (
+      matchSearch &&
+      matchStatus &&
+      matchClient
+    );
   });
-  const allStatuses = ['All',...new Set(docs.map(d=>d.status).filter(Boolean))];
+
+  const allStatuses = [
+    "All",
+    ...new Set(
+      docs
+        .map((d) => d.status)
+        .filter(Boolean)
+    )
+  ];
 
   return (
     <div>
-      <div style={{display:'flex',gap:10,marginBottom:14,alignItems:'center',flexWrap:'wrap'}}>
-        <button className="btn btn-primary" onClick={() => setShowForm(true)}>+ New {label}</button>
-        <div style={{position:'relative',flex:1,minWidth:200,maxWidth:360}}>
-          <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#94a3b8',pointerEvents:'none'}}>🔍</span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ID, client, PO/SO…`}
-            style={{paddingLeft:34,width:'100%',height:36,borderRadius:8,border:'1px solid #d1d5db',fontSize:13}}/>
-          {search && <button onClick={() => setSearch('')} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#94a3b8',fontSize:18}}>×</button>}
-        </div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{padding:'7px 10px',borderRadius:8,border:'1px solid #d1d5db',fontSize:13,background:'#fff'}}>
-          {allStatuses.map(s=><option key={s}>{s}</option>)}
+      {/* Toolbar */}
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          marginBottom: 14,
+          alignItems: "center",
+          flexWrap: "wrap"
+        }}
+      >
+        <button
+          className="btn btn-primary"
+          onClick={() => setShowForm(true)}
+        >
+          + New {label}
+        </button>
+
+        <input
+          value={search}
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
+          placeholder="Search..."
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(e) =>
+            setStatusFilter(e.target.value)
+          }
+        >
+          {allStatuses.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
         </select>
-        <select value={clientFilter} onChange={e => setClientFilter(e.target.value)} style={{padding:'7px 10px',borderRadius:8,border:'1px solid #d1d5db',fontSize:13,background:'#fff',maxWidth:180}}>
-          <option value="All">All Clients</option>
-          {clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+
+        <select
+          value={clientFilter}
+          onChange={(e) =>
+            setClientFilter(e.target.value)
+          }
+        >
+          <option value="All">
+            All Clients
+          </option>
+
+          {clients.map((c) => (
+            <option
+              key={c.id}
+              value={c.id}
+            >
+              {c.name}
+            </option>
+          ))}
         </select>
-        <span style={{fontSize:12,color:'#94a3b8'}}>{filtered.length} of {docs.length}</span>
       </div>
 
-      <FlowBar current={type}/>
-      <div style={{marginBottom:14}}/>
-
+      {/* Document List */}
       <div className="card">
-        {filtered.length===0 ? (
-          <div style={{padding:'40px',textAlign:'center',color:'#94a3b8'}}>
-            <div style={{fontSize:32,marginBottom:8}}>{q?'🔍':'📋'}</div>
-            <div style={{fontSize:14,fontWeight:600}}>{q?'No results found':`No ${label}s yet`}</div>
-            <div style={{fontSize:12,marginTop:4}}>{q?'Try a different search term':`Click "+ New ${label}" to create your first one`}</div>
+        {filtered.length === 0 ? (
+          <div
+            style={{
+              padding: 40,
+              textAlign: "center"
+            }}
+          >
+            No {label} found
           </div>
         ) : (
-          <table><thead><tr>
-            <th>ID</th><th>Client</th><th>Date</th>
-            {type==='invoice'&&<th>Due Date</th>}
-            {(type==='purchase_order'||type==='sales_order')&&<th>ETA</th>}
-            {(type==='purchase_order'||type==='sales_order'||type==='invoice')&&<th>PO/SO</th>}
-            <th>Currency</th><th>Amount</th>
-            {type==='invoice'&&<th>Paid</th>}
-            <th>Status</th><th>PDF</th><th></th>
-          </tr></thead>
-          <tbody>{filtered.map(doc => {
-            const cl=clients.find(c=>c.id===doc.client_id);
-            const {total}=calcTotals(doc.items||[]);
-            const currency=doc.currency||'INR';
-            const idHighlight=q&&doc.id.toLowerCase().includes(q);
-            return (<tr key={doc.id}>
-              <td><code style={idHighlight?{background:'#fef3c7',borderColor:'#f59e0b',color:'#92400e'}:{}}>{doc.id}</code></td>
-              <td><strong>{cl?.name||'—'}</strong></td>
-              <td>{doc.date}</td>
-              {type==='invoice'&&<td>{doc.due_date||'—'}</td>}
-              {(type==='purchase_order'||type==='sales_order')&&<td>{doc.due_date||'—'}</td>}
-              {(type==='purchase_order'||type==='sales_order'||type==='invoice')&&<td><small className="muted">{[doc.po_number,doc.so_number].filter(Boolean).join('/')||'—'}</small></td>}
-              <td><span className="badge badge-gray">{currency}</span></td>
-              <td className="bold">{fmtAmt(total,currency)}</td>
-              {type==='invoice'&&<td className="success">{fmtAmt(doc.paid||0,currency)}</td>}
-              <td><Badge status={doc.status}/></td>
-              <td><PDFButton docId={doc.id} brand={brand}/></td>
-              <td>
-                <div className="actions">
-                  <button className="btn btn-sm" onClick={() => setViewDoc(doc)}>View</button>
-                  {nextType&&doc.status!=='Converted'&&<button className="btn btn-sm btn-purple" onClick={async()=>{await api.convertDocument(doc.id,nextType);load();}}>→ {nextLabel}</button>}
-                  {type==='invoice'&&doc.status!=='Paid'&&<button className="btn btn-sm btn-success" onClick={() => setPayModal(doc)}>Pay</button>}
-                  {doc.status!=='Converted'&&<button className="btn btn-sm" style={{background:'#fee2e2',color:'#dc2626',border:'1px solid #fecaca'}} onClick={async()=>{if(window.confirm('Delete '+doc.id+'? This cannot be undone.')){{await api.deleteDocument(doc.id);load();}}}}>🗑</button>}
-                </div>
-              </td>
-            </tr>);
-          })}</tbody></table>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filtered.map((doc) => {
+                const client =
+                  clients.find(
+                    (c) =>
+                      c.id === doc.client_id
+                  );
+
+                const totals =
+                  calcTotals(
+                    doc.items || []
+                  );
+
+                return (
+                  <tr key={doc.id}>
+                    <td>{doc.id}</td>
+                    <td>
+                      {client?.name || "—"}
+                    </td>
+                    <td>{doc.date}</td>
+                    <td>{doc.status}</td>
+                    <td>
+                      {totals.total.toFixed(
+                        2
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {showForm&&<DocForm type={type} clients={clients} products={products} brand={brand} onClose={() => setShowForm(false)} onSaved={(savedDoc) => {load();if(savedDoc&&savedDoc.id)setViewDoc(savedDoc);}}/>}
-      {viewDoc&&<DualDocView doc={viewDoc} clients={clients} products={products} onClose={() => setViewDoc(null)} onRefresh={load} brand={brand}/>}
-      {payModal&&<PayForm doc={payModal} clients={clients} onClose={() => {setPayModal(null);load();}}/>}
+      {showForm && (
+        <DocForm
+          type={type}
+          clients={clients}
+          products={products}
+          brand={brand}
+          onClose={() =>
+            setShowForm(false)
+          }
+          onSaved={() => {
+            load();
+            setShowForm(false);
+          }}
+        />
+      )}
+
+      {viewDoc && (
+        <DualDocView
+          doc={viewDoc}
+          clients={clients}
+          products={products}
+          brand={brand}
+          onClose={() =>
+            setViewDoc(null)
+          }
+          onRefresh={load}
+        />
+      )}
+
+      {payModal && (
+        <PayForm
+          doc={payModal}
+          clients={clients}
+          onClose={() => {
+            setPayModal(null);
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }
+```
 
 // ── PAYMENTS ──────────────────────────────────────────────────────────────────
 function Payments({ clients }) {
