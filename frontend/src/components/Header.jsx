@@ -1,22 +1,24 @@
 import React from "react";
-import CompanySwitcher from "./CompanySwitcher";
 
 function Header() {
   return (
     <div
       style={{
-        height: "70px",
         background: "#ffffff",
+        padding: "20px",
         borderBottom: "1px solid #e5e7eb",
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "center",
-        padding: "0 20px"
+        alignItems: "center"
       }}
     >
-      <h2>BVM ERP</h2>
+      <h2 style={{ margin: 0 }}>
+        BVM ERP System
+      </h2>
 
-      <CompanySwitcher />
+      <div>
+        Welcome, Admin
+      </div>
     </div>
   );
 }
