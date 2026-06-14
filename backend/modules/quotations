@@ -1,1 +1,20 @@
+const router = require("express").Router();
+const controller = require("./quotation.controller");
 
+router.get("/", controller.getQuotations);
+router.post("/", controller.createQuotation);
+
+module.exports = router;
+
+exports.getQuotations = async (req, res) => {
+  res.json([]);
+};
+
+exports.createQuotation = async (req, res) => {
+  res.json({
+    success: true,
+    message: "Quotation created"
+  });
+};
+module.exports = {};
+module.exports = {};
