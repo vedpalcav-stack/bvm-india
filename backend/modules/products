@@ -1,1 +1,20 @@
+const router = require("express").Router();
+const controller = require("./product.controller");
 
+router.get("/", controller.getProducts);
+router.post("/", controller.createProduct);
+
+module.exports = router;
+
+exports.getProducts = async (req, res) => {
+  res.json([]);
+};
+
+exports.createProduct = async (req, res) => {
+  res.json({
+    success: true,
+    message: "Product created"
+  });
+};
+module.exports = {};
+module.exports = {};
