@@ -2,216 +2,86 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-const { Pool } = require("pg");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// ======================
-// DATABASE CONNECTION
-// ======================
-const db = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
+// ====================
+// ROUTES
+// ====================
 
-// ======================
-// HOME ROUTE
-// ======================
+app.use(
+  "/api/companies",
+  require("./modules/companies/company.routes")
+);
+
+app.use(
+  "/api/customers",
+  require("./modules/customers/customer.routes")
+);
+
+app.use(
+  "/api/products",
+  require("./modules/products/product.routes")
+);
+
+app.use(
+  "/api/inventory",
+  require("./modules/inventory/inventory.routes")
+);
+
+app.use(
+  "/api/quotations",
+  require("./modules/quotations/quotation.routes")
+);
+
+app.use(
+  "/api/proforma",
+  require("./modules/proforma/proforma.routes")
+);
+
+app.use(
+  "/api/purchase-orders",
+  require("./modules/purchase-order/po.routes")
+);
+
+app.use(
+  "/api/sales-orders",
+  require("./modules/sales-order/so.routes")
+);
+
+app.use(
+  "/api/invoices",
+  require("./modules/invoices/invoice.routes")
+);
+
+app.use(
+  "/api/dispatch",
+  require("./modules/dispatch/dispatch.routes")
+);
+
+app.use(
+  "/api/reminders",
+  require("./modules/reminders/reminder.routes")
+);
+
+// ====================
+// HOME
+// ====================
+
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "BVM ERP API Running",
+    message: "BVM ERP API Running"
   });
 });
 
-// ======================
-// GET ALL COMPANIES
-// ======================
-app.get("/api/companies", async (req, res) => {
-  try {
-    const result = await db.query(
-      `
-      SELECT *
-      FROM companies
-      ORDER BY id
-      `
-    );
-
-    res.json({
-      success: true,
-      data: result.rows,
-    });
-  } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-});
-
-// ======================
-// GET SINGLE COMPANY
-// ======================
-app.get("/api/companies/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await db.query(
-      `
-      SELECT *
-      FROM companies
-      WHERE id = $1
-      `,
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Company not found",
-      });
-    }
-
-    res.json({
-      success: true,
-      data: result.rows[0],
-    });
-  } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-});
-
-// ======================
-// CREATE COMPANY
-// ======================
-app.post("/api/companies", async (req, res) => {
-  try {
-    const { name } = req.body;
-
-    if (!name) {
-      return res.status(400).json({
-        success: false,
-        message: "Company name is required",
-      });
-    }
-
-    const result = await db.query(
-      `
-      INSERT INTO companies (name)
-      VALUES ($1)
-      RETURNING *
-      `,
-      [name]
-    );
-
-    res.status(201).json({
-      success: true,
-      message: "Company created successfully",
-      data: result.rows[0],
-    });
-  } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-});
-
-// ======================
-// UPDATE COMPANY
-// ======================
-app.put("/api/companies/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name } = req.body;
-
-    const result = await db.query(
-      `
-      UPDATE companies
-      SET name = $1
-      WHERE id = $2
-      RETURNING *
-      `,
-      [name, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Company not found",
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "Company updated successfully",
-      data: result.rows[0],
-    });
-  } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-});
-
-// ======================
-// DELETE COMPANY
-// ======================
-app.delete("/api/companies/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await db.query(
-      `
-      DELETE FROM companies
-      WHERE id = $1
-      RETURNING *
-      `,
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Company not found",
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "Company deleted successfully",
-      data: result.rows[0],
-    });
-  } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-});
-
-// ======================
+// ====================
 // START SERVER
-// ======================
+// ====================
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
