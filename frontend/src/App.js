@@ -1003,8 +1003,6 @@ function PayForm({ doc, clients, onClose }) {
   );
 }
 
-```javascript
-```javascript
 // ── DOC LIST ──────────────────────────────────────────────────────────────────
 function DocList({
   type,
