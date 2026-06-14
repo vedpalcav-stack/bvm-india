@@ -1,1 +1,20 @@
+const router = require("express").Router();
+const controller = require("./po.controller");
 
+router.get("/", controller.getPO);
+router.post("/", controller.createPO);
+
+module.exports = router;
+exports.getPO = async (req, res) => {
+  res.json([]);
+};
+
+exports.createPO = async (req, res) => {
+  res.json({
+    success: true,
+    message: "Purchase Order created"
+  });
+
+};
+module.exports = {};
+module.exports = {};
