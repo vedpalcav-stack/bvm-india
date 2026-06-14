@@ -1,70 +1,54 @@
 import React from "react";
 
+const menus = [
+  "Dashboard",
+  "Customers",
+  "Products",
+  "Inventory",
+  "Quotations",
+  "Proforma",
+  "Purchase Orders",
+  "Sales Orders",
+  "Invoices",
+  "Dispatch",
+  "Reminders"
+];
+
 function Sidebar({
   currentPage,
   setCurrentPage
 }) {
-  const menus = [
-    "Dashboard",
-    "Customers",
-    "Products",
-    "Inventory",
-    "Quotations",
-    "Proforma",
-    "Purchase Orders",
-    "Sales Orders",
-    "Invoices",
-    "Dispatch",
-    "Payments",
-    "Reminders",
-    "Reports",
-    "Settings"
-  ];
-
   return (
     <div
       style={{
         width: "250px",
-        height: "100vh",
+        minHeight: "100vh",
         background: "#1e293b",
         color: "#ffffff",
-        padding: "20px",
-        boxSizing: "border-box"
+        padding: "20px"
       }}
     >
-      <h2
-        style={{
-          marginBottom: "30px",
-          textAlign: "center"
-        }}
-      >
-        BVM ERP
-      </h2>
+      <h2>BVM ERP</h2>
 
       {menus.map((menu) => (
-        <button
+        <div
           key={menu}
           onClick={() =>
             setCurrentPage(menu)
           }
           style={{
-            width: "100%",
             padding: "12px",
-            marginBottom: "10px",
-            border: "none",
-            borderRadius: "8px",
+            marginTop: "10px",
             cursor: "pointer",
-            textAlign: "left",
+            borderRadius: "8px",
             background:
               currentPage === menu
                 ? "#2563eb"
-                : "#334155",
-            color: "#fff",
-            fontSize: "14px"
+                : "transparent"
           }}
         >
           {menu}
-        </button>
+        </div>
       ))}
     </div>
   );
