@@ -1,1 +1,20 @@
+const router = require("express").Router();
+const controller = require("./reminder.controller");
 
+router.get("/", controller.getReminders);
+router.post("/", controller.createReminder);
+
+module.exports = router;
+
+exports.getReminders = async (req, res) => {
+  res.json([]);
+};
+
+exports.createReminder = async (req, res) => {
+  res.json({
+    success: true,
+    message: "Reminder created"
+  });
+};
+module.exports = {};
+module.exports = {};
