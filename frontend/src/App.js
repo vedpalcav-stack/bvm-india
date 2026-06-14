@@ -1003,6 +1003,7 @@ function PayForm({ doc, clients, onClose }) {
   );
 }
 
+```javascript
 // ── DOC LIST ──────────────────────────────────────────────────────────────────
 function ({
   type,
@@ -1013,6 +1014,12 @@ function ({
   brand
 }) {
 }
+
+function ({ type, clients, products, showNew, onClearNew, brand }) {
+  // your DocList code...
+}
+```
+
 function ({ type, clients, products, showNew, onClearNew, brand }) {
   const [docs, setDocs] = useState([]);
   const [showForm, setShowForm] = useState(false);
