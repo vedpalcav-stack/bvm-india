@@ -1004,7 +1004,7 @@ function PayForm({ doc, clients, onClose }) {
 }
 
 // ── DOC LIST ──────────────────────────────────────────────────────────────────
-function DocList({
+function ({
   type,
   clients,
   products,
@@ -1013,7 +1013,7 @@ function DocList({
   brand
 }) {
 }
-function DocList({ type, clients, products, showNew, onClearNew, brand }) {
+function ({ type, clients, products, showNew, onClearNew, brand }) {
   const [docs, setDocs] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [viewDoc, setViewDoc] = useState(null);
@@ -1727,7 +1727,7 @@ export default function App() {
           {page==='clients'&&<Clients onDataChange={loadMasters} brand={brand}/>}
           {page==='products'&&<Products onDataChange={loadMasters} brand={brand}/>}
           {page==='inventory'&&<Inventory brand={brand}/>}
-          {docType&&<DocList key={page+brand} type={docType} clients={clients} products={products} brand={brand} showNew={false} onClearNew={()=>{}}/>}
+          {docType&&< key={page+brand} type={docType} clients={clients} products={products} brand={brand} showNew={false} onClearNew={()=>{}}/>}
           {page==='payments'&&<Payments clients={clients}/>}
           {page==='reminders'&&<Reminders clients={clients} brand={brand}/>}
         </div>
