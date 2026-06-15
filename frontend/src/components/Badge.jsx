@@ -20,3 +20,16 @@ function Badge({ text, color = "#2563eb" }) {
 }
 
 export default Badge;
+function App() {
+  return (
+    <div>
+      <h1>My ERP Dashboard</h1>
+
+      <Badge text="Active" color="green" />
+      <Badge text="Pending" color="orange" />
+      <Badge text="Inactive" color="red" />
+    </div>
+  );
+}
+
+export default App;
