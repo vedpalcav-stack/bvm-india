@@ -2,7 +2,10 @@ const express = require("express");
 const router = express.Router();
 
 router.get("/", (req, res) => {
-  res.json({ message: "Companies API working" });
+  res.json({
+    success: true,
+    message: "Companies API working"
+  });
 });
 
 module.exports = router;
