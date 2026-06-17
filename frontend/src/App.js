@@ -12,7 +12,7 @@ import PurchaseOrder from "./pages/PurchaseOrder";
 import SalesOrder from "./pages/SalesOrder";
 import Invoices from "./pages/Invoices";
 import Dispatch from "./pages/Dispatch";
-import Performa from "./pages/Performa";
+import Proforma from "./pages/Proforma";
 import Reminder from "./pages/Reminder";
 
 function App() {
