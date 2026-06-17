@@ -24,7 +24,7 @@ function Dashboard() {
         </div>
 
         <div style={cardStyle}>
-          <h3>Total Quotations</h3>
+          <h3>Total quotation</h3>
           <h2>45</h2>
         </div>
 
