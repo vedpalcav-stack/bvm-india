@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 function Quotation() {
-  const [quotations] = useState([
+  const [quotation] = useState([
     {
       id: 1,
       quotationNo: "QT-001",
@@ -22,7 +22,7 @@ function Quotation() {
 
   return (
     <div style={{ padding: "20px" }}>
-      <h1>Quotations</h1>
+      <h1>quotation</h1>
 
       <table
         style={{
@@ -42,7 +42,7 @@ function Quotation() {
         </thead>
 
         <tbody>
-          {quotations.map((quotation) => (
+          {quotation.map((quotation) => (
             <tr key={quotation.id}>
               <td style={tdStyle}>{quotation.quotationNo}</td>
               <td style={tdStyle}>{quotation.customer}</td>
